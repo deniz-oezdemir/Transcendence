@@ -13,10 +13,10 @@
 ## hackyMVP
 No dockerization, only game engine with django and FE with bootstrap.
 
-Achieved but laggy, start server with `python manage.py runserver` and visit localhost. Controls to play are `w` and `s` and `arrow up` and `arrow down`.
+The initial implementation is functional but experiences some lag. To start the server, run `python manage.py runserver` and navigate to `localhost` in your browser. Use the `w` and `s` keys, or the `up` and `down` arrow keys, to control the game.
 
 ## MVP and V0.1
-[MVP Plan](./images/mvp_plan.png)
+![MVP Plan](./images/mvp_plan.png)
 
 ## Research
 
