@@ -24,7 +24,7 @@ Goal: Dockerized frontend and backend. Communicate via websockets. Fluid gamepla
 
 Status: Not started.
 
-![MVP Plan](./mvp_plan.jpg){ width=30% }
+<img src="./mvp_plan.jpg" alt="MVP Plan" width="30%">
 
 ### V0.1
 
