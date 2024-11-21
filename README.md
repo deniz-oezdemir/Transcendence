@@ -1,22 +1,36 @@
 # Transcendence
+
 ## Table of Contents
+- [Versions](#versions)
+  - [hackyMVP](#hackymvp)
+  - [MVP](#mvp)
+  - [V0.1](#v01)
 - [Research](#research)
   - [Databases](#databases)
   - [Microservices](#microservices)
   - [User and Game Stats](#user-and-game-stats)
-- [hackyMVP](#hackymvp)
-- [MVP and V0.1](#mvp-and-v01)
 - [Sources](#sources)
   - [Useful Resources](#useful-resources)
   - [Similar projects](#similar-projects)
 
-## hackyMVP
-No dockerization, only game engine with django and FE with bootstrap.
+## Versions
+### hackyMVP
+Goal: Simple game engine on django backend and frontend with minimal bootstrap.
 
-The initial implementation is functional but experiences some lag. To start the server, run `python manage.py runserver` and navigate to `localhost` in your browser. Use the `w` and `s` keys, or the `up` and `down` arrow keys, to control the game.
+Status: Functional but experiences some lag. To start the server, run `python manage.py runserver` and navigate to `localhost` in your browser. Use the `w` and `s` keys, or the `up` and `down` arrow keys, to control the game.
 
-## MVP and V0.1
-![MVP Plan](./mvp_plan.jpg)
+### MVP
+Goal: Dockerized frontend and backend. Communicate via websockets. Fluid gameplay experience.
+
+Status: Not started.
+
+![MVP Plan](./images/mvp_plan.jpg){ width=30% }
+
+### V0.1
+
+Goal: Added Database, Authentication, and Single Page App.
+
+Status: Not started.
 
 ## Research
 
