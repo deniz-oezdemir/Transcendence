@@ -8,15 +8,19 @@ from .engine.pong_game_engine import PongGameEngine
 from .models import GameState
 
 
-class CreateGame:
+class CreateGame(generics.CreateAPIView):
     pass
 
 
-class JoinGame:
+class JoinGame(generics.UpdateAPIView):
     pass
 
 
-class StartGame:
+class StartGame(generics.UpdateAPIView):
+    pass
+
+
+class DeleteGame(generics.DestroyAPIView):
     pass
 
 
