@@ -1,5 +1,8 @@
+from ..models import GameState
+
+
 class PongGameEngine:
-    def __init__(self, game_state):
+    def __init__(self, game_state: GameState):
         self.game_state = game_state
 
     def update_game_state(self):
@@ -7,9 +10,4 @@ class PongGameEngine:
         pass
 
     def move_player(self, player_id, direction):
-        # Implement the logic to move a player
-        pass
-
-    def check_collisions(self):
-        # Implement the logic to check for collisions
         pass

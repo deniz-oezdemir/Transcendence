@@ -3,8 +3,25 @@ from django.db.models.fields.related import ForeignKey
 
 
 class GameState(models.Model):
+    """
+    Represents the state of a Pong game.
+
+    Attributes:
+        player_1_position (int): The vertical position of player 1's paddle.
+        player_1_direction (int): The direction of player 1's paddle movement.
+        player_2_position (int): The vertical position of player 2's paddle.
+        player_2_direction (int): The direction of player 2's paddle movement.
+        ball_x_position (int): The horizontal position of the ball.
+        ball_y_position (int): The vertical position of the ball.
+        ball_x_velocity (int): The horizontal velocity of the ball.
+        ball_y_velocity (int): The vertical velocity of the ball.
+    """
+
+    player_1_id = models.IntegerField(default=150)
     player_1_position = models.IntegerField(default=150)
     player_1_direction = models.IntegerField(default=150)
+
+    player_2_id = models.IntegerField(default=150)
     player_2_position = models.IntegerField(default=150)
     player_2_direction = models.IntegerField(default=150)
 

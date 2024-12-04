@@ -4,13 +4,25 @@ from rest_framework.response import Response
 
 
 from .serializers import GameStateSerializer
-from .engine.game_logic import PongGameEngine
+from .engine.pong_game_engine import PongGameEngine
 from .models import GameState
+
+
+class CreateGame:
+    pass
+
+
+class JoinGame:
+    pass
+
+
+class StartGame:
+    pass
 
 
 class GetGameState(generics.RetrieveAPIView):
     queryset = GameState.objects.all()
-    serializer_class = GameInstanceSerializer
+    serializer_class = GameStateSerializer
 
 
 class PostGameState(APIView):
