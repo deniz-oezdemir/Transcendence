@@ -1,5 +1,6 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
 from .models import GameState
 from .engine.pong_game_engine import PongGameEngine
 
@@ -25,8 +26,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         game_state = await self.get_game_state(self.game_id)
         game_engine = PongGameEngine(game_state)
-        game_engine.move_player(player_id, direction)
-        game_engine.update_game_state()
+        await database_sync_to_async(game_engine.move_player)(player_id, direction)
+        await database_sync_to_async(game_engine.update_game_state)()
         await self.save_game_state(game_state)
 
         # Send updated game state to group
@@ -52,6 +53,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     def save_game_state(self, game_state):
         game_state.save()
 
+    @database_sync_to_async
     def serialize_game_state(self, game_state):
         return {
             "ball_x_position": game_state.ball_x_position,

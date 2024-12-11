@@ -1,7 +1,30 @@
 from django.db import models
-from shared.models.player import Player
+from django.contrib.auth.models import AbstractUser, Group, Permission
 
 # TODO: remove magic numbers
+
+
+class Player(AbstractUser):
+    def __str__(self) -> str:
+        return str(self.player_name)
+
+    player_name = models.CharField(max_length=100)
+    player_id = models.IntegerField(default=150)
+
+    groups = models.ManyToManyField(
+        Group,
+        related_name="player_set",  # Change related_name to avoid conflict
+        blank=True,
+        help_text="The groups this user belongs to.",
+        verbose_name="groups",
+    )
+    user_permissions = models.ManyToManyField(
+        Permission,
+        related_name="player_set",  # Change related_name to avoid conflict
+        blank=True,
+        help_text="Specific permissions for this user.",
+        verbose_name="user permissions",
+    )
 
 
 class GamePlayer(models.Model):

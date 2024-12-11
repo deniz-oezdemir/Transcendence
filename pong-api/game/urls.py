@@ -1,10 +1,9 @@
 from django.urls import path
-from rest_framework.urlpatterns import format_suffix_patterns
-from .views import GetGameState, PostGameState
+from . import views
 
 urlpatterns = [
-    path("game-state/<int:pk>/", GetGameState.as_view(), name="get-game-state"),
-    path("game-state/<int:pk>/move/", PostGameState.as_view(), name="post-game-state"),
+    path("create_game/", views.CreateGame.as_view(), name="create_game"),
+    path(
+        "get_game_state/<int:pk>/", views.GetGameState.as_view(), name="get_game_state"
+    ),
 ]
-
-urlpatterns = format_suffix_patterns(urlpatterns)
