@@ -1,8 +1,5 @@
-import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.db import database_sync_to_async
-from .models import GameState
-from .engine.pong_game_engine import PongGameEngine
+import json
 
 
 class GameConsumer(AsyncWebsocketConsumer):
@@ -20,50 +17,31 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
-        player_id = data["player_id"]
-        direction = data["direction"]
+        text_data_json = json.loads(text_data)
 
-        game_state = await self.get_game_state(self.game_id)
-        game_engine = PongGameEngine(game_state)
-        await database_sync_to_async(game_engine.move_player)(player_id, direction)
-        await database_sync_to_async(game_engine.update_game_state)()
-        await self.save_game_state(game_state)
+        if "message" in text_data_json:
+            message = text_data_json["message"]
 
-        # Send updated game state to group
-        await self.channel_layer.group_send(
-            self.game_group_name,
-            {
-                "type": "game_state_update",
-                "game_state": self.serialize_game_state(game_state),
-            },
-        )
+            # Send message to game group
+            await self.channel_layer.group_send(
+                self.game_group_name, {"type": "game_message", "message": message}
+            )
+        elif "type" in text_data_json and text_data_json["type"] == "game_state_update":
+            state = text_data_json["state"]
+
+            # Send state update to game group
+            await self.channel_layer.group_send(
+                self.game_group_name, {"type": "game_state_update", "state": state}
+            )
+
+    async def game_message(self, event):
+        message = event["message"]
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({"message": message}))
 
     async def game_state_update(self, event):
-        game_state = event["game_state"]
+        state = event["state"]
 
-        # Send game state to WebSocket
-        await self.send(text_data=json.dumps(game_state))
-
-    @database_sync_to_async
-    def get_game_state(self, game_id):
-        return GameState.objects.get(pk=game_id)
-
-    @database_sync_to_async
-    def save_game_state(self, game_state):
-        game_state.save()
-
-    @database_sync_to_async
-    def serialize_game_state(self, game_state):
-        return {
-            "ball_x_position": game_state.ball_x_position,
-            "ball_y_position": game_state.ball_y_position,
-            "players": [
-                {
-                    "id": player.player.id,
-                    "position": player.player_position,
-                    "score": player.player_score,
-                }
-                for player in game_state.players.all()
-            ],
-        }
+        # Send state update to WebSocket
+        await self.send(text_data=json.dumps({"state": state}))
