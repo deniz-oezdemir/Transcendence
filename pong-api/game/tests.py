@@ -31,30 +31,28 @@ class GameConsumerTest(TransactionTestCase):
         await database_sync_to_async(self.game_state.players.add)(self.game_player1)
         await database_sync_to_async(self.game_state.players.add)(self.game_player2)
 
-    async def test_game_consumer(self):
+    async def test_player_move(self):
         communicator = WebsocketCommunicator(application, "/ws/game/1/")
         connected, subprotocol = await communicator.connect()
         self.assertTrue(connected)
 
-        # Test sending a message
-        await communicator.send_json_to({"message": "hello"})
-        response = await communicator.receive_json_from()
-        self.assertEqual(response["message"], "hello")
-
-        # Close the connection
-        await communicator.disconnect()
-
-    async def test_game_state_update(self):
-        communicator = WebsocketCommunicator(application, "/ws/game/1/")
-        connected, subprotocol = await communicator.connect()
-        self.assertTrue(connected)
-
-        # Test sending a game state update
+        # Test sending a player move input
         await communicator.send_json_to(
-            {"type": "game_state_update", "state": "new_state"}
+            {
+                "type": "player_move",
+                "player_id": self.player1.player_id,
+                "new_position": 10,
+            }
         )
         response = await communicator.receive_json_from()
-        self.assertEqual(response["state"], "new_state")
+        self.assertEqual(response["player_id"], self.player1.player_id)
+        self.assertEqual(response["new_position"], 10)
+
+        # Verify the player's position in the database
+        updated_game_player1 = await database_sync_to_async(GamePlayer.objects.get)(
+            player=self.player1
+        )
+        self.assertEqual(updated_game_player1.player_position, 10)
 
         # Close the connection
         await communicator.disconnect()
