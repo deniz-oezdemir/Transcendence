@@ -1,9 +1,6 @@
 from rest_framework import generics
 from .serializers import GameStateSerializer
-import json
-from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import GameState
-from .engine.pong_game_engine import PongGameEngine
 
 
 class CreateGame(generics.CreateAPIView):
@@ -18,3 +15,4 @@ class CreateGame(generics.CreateAPIView):
 class GetGameState(generics.RetrieveAPIView):
     queryset = GameState.objects.all()
     serializer_class = GameStateSerializer
+    lookup_field = "id"

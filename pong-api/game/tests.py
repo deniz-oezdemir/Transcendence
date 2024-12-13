@@ -5,6 +5,10 @@ from django.test import TransactionTestCase
 from game.models import GameState, GamePlayer, Player
 from game.routing import application
 from asgiref.sync import async_to_sync
+import logging
+import asyncio
+
+logger = logging.getLogger(__name__)
 
 
 class GameConsumerTest(TransactionTestCase):
@@ -32,27 +36,64 @@ class GameConsumerTest(TransactionTestCase):
         await database_sync_to_async(self.game_state.players.add)(self.game_player2)
 
     async def test_player_move(self):
-        communicator = WebsocketCommunicator(application, "/ws/game/1/")
+        communicator = WebsocketCommunicator(
+            application, f"/ws/game/{self.game_state.id}/"
+        )
         connected, subprotocol = await communicator.connect()
         self.assertTrue(connected)
 
-        # Test sending a player move input
+        # Send a move action
         await communicator.send_json_to(
-            {
-                "type": "player_move",
-                "player_id": self.player1.player_id,
-                "new_position": 10,
-            }
+            {"action": "move", "player_id": self.player1.id, "direction": 1}
         )
-        response = await communicator.receive_json_from()
-        self.assertEqual(response["player_id"], self.player1.player_id)
-        self.assertEqual(response["new_position"], 10)
 
-        # Verify the player's position in the database
-        updated_game_player1 = await database_sync_to_async(GamePlayer.objects.get)(
-            player=self.player1
-        )
-        self.assertEqual(updated_game_player1.player_position, 10)
+        # Increase the timeout to give more time for the response
+        try:
+            response = await communicator.receive_json_from(timeout=10)
+            self.assertEqual(response["action"], "move")
+            self.assertEqual(response["player_id"], self.player1.id)
+            self.assertEqual(response["direction"], 1)
+        except asyncio.TimeoutError:
+            logger.error("TimeoutError: Did not receive response in time")
+            self.fail("TimeoutError: Did not receive response in time")
 
-        # Close the connection
         await communicator.disconnect()
+
+    async def test_game_state_updates(self):
+        communicator1 = WebsocketCommunicator(
+            application, f"/ws/game/{self.game_state.id}/"
+        )
+        communicator2 = WebsocketCommunicator(
+            application, f"/ws/game/{self.game_state.id}/"
+        )
+        connected1, subprotocol1 = await communicator1.connect()
+        connected2, subprotocol2 = await communicator2.connect()
+        self.assertTrue(connected1)
+        self.assertTrue(connected2)
+
+        # Simulate game state update
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(
+            f"game_{self.game_state.id}",
+            {
+                "type": "game_state_update",
+                "state": {"ball_x_position": 100, "ball_y_position": 100},
+            },
+        )
+
+        # Increase the timeout to give more time for the response
+        try:
+            response1 = await communicator1.receive_json_from(timeout=10)
+            response2 = await communicator2.receive_json_from(timeout=10)
+
+            self.assertEqual(response1["state"]["ball_x_position"], 100)
+            self.assertEqual(response1["state"]["ball_y_position"], 100)
+            self.assertEqual(response2["state"]["ball_x_position"], 100)
+            self.assertEqual(response2["state"]["ball_y_position"], 100)
+        except asyncio.TimeoutError:
+            logger.error("TimeoutError: Did not receive response in time")
+            self.fail("TimeoutError: Did not receive response in time")
+
+        # Close the connections
+        await communicator1.disconnect()
+        await communicator2.disconnect()

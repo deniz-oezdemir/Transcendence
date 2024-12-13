@@ -1,7 +1,10 @@
-from channels.generic.websocket import AsyncWebsocketConsumer
 import json
+import logging
+from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from game.models import GamePlayer
+from .models import GameState, GamePlayer, Player
+
+logger = logging.getLogger(__name__)
 
 
 class GameConsumer(AsyncWebsocketConsumer):
@@ -13,74 +16,59 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.game_group_name, self.channel_name)
 
         await self.accept()
+        logger.debug(f"WebSocket connected: {self.channel_name}")
 
     async def disconnect(self, close_code):
         # Leave game group
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
+        logger.debug(f"WebSocket disconnected: {self.channel_name}")
 
+    # Receive message from WebSocket
     async def receive(self, text_data):
+        logger.debug(f"Message received: {text_data}")
         text_data_json = json.loads(text_data)
+        action = text_data_json["action"]
 
-        if "message" in text_data_json:
-            message = text_data_json["message"]
-
-            # Send message to game group
-            await self.channel_layer.group_send(
-                self.game_group_name, {"type": "game_message", "message": message}
-            )
-        elif "type" in text_data_json and text_data_json["type"] == "game_state_update":
-            state = text_data_json["state"]
-
-            # Send state update to game group
-            await self.channel_layer.group_send(
-                self.game_group_name, {"type": "game_state_update", "state": state}
-            )
-        elif "type" in text_data_json and text_data_json["type"] == "player_move":
+        if action == "move":
             player_id = text_data_json["player_id"]
-            new_position = text_data_json["new_position"]
+            direction = text_data_json["direction"]
+            await self.move_player(player_id, direction)
 
-            # Update the player's position in the database
-            await self.update_player_position(player_id, new_position)
+        # Send message to game group
+        await self.channel_layer.group_send(
+            self.game_group_name, {"type": "game_update", "message": text_data_json}
+        )
 
-            # Send the updated position to the game group
-            await self.channel_layer.group_send(
-                self.game_group_name,
-                {
-                    "type": "player_move_update",
-                    "player_id": player_id,
-                    "new_position": new_position,
-                },
-            )
-
-    async def game_message(self, event):
+    # Receive message from game group
+    async def game_update(self, event):
         message = event["message"]
+        logger.debug(f"Game update: {message}")
 
         # Send message to WebSocket
-        await self.send(text_data=json.dumps({"message": message}))
+        await self.send(text_data=json.dumps(message))
 
+    # Handle game state update
     async def game_state_update(self, event):
         state = event["state"]
+        logger.debug(f"Game state update: {state}")
 
-        # Send state update to WebSocket
-        await self.send(text_data=json.dumps({"state": state}))
-
-    async def player_move_update(self, event):
-        player_id = event["player_id"]
-        new_position = event["new_position"]
-
-        # Send the updated position to WebSocket
+        # Send game state update to WebSocket
         await self.send(
-            text_data=json.dumps(
-                {
-                    "type": "player_move_update",
-                    "player_id": player_id,
-                    "new_position": new_position,
-                }
-            )
+            text_data=json.dumps({"type": "game_state_update", "state": state})
         )
 
     @database_sync_to_async
-    def update_player_position(self, player_id, new_position):
-        player = GamePlayer.objects.get(player_id=player_id)
-        player.player_position = new_position
-        player.save()
+    def move_player(self, player_id, direction):
+        try:
+            player = Player.objects.get(id=player_id)
+            game_player = GamePlayer.objects.get(player=player)
+            # Validate direction here if necessary
+            game_player.player_direction = direction
+            game_player.save()
+            logger.debug(f"Player {player_id} moved to direction {direction}")
+        except Player.DoesNotExist:
+            logger.error(f"Player with id {player_id} does not exist")
+        except GamePlayer.DoesNotExist:
+            logger.error(f"GamePlayer for player id {player_id} does not exist")
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while moving player: {e}")

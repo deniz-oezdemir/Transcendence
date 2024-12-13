@@ -13,7 +13,7 @@ class Player(AbstractUser):
 
     groups = models.ManyToManyField(
         Group,
-        related_name="player_set",  # Change related_name to avoid conflict
+        related_name="player_set",
         blank=True,
         help_text="The groups this user belongs to.",
         verbose_name="groups",

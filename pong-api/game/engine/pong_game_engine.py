@@ -2,6 +2,7 @@ from ..models import GameState, GamePlayer
 
 
 class PongGameEngine:
+    # TODO: check game defaults, remove magic numbers
     def __init__(self, game_state: GameState):
         self.game_state = game_state
         self.game_height = 600
