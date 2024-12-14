@@ -61,8 +61,8 @@ class GameState(models.Model):
     # Ball state
     ball_x_position = models.IntegerField(default=400)
     ball_y_position = models.IntegerField(default=200)
-    ball_x_velocity = models.IntegerField(default=30)
-    ball_y_velocity = models.IntegerField(default=30)
+    ball_x_velocity = models.IntegerField(default=10)
+    ball_y_velocity = models.IntegerField(default=10)
 
     def __str__(self) -> str:
         players_str = "\n".join(
