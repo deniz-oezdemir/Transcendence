@@ -1,17 +1,29 @@
 from rest_framework import serializers
+from .models import GameState, GamePlayer
 
-from .models import GameState
+
+class GamePlayerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GamePlayer
+        fields = (
+            "player",
+            "player_position",
+            "player_direction",
+            "player_score",
+        )
 
 
 class GameStateSerializer(serializers.ModelSerializer):
+    players = GamePlayerSerializer(many=True, read_only=True)
+
     class Meta:
         model = GameState
         fields = (
             "id",
-            "player_1_position",
-            "player_1_direction",
-            "player_2_position",
-            "player_2_direction",
+            "max_score",
+            "is_game_running",
+            "is_game_ended",
+            "players",
             "ball_x_position",
             "ball_y_position",
             "ball_x_velocity",
