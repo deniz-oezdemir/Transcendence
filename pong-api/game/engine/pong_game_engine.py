@@ -11,6 +11,9 @@ class PongGameEngine:
         self.paddle_width = 10
 
     def update_game_state(self):
+        if not self.game_state.is_game_running or self.game_state.is_game_ended:
+            return
+
         # Update the positions of the ball
         self.game_state.ball_x_position += self.game_state.ball_x_velocity
         self.game_state.ball_y_position += self.game_state.ball_y_velocity
@@ -42,6 +45,9 @@ class PongGameEngine:
         self.game_state.save()
 
     def move_player(self, player_id, direction):
+        if not self.game_state.is_game_running or self.game_state.is_game_ended:
+            return
+
         player = self.game_state.players.get(player__id=player_id)
         if direction == 1:
             player.player_position -= 10

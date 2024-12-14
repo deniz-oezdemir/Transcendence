@@ -148,6 +148,12 @@ Once connected to the WebSocket, you will receive real-time updates about the ga
 curl -X POST http://localhost:8000/game/create_game/ -H "Content-Type: application/json" -d '{"max_score": 3}'
 ```
 
+### Toggle Game On/Off
+
+```bash
+curl -X PUT http://localhost:8000/game/toggle_game/1/
+```
+
 ### Retrieving Game State
 
 ```bash
