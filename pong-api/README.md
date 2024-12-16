@@ -12,6 +12,12 @@ Welcome to the Pong Game API! This API allows you to interact with the Pong game
   - [Connect to Game](#connect-to-game)
   - [Move Player](#move-player)
   - [Receive Game Updates](#receive-game-updates)
+- [Example Usage](#example-usage)
+  - [Creating a Game](#creating-a-game)
+  - [Toggle Game On/Off](#toggle-game-onoff)
+  - [Retrieving Game State](#retrieving-game-state)
+  - [WebSocket Connection](#websocket-connection)
+- [Testing the WebSocket](#testing-the-websocket)
 
 ## Getting Started
 
@@ -191,4 +197,47 @@ socket.onclose = function(event) {
 socket.onerror = function(error) {
   console.error('WebSocket error:', error);
 };
+```
+
+## Testing the WebSocket
+
+To test the WebSocket connection and ensure that the server is sending periodic updates, follow these steps:
+
+1. **Start the Django Development Server**:
+   - Ensure your Django development server is running.
+
+   ```bash
+   python manage.py runserver
+   ```
+
+2. **Connect to the WebSocket**:
+   - Use a WebSocket client (e.g., JavaScript WebSocket API, `websocat`, etc.) to connect to the game and send/receive messages.
+
+   **JavaScript Example**:
+
+   ```javascript
+   const socket = new WebSocket('ws://localhost:8000/ws/game/1/');
+
+   socket.onopen = function(event) {
+     console.log('WebSocket is connected.');
+   };
+
+   socket.onmessage = function(event) {
+     const message = JSON.parse(event.data);
+     console.log('Message from server:', message);
+   };
+
+   socket.onclose = function(event) {
+     console.log('WebSocket is closed.');
+   };
+
+   socket.onerror = function(error) {
+     console.error('WebSocket error:', error);
+   };
+   ```
+
+3. **Observe Periodic Updates**:
+   - Once connected, you should observe periodic updates from the server in the console. The server will send updates about the ball position every second.
+
+By following these steps, you can test the WebSocket connection and ensure that the server is sending periodic updates to the client.
 
