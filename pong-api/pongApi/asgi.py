@@ -1,23 +1,19 @@
-"""
-ASGI config for pongApi project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
-"""
-
 import os
+import sys
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from game import routing  # Import the routing from your game app
+from game.routing import websocket_urlpatterns
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pongAPI.settings")
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pongApi.settings")
+
+print("Loading ASGI application...")
 
 application = ProtocolTypeRouter(
     {
         "http": get_asgi_application(),
-        "websocket": AuthMiddlewareStack(URLRouter(routing.websocket_urlpatterns)),
+        "websocket": AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),
     }
 )
+print("ASGI application loaded.")

@@ -31,9 +31,10 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    "channels",
+    "daphne",
     "rest_framework",
     "game",
+    "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -50,6 +52,10 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
 ]
 
 ROOT_URLCONF = "pongApi.urls"
@@ -125,7 +131,7 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-ASGI_APPLICATION = "pongAPI.asgi.application"
+ASGI_APPLICATION = "pongApi.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
