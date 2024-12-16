@@ -1,8 +1,10 @@
 import json
 import logging
+import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import GameState, GamePlayer, Player
+from .engine.pong_game_engine import PongGameEngine  # Import your game engine
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +20,16 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.accept()
         logger.debug(f"WebSocket connected: {self.channel_name}")
 
+        # Start periodic task
+        self.periodic_task = asyncio.create_task(self.send_periodic_updates())
+
     async def disconnect(self, close_code):
         # Leave game group
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
         logger.debug(f"WebSocket disconnected: {self.channel_name}")
+
+        # Cancel periodic task
+        self.periodic_task.cancel()
 
     # Receive message from WebSocket
     async def receive(self, text_data):
@@ -60,11 +68,9 @@ class GameConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def move_player(self, player_id, direction):
         try:
-            player = Player.objects.get(id=player_id)
-            game_player = GamePlayer.objects.get(player=player)
-            # Validate direction here if necessary
-            game_player.player_direction = direction
-            game_player.save()
+            game_state = GameState.objects.get(id=self.game_id)
+            engine = PongGameEngine(game_state)
+            engine.move_player(player_id, direction)
             logger.debug(f"Player {player_id} moved to direction {direction}")
         except Player.DoesNotExist:
             logger.error(f"Player with id {player_id} does not exist")
@@ -72,3 +78,23 @@ class GameConsumer(AsyncWebsocketConsumer):
             logger.error(f"GamePlayer for player id {player_id} does not exist")
         except Exception as e:
             logger.error(f"Unexpected error occurred while moving player: {e}")
+
+    async def send_periodic_updates(self):
+        while True:
+            # Update game state
+            ball_position = await database_sync_to_async(self.update_game_state)()
+
+            # Send updated ball position to WebSocket
+            await self.send(
+                text_data=json.dumps({"type": "ball_update", "position": ball_position})
+            )
+            await asyncio.sleep(1)  # Update ball position every 1 second
+
+    def update_game_state(self):
+        try:
+            game_state = GameState.objects.get(id=self.game_id)
+            engine = PongGameEngine(game_state)
+            engine.update_game_state()
+            return {"x": game_state.ball_x_position, "y": game_state.ball_y_position}
+        except GameState.DoesNotExist:
+            return {"error": "Game not found"}
