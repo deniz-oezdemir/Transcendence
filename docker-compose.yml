@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  pong-api:
+    image: pong-api
+    build:
+      context: ./pong-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./pong-api:/app
+    depends_on:
+      - db
+
+  pong-frontend:
+    image: pong-frontend
+    build:
+      context: ./pong-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./pong-frontend:/app
+    depends_on:
+      - pong-api
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: pong
+      POSTGRES_USER: ponguser
+      POSTGRES_PASSWORD: pongpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
