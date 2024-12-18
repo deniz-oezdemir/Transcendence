@@ -12,3 +12,4 @@ redis==5.2.1
 sqlparse==0.5.2
 types-psycopg2==2.9.21.20241019
 typing_extensions==4.12.2
+django-cors-headers==3.13.0
