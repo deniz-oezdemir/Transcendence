@@ -1,8 +1,44 @@
 document.addEventListener("DOMContentLoaded", function () {
   const toggleGameBtn = document.getElementById("toggleGameBtn");
   const messagesList = document.getElementById("messagesList");
+  const gameCanvas = document.getElementById("gameCanvas");
+  const ctx = gameCanvas.getContext("2d");
+  const player1Name = document.getElementById("player1Name");
+  const player2Name = document.getElementById("player2Name");
+  const player1Score = document.getElementById("player1Score");
+  const player2Score = document.getElementById("player2Score");
+  const roundCounter = document.getElementById("roundCounter");
+  const maxScore = document.getElementById("maxScore");
   let gameId = null; // Initialize gameId as null
   let ws;
+
+  // Hardcoded game state to test frontend
+  const hardcodedGameState = {
+    id: 1,
+    max_score: 3,
+    is_game_running: false,
+    is_game_ended: false,
+    players: [
+      {
+        player: 1,
+        player_name: "Kaan",
+        player_position: 150,
+        player_direction: 150,
+        player_score: 0
+      },
+      {
+        player: 2,
+        player_name: "Seba",
+        player_position: 150,
+        player_direction: 150,
+        player_score: 0
+      }
+    ],
+    ball_x_position: 400,
+    ball_y_position: 200,
+    ball_x_velocity: 30,
+    ball_y_velocity: 30
+  };
 
   // Function to check if the game exists
   function checkGame() {
@@ -83,10 +119,50 @@ document.addEventListener("DOMContentLoaded", function () {
       listItem.className = "list-group-item";
       listItem.textContent = JSON.stringify(message);
       messagesList.appendChild(listItem);
+
+      if (message.type === "game_state_update") {
+        drawGameState(message.state);
+      }
     };
 
     ws.onclose = function () {
       console.log("WebSocket is closed.");
     };
   }
+
+  function drawGameState(state) {
+    ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+    // Draw ball
+    ctx.beginPath();
+    ctx.arc(state.ball_x_position, state.ball_y_position, 10, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.closePath();
+
+    // Draw players
+    state.players.forEach(player => {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(10, player.player_position, 10, 100); // Player 1
+      ctx.fillRect(gameCanvas.width - 20, player.player_position, 10, 100); // Player 2
+    });
+
+    // Update player names and scores if a player scored
+    if (state.is_game_ended || state.players.some(player => player.player_score > 0)) {
+      updatePlayerInfo(state);
+    }
+  }
+
+  function updatePlayerInfo(state) {
+    player1Name.textContent = state.players[0].player_name;
+    player2Name.textContent = state.players[1].player_name;
+    player1Score.textContent = `Score: ${state.players[0].player_score}`;
+    player2Score.textContent = `Score: ${state.players[1].player_score}`;
+    roundCounter.textContent = state.players[0].player_score + state.players[1].player_score + 1;
+    maxScore.textContent = state.max_score;
+  }
+
+  // Draw the hardcoded game state for testing
+  updatePlayerInfo(hardcodedGameState);
+  drawGameState(hardcodedGameState);
 });

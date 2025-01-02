@@ -1,5 +1,24 @@
 body {
-    background-color: #f8f9fa;
+    background-color: #343a40;
+    color: #ffffff;
+}
+
+#gameCanvas {
+    background-color: #000000;
+    border: 1px solid #ffffff;
+    display: block;
+    margin: 0 auto;
+}
+
+.messages-container {
+    background-color: #444;
+    border: 1px solid #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+    max-height: 100px;
+    overflow-y: auto;
+    margin: 0 auto;
+    width: 80%;
 }
 
 h1 {
@@ -7,7 +26,13 @@ h1 {
 }
 
 #messagesList {
-    max-height: 300px;
+    max-height: 100px;
     overflow-y: auto;
 }
 
+.player-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
