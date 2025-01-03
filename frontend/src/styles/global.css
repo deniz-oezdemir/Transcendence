@@ -1,0 +1,122 @@
+@import './reset.css';
+@import './layout.css';
+
+:root {
+  --background: 10 10 10; /* HSL(100, 0%, 3.9%) */
+  --foreground: 250 250 250; /* HSL(0, 0%, 98%) */
+  --card: 10 10 10; /* HSL(0, 0%, 3.9%) */
+  --card-foreground: 250 250 250; /* HSL(0, 0%, 98%) */
+  --popover: 10 10 10; /* HSL(0, 0%, 3.9%) */
+  --popover-foreground: 250 250 250; /* HSL(0, 0%, 98%) */
+  --primary: 250 250 250; /* HSL(0, 0%, 98%) */
+  --primary-foreground: 23 23 23; /* HSL(0, 0%, 9%) */
+  --secondary: 38 38 38; /* HSL(0, 0%, 14.9%) */
+  --secondary-foreground: 250 250 250; /* HSL(0, 0%, 98%) */
+  --muted: 38 38 38; /* HSL(0, 0%, 14.9%) */
+  --muted-foreground: 163 163 163; /* HSL(0, 0%, 63.9%) */
+  --accent: 38 38 38; /* HSL(0, 0%, 14.9%) */
+  --accent-foreground: 250 250 250; /* HSL(0, 0%, 98%) */
+  --destructive: 181 45 45; /* HSL(0, 62.8%, 30.6%) */
+  --destructive-foreground: 250 250 250; /* HSL(0, 0%, 98%) */
+  --border: 38 38 38; /* HSL(0, 0%, 14.9%) */
+  --input: 38 38 38; /* HSL(0, 0%, 14.9%) */
+  --ring: 212 212 212; /* HSL(0, 0%, 83.1%) */
+  --chart-1: 38 102 204; /* HSL(220, 70%, 50%) */
+  --chart-2: 51 153 153; /* HSL(160, 60%, 45%) */
+  --chart-3: 204 102 51; /* HSL(30, 80%, 55%) */
+  --chart-4: 153 51 204; /* HSL(280, 65%, 60%) */
+  --chart-5: 204 51 102; /* HSL(340, 75%, 55%) */
+  --radius: 0.5rem;
+
+  --default: 15 23 41;
+  --neutral: 29 40 58;
+  --primary: 112 64 255;
+  --secondary: 58 191 248;
+  --accent: 244 113 181;
+  --warning: 244 193 82;
+  --error: 251 111 132;
+  --success: 43 212 189;
+  --info: 12 166 233;
+
+  --default: 236 228 236;
+  --neutral: 29 40 58;
+  --primary: 112 64 255;
+  --secondary: 58 191 248;
+  --accent: 244 113 181;
+  --warning: 244 193 82;
+  --error: 251 111 132;
+  --success: 43 212 189;
+  --info: 12 166 233;
+
+  /* @link https://utopia.fyi/type/calculator?c=320,20,1.25,1240,24,1.333,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
+  /* Step -2: 12.8px → 13.5068px */
+  --step--2: clamp(0.8rem, 0.7846rem + 0.0768vw, 0.8442rem);
+  /* Step -1: 16px → 18.0045px */
+  --step--1: clamp(1rem, 0.9564rem + 0.2179vw, 1.1253rem);
+  /* Step 0: 20px → 24px */
+  --step-0: clamp(1.25rem, 1.163rem + 0.4348vw, 1.5rem);
+  /* Step 1: 25px → 31.992px */
+  --step-1: clamp(1.5625rem, 1.4105rem + 0.76vw, 1.9995rem);
+  /* Step 2: 31.25px → 42.6453px */
+  --step-2: clamp(1.9531rem, 1.7054rem + 1.2386vw, 2.6653rem);
+  /* Step 3: 39.0625px → 56.8462px */
+  --step-3: clamp(2.4414rem, 2.0548rem + 1.933vw, 3.5529rem);
+  /* Step 4: 48.8281px → 75.776px */
+  --step-4: clamp(3.0518rem, 2.4659rem + 2.9291vw, 4.736rem);
+  /* Step 5: 61.0352px → 101.0094px */
+  --step-5: clamp(3.8147rem, 2.9457rem + 4.345vw, 6.3131rem);
+}
+/* @link https://utopia.fyi/type/calculator?c=320,18,1.25,1240,20,1.333,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
+
+.h0 {
+  font-size: var(--step-5);
+}
+
+h1,
+.h1 {
+  font-size: var(--step-4);
+}
+
+h2,
+.h2 {
+  font-size: var(--step-3);
+}
+
+h3,
+.h3 {
+  font-size: var(--step-2);
+}
+
+h4,
+.h4 {
+  font-size: var(--step-1);
+}
+
+h5,
+.h5 {
+  font-size: var(--step-0);
+}
+
+body,
+.p {
+  font-size: var(--step--1);
+}
+
+small,
+.small {
+  font-size: var(--step--2);
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  scroll-behavior: smooth;
+  color: rgb(var(--foreground));
+  background-color: rgb(var(--background));
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+.text-pretty {
+  text-wrap: pretty;
+}
