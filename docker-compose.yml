@@ -6,11 +6,20 @@ services:
     build:
       context: ./pong-api
     ports:
-      - "8000:8000"
+      - 8000:8000
     volumes:
       - ./pong-api:/app
+    environment:
+      - SECRET_KEY=devkey
+      - DEBUG=1
+      - DB_HOST=db
+      - DB_USER=devuser
+      - DB_PASS=pongpassword
+    restart: on-failure
     depends_on:
       - db
+    networks:
+      - backend
 
   pong-frontend:
     image: pong-frontend
@@ -20,17 +29,28 @@ services:
       - "3000:3000"
     volumes:
       - ./pong-frontend:/app
+    restart: on-failure
     depends_on:
       - pong-api
+    networks:
+      - frontend
+      - backend
 
   db:
     image: postgres:13
     environment:
-      POSTGRES_DB: pong
-      POSTGRES_USER: ponguser
-      POSTGRES_PASSWORD: pongpassword
+      - POSTGRES_DB=devdb
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASSWORD=pongpassword
+    restart: on-failure
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+networks:
+  backend:
+  frontend:
 
 volumes:
   postgres_data:

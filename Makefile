@@ -8,8 +8,11 @@ up:
 	@docker-compose -p $(NAME) -f $(COMPOSE) up -d --build || (echo " $(BUILD_INTERRUPTED)" && exit 1)
 	@echo " $(CONTAINERS_STARTED)"
 
-access:
+gamengine:
 	@docker exec -it $(NAME)-pong-api-1 bash
+
+frontend:
+	@docker exec -it $(NAME)-pong-frontend-1 bash
 
 down:
 	@docker-compose -p $(NAME) down
