@@ -5,12 +5,18 @@ HIDE        = /dev/null 2>&1
 all: clean up
 
 up:
-	@docker-compose -p $(NAME) -f $(COMPOSE) up --build || (echo " $(BUILD_INTERRUPTED)" && exit 1)
+	@docker-compose -p $(NAME) -f $(COMPOSE) up -d --build || (echo " $(BUILD_INTERRUPTED)" && exit 1)
 	@echo " $(CONTAINERS_STARTED)"
+
+access:
+	@docker exec -it $(NAME)-pong-api-1 bash
 
 down:
 	@docker-compose -p $(NAME) down
 	@echo " $(CONTAINERS_STOPPED)"
+
+show:
+	@docker image ls -a && echo "\n" && docker ps && echo "\n"
 
 clean:
 	@docker-compose -f $(COMPOSE) down -v
@@ -18,6 +24,8 @@ clean:
 	@echo " $(CLEANED)"
 
 fclean: clean
+	@docker stop $$(docker ps -qa) > $(HIDE) 2>&1 || true
+	@docker rm $$(docker ps -qa) > $(HIDE) 2>&1 || true
 	@docker rmi -f $$(docker images -qa) > $(HIDE) 2>&1 || true
 	@docker volume rm $$(docker volume ls -q) > $(HIDE) 2>&1 || true
 	@docker network rm $$(docker network ls -q) > $(HIDE) 2>&1 || true
