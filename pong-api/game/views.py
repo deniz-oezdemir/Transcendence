@@ -31,3 +31,8 @@ class GetGameState(generics.RetrieveAPIView):
     queryset = GameState.objects.all()
     serializer_class = GameStateSerializer
     lookup_field = "id"
+
+from django.http import JsonResponse
+
+def test_cors(request):
+    return JsonResponse({'message': 'CORS test successful'})
