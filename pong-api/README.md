@@ -37,7 +37,7 @@
    ```bash
    cd pong-frontend
    npm install -g http-server  # Install http-server if not already installed
-   http-server
+   http-server 
    ```
 
 ### Running Tests
