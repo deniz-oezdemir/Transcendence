@@ -27,6 +27,7 @@
 
    ```bash
    cd pong-api
+   python manage.py migrate # Only if you see warning about pending migrations
    python manage.py runserver
    ```
 
@@ -36,7 +37,7 @@
    ```bash
    cd pong-frontend
    npm install -g http-server  # Install http-server if not already installed
-   http-server --cors
+   http-server 
    ```
 
 ### Running Tests
