@@ -1,12 +1,11 @@
-// Basic Signal System
 export function createSignal(initialValue) {
   let value = initialValue;
   const subscribers = new Set();
 
-  // Getter function to access the value
-  const signal = () => value;
+  const signal = () => {
+    return value;
+  };
 
-  // Setter function to update the value and notify subscribers
   const setSignal = (newValue) => {
     if (value !== newValue) {
       value = newValue;
@@ -14,11 +13,12 @@ export function createSignal(initialValue) {
     }
   };
 
-  // Subscribe to changes in the signal
   const subscribe = (fn) => {
     subscribers.add(fn);
-    return () => subscribers.delete(fn); // Return an unsubscribe function
+    return () => subscribers.delete(fn);
   };
+
+  signal.subscribe = subscribe;
 
   return [signal, setSignal, subscribe];
 }

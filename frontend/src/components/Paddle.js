@@ -1,19 +1,27 @@
-import createSignal from '../signals/createSignal';
+import { createSignal } from '@signals';
+import { createComponent } from '@components';
+import styles from './Paddle.module.css';
 
 export function Paddle() {
-  const [position, setPosition] = createSignal(100); // Posición inicial
+  const [position, setPosition] = createSignal(100);
 
-  const element = document.createElement('div');
-  element.className = 'paddle';
-  element.style.top = `${position()}px`;
+  const element = createComponent('div', {
+    className: styles.paddle,
+  });
+
+  function updatePaddlePosition() {
+    element.style.top = `${position()}px`;
+  }
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowUp') {
-      setPosition(position() - 10);
+      setPosition(Math.max(0, position() - 10));
     } else if (e.key === 'ArrowDown') {
-      setPosition(position() + 10);
+      setPosition(Math.min(200, position() + 10));
     }
+    updatePaddlePosition();
   });
 
+  updatePaddlePosition();
   return element;
 }

@@ -1,15 +1,26 @@
-import createSignal from '../signals/createSignal';
+import { createSignal } from '@signals';
+import { createComponent } from '@components';
+import styles from './Score.module.css';
 
 export function Score() {
   const [score, setScore] = createSignal(0);
 
-  const element = document.createElement('div');
-  element.className = 'score';
-  element.innerHTML = `
-    <p>Score: <span id="score">${score()}</span></p>
-  `;
+  const scoreElement = createComponent('span', {
+    content: score,
+  });
 
-  // setScore(newScore);
+  const element = createComponent('div', {
+    className: styles.score,
+    children: [
+      createComponent('p', {
+        content: 'Score: ',
+        children: [scoreElement],
+      }),
+    ],
+  });
 
-  return element;
+  return {
+    element,
+    increment: () => setScore(score() + 1),
+  };
 }

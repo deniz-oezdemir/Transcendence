@@ -29,10 +29,24 @@ export function createComponent(
 
   if (className) element.className = className;
   if (id) element.id = id;
-  if (content) element.innerHTML = content;
-
   if (attributes) setAttributes(element, attributes);
   if (events) setEvents(element, events);
+
+  if (typeof content === 'function') {
+    const updateContent = () => {
+      console.log('content', content());
+      // element.textContent = content();
+      element.innerHTML = content();
+    };
+
+    updateContent();
+
+    content.subscribe(updateContent);
+  } else if (content) {
+    // element.textContent = content;
+    element.innerHTML = content;
+  }
+
   if (children) setChildren(element, children);
 
   return element;

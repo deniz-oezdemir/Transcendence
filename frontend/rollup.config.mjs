@@ -23,6 +23,10 @@ export default {
     alias({
       entries: [
         {
+          find: '@',
+          replacement: path.resolve(__dirname, 'src/'),
+        },
+        {
           find: '@router',
           replacement: path.resolve(__dirname, 'src/utils/router'),
         },
