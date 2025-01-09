@@ -1,0 +1,199 @@
+import { createComponent } from '@components';
+
+export class Router {
+  constructor({
+    routes,
+    rootElement,
+    layoutComponent = null,
+    middlewares = [],
+    errorComponent = null,
+  }) {
+    this.routes = routes;
+    this.rootElement = rootElement;
+    this.middlewares = middlewares;
+    this.currentRoute = null;
+    this.middlewareCache = new Map();
+    this.errorComponent = errorComponent || this.createFallbackErrorComponent;
+    this.layoutComponent = layoutComponent;
+    this.currentLayout = null;
+    this.currentNestedLayout = null;
+    this.contentContainer = null;
+
+    // Bind methods
+    this.navigate = this.navigate.bind(this);
+    this.handlePopState = this.handlePopState.bind(this);
+
+    // Initialize router
+    window.addEventListener('popstate', this.handlePopState);
+    // this.render();
+  }
+
+  // Match the current path to a route and extract parameters
+  matchRoute(path) {
+    console.log('Matching route for:', path);
+    for (const route of this.routes) {
+      const paramNames = [];
+      const regexPath = route.path.replace(/:([^/]+)/g, (_, paramName) => {
+        paramNames.push(paramName);
+        return '([^/]+)';
+      });
+
+      const regex = new RegExp(`^${regexPath}(?:/)?$`);
+      const match = path.match(regex);
+
+      if (match) {
+        const params = paramNames.reduce((acc, name, index) => {
+          acc[name] = match[index + 1];
+          return acc;
+        }, {});
+        return { route, params };
+      }
+    }
+    return null;
+  }
+
+  // Render the current route
+  render() {
+    const path = window.location.pathname;
+
+    if (path === this.currentRoute?.path) {
+      return;
+    }
+
+    try {
+      const matched = this.matchRoute(path);
+      if (matched) {
+        const { route, params } = matched;
+
+        // Render general layoutComponent if not already rendered
+        if (
+          this.layoutComponent &&
+          this.currentLayout !== this.layoutComponent
+        ) {
+          this.currentLayout = this.layoutComponent;
+          const layoutElement = this.layoutComponent();
+          this.rootElement.replaceChildren(layoutElement);
+          this.contentContainer = layoutElement.querySelector('.route-content');
+        }
+
+        // Render nested layoutComponent if needed
+        const newNestedLayout = route.layoutComponent || null;
+        if (newNestedLayout && this.currentNestedLayout !== newNestedLayout) {
+          this.currentNestedLayout = newNestedLayout;
+          const nestedLayoutElement = newNestedLayout();
+          if (this.contentContainer) {
+            this.contentContainer.replaceChildren(nestedLayoutElement);
+            this.contentContainer =
+              nestedLayoutElement.querySelector('.nested-content');
+          } else {
+            this.rootElement.replaceChildren(nestedLayoutElement);
+            this.contentContainer =
+              nestedLayoutElement.querySelector('.nested-content');
+          }
+        }
+
+        const queryString = window.location.search;
+        const queryParams = this.parseQueryString(queryString);
+
+        console.log('Params:', params);
+        console.log('Query Params:', queryParams);
+
+        const context = {
+          params,
+          query: queryParams,
+          navigate: this.navigate,
+        };
+
+        const newComponent = route.component(context);
+        if (this.contentContainer) {
+          this.contentContainer.replaceChildren(newComponent);
+        } else if (
+          !this.rootElement.firstChild ||
+          !this.rootElement.firstChild.isEqualNode(newComponent)
+        ) {
+          this.rootElement.replaceChildren(newComponent);
+        }
+        this.currentRoute = route;
+      } else {
+        // Handle 404 Not Found
+        throw { code: 404, message: 'Page Not Found' };
+      }
+    } catch (error) {
+      this.renderError(error);
+    }
+  }
+
+  renderError(error) {
+    console.error('Render error:', error); // Log the error for debugging
+
+    const errorContext = {
+      code: error.code || 500,
+      message: error.message || 'An unexpected error occurred.',
+      stack: error.stack || null,
+    };
+
+    const newComponent = this.errorComponent(errorContext);
+    if (this.contentContainer) {
+      this.contentContainer.replaceChildren(newComponent);
+    } else {
+      this.rootElement.replaceChildren(newComponent);
+    }
+  }
+
+  createFallbackErrorComponent({ code, message }) {
+    return createComponent('div', {
+      className: 'error',
+      content: `
+        <h1>Error ${code}</h1>
+        <p>${message}</p>
+      `,
+    });
+  }
+  // Parse query strings into an object
+  parseQueryString(queryString) {
+    const params = new URLSearchParams(queryString);
+    const result = {};
+    params.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
+  }
+
+  // Execute middleware functions
+  async executeMiddlewares(path, context) {
+    if (this.middlewareCache.has(path)) {
+      return this.middlewareCache.get(path);
+    }
+
+    const results = await Promise.all(
+      this.middlewares.map((middleware) => middleware(path, context))
+    );
+    const proceed = results.every((result) => result !== false);
+
+    this.middlewareCache.set(path, proceed);
+    return proceed;
+  }
+
+  // Navigate to a new route
+  async navigate(path, { replace = false } = {}) {
+    if (path === window.location.pathname) {
+      return; // Prevent navigating to the same path
+    }
+
+    const context = { currentPath: window.location.pathname, nextPath: path };
+    const proceed = await this.executeMiddlewares(path, context);
+    if (!proceed) return;
+
+    if (replace) {
+      history.replaceState(null, '', path);
+    } else {
+      history.pushState(null, '', path);
+    }
+    this.render();
+  }
+
+  // Handle browser back/forward buttons
+  handlePopState() {
+    this.render();
+  }
+}
