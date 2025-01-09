@@ -24,5 +24,20 @@ services:
       PGADMIN_DEFAULT_PASSWORD: bar
     restart: unless-stopped
 
+  user-service:
+    container_name: user-service
+    build:
+      context: ./user-management
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    depends_on:
+      - database
+    environment:
+      - DATABASE_URL=postgresql://admin:foo@database:5432/postgres
+    volumes:
+      - ./user-management:/app
+    restart: always
+
 volumes:
   postgres-data:
