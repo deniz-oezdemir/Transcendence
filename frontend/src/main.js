@@ -6,7 +6,10 @@ import ErrorPage from './pages/ErrorPage';
 import PongGamePage from './pages/PongGamePage';
 import AppLayout from './Layout';
 
+import '@popperjs/core';
 import 'bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 import '@styles/global.css';
 
 const middlewares = [
@@ -30,7 +33,19 @@ function AdminLayout() {
 
 // Components
 function AboutPage() {
-  return createComponent('div', { content: '<h1>About Page</h1>' });
+  return createComponent('div', {
+    content: `
+      <h1 class="text-center">About Page</h1>
+      <div class="card" style="width: 18rem;">
+        <img src="https://via.placeholder.com/150" class="card-img-top" alt="Image">
+        <div class="card-body">
+          <h5 class="card-title">Bootstrap Card</h5>
+          <p class="card-text">This is a simple Bootstrap card added to the About Page. You can use Bootstrap components like buttons, cards, forms, etc.</p>
+          <a href="#" class="btn btn-primary">Go somewhere</a>
+        </div>
+      </div>
+    `,
+  });
 }
 
 function AdminPage() {

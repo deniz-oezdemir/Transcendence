@@ -78,17 +78,26 @@ export class Router {
 
         // Render nested layoutComponent if needed
         const newNestedLayout = route.layoutComponent || null;
-        if (newNestedLayout && this.currentNestedLayout !== newNestedLayout) {
-          this.currentNestedLayout = newNestedLayout;
-          const nestedLayoutElement = newNestedLayout();
-          if (this.contentContainer) {
-            this.contentContainer.replaceChildren(nestedLayoutElement);
-            this.contentContainer =
-              nestedLayoutElement.querySelector('.nested-content');
-          } else {
-            this.rootElement.replaceChildren(nestedLayoutElement);
-            this.contentContainer =
-              nestedLayoutElement.querySelector('.nested-content');
+        if (this.currentNestedLayout !== newNestedLayout) {
+          console.log('Nested layout changed:', newNestedLayout);
+          console.log('Nested layout changed:', this.currentNestedLayout);
+          if (newNestedLayout) {
+            this.currentNestedLayout = newNestedLayout;
+            const nestedLayoutElement = newNestedLayout();
+            if (this.contentContainer) {
+              this.contentContainer.replaceChildren(nestedLayoutElement);
+              this.contentContainer =
+                nestedLayoutElement.querySelector('.nested-content');
+            } else {
+              this.rootElement.replaceChildren(nestedLayoutElement);
+              this.contentContainer =
+                nestedLayoutElement.querySelector('.nested-content');
+            }
+          } else if (this.contentContainer) {
+            console.log('No content container found: ', this.layoutComponent);
+            const nestedLayoutElement = this.contentContainer;
+            nestedLayoutElement.removeChild(this.currentNestedLayout);
+            this.currentNestedLayout = null;
           }
         }
 

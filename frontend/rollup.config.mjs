@@ -1,6 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import postcss from 'rollup-plugin-postcss';
+import postcssImport from 'postcss-import';
 import terser from '@rollup/plugin-terser';
 import livereload from 'rollup-plugin-livereload';
 import swc from '@rollup/plugin-swc';
@@ -8,6 +9,7 @@ import copy from 'rollup-plugin-copy';
 import alias from '@rollup/plugin-alias';
 import path from 'path';
 import dev from 'rollup-plugin-dev';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 const isDev = process.env.ROLLUP_WATCH;
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -44,12 +46,20 @@ export default {
         },
       ],
     }),
+    nodeResolve({
+      browser: true,
+    }),
+    commonjs({
+      include: /node_modules/,
+      requireReturnsDefault: 'auto',
+    }),
     resolve(),
-    commonjs(),
     postcss({
-      modules: true,
+      plugins: [postcssImport()],
+      modules: false,
       extract: true,
       minimize: isDev ? false : true,
+      sourceMap: true,
     }),
     swc({
       jsc: {
