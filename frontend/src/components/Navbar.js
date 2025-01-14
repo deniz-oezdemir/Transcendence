@@ -22,7 +22,7 @@ export default function Navbar() {
         children: [
           Link({
             href: '/',
-            content: 'Navbar',
+            content: 'Home',
             className: 'navbar-brand',
           }),
           createComponent('button', {
@@ -52,8 +52,18 @@ export default function Navbar() {
                     className: 'nav-item',
                     children: [
                       Link({
-                        href: '/',
-                        content: 'Home',
+                        href: '/about',
+                        content: 'About',
+                        className: 'nav-link',
+                      }),
+                    ],
+                  }),
+                  createComponent('li', {
+                    className: 'nav-item',
+                    children: [
+                      Link({
+                        href: '/admin',
+                        content: 'Admin',
                         className: 'nav-link active',
                         attributes: { 'aria-current': 'page' },
                       }),
@@ -63,32 +73,28 @@ export default function Navbar() {
                     className: 'nav-item',
                     children: [
                       Link({
-                        href: '/',
-                        content: 'Link',
-                        className: 'nav-link',
+                        href: '/pong-game',
+                        content: 'Pong Game',
+                        className: 'nav-link active',
+                        attributes: { 'aria-current': 'page' },
                       }),
                     ],
                   }),
                   createComponent('li', {
                     className: 'nav-item dropdown',
+                    content: `
+											<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+												Dropdown
+											</a>
+										`,
                     children: [
-                      Link({
-                        href: '/',
-                        content: 'Dropdown',
-                        className: 'nav-link dropdown-toggle',
-                        attributes: {
-                          role: 'button',
-                          'data-bs-toggle': 'dropdown',
-                          'aria-expanded': 'false',
-                        },
-                      }),
                       createComponent('ul', {
                         className: 'dropdown-menu',
                         children: [
                           createComponent('li', {
                             children: [
                               Link({
-                                href: '/',
+                                href: '/admin',
                                 content: 'Action',
                                 className: 'dropdown-item',
                               }),

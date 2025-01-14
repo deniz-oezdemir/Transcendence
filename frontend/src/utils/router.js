@@ -76,28 +76,32 @@ export class Router {
           this.contentContainer = layoutElement.querySelector('.route-content');
         }
 
-        // Render nested layoutComponent if needed
+        // Handle nested layout changes
         const newNestedLayout = route.layoutComponent || null;
-        if (this.currentNestedLayout !== newNestedLayout) {
-          console.log('Nested layout changed:', newNestedLayout);
-          console.log('Nested layout changed:', this.currentNestedLayout);
-          if (newNestedLayout) {
-            this.currentNestedLayout = newNestedLayout;
-            const nestedLayoutElement = newNestedLayout();
-            if (this.contentContainer) {
-              this.contentContainer.replaceChildren(nestedLayoutElement);
-              this.contentContainer =
-                nestedLayoutElement.querySelector('.nested-content');
-            } else {
-              this.rootElement.replaceChildren(nestedLayoutElement);
-              this.contentContainer =
-                nestedLayoutElement.querySelector('.nested-content');
-            }
-          } else if (this.contentContainer) {
-            console.log('No content container found: ', this.layoutComponent);
-            const nestedLayoutElement = this.contentContainer;
-            nestedLayoutElement.removeChild(this.currentNestedLayout);
-            this.currentNestedLayout = null;
+        // Clean up previous nested layout if it's no longer needed
+        if (
+          this.currentNestedLayout &&
+          this.currentNestedLayout !== newNestedLayout
+        ) {
+          const nestedLayoutElement =
+            this.contentContainer?.querySelector('.nested-content');
+          if (nestedLayoutElement) {
+            nestedLayoutElement.remove(); // Remove the previous nested layout
+          }
+          this.currentNestedLayout = null;
+          this.contentContainer =
+            this.rootElement.querySelector('.route-content');
+        }
+
+        // Render new nested layout if applicable
+        if (newNestedLayout && this.currentNestedLayout !== newNestedLayout) {
+          this.currentNestedLayout = newNestedLayout;
+          const nestedLayoutElement = newNestedLayout();
+          if (this.contentContainer) {
+            this.contentContainer.replaceChildren(nestedLayoutElement);
+            this.contentContainer =
+              nestedLayoutElement.querySelector('.nested-content') ||
+              this.contentContainer;
           }
         }
 
