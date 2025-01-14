@@ -83,30 +83,36 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def send_periodic_updates(self):
         while True:
             # Update game state
+            print("while loop")
             ball_position = await database_sync_to_async(self.update_game_state)()
+            print(f"ball position: {ball_position}")
 
             # Send updated ball position to WebSocket
             await self.send(
                 text_data=json.dumps({"type": "ball_update", "position": ball_position})
             )
-            await asyncio.sleep(1)  # Update ball position every 1 second
+            await asyncio.sleep(1)  # TODO: update ball position 60 times per second
 
     def update_game_state(self):
         try:
             game_state = cache.get(f"game_{self.game_id}")
+            if not game_state:
+                raise {"error": "Game not found"}
             engine = PongGameEngine(game_state)
             engine.update_game_state()
+            print("game updated on engine")
             self.save_game_state(game_state)
+            print("game saved")
             return {"x": game_state.ball_x_position, "y": game_state.ball_y_position}
         except GameState.DoesNotExist:
             return {"error": "Game not found"}
 
     def get_game_state(self):
-       game_state = cache.get(f"game_{self.game_id}")
-       if not game_state:
-           game_state = GameState.objects.get(id=self.game_id)
-           cache.set(f"game_{self.game_id}", game_state, timeout=None)
-       return game_state
+        game_state = cache.get(f"game_{self.game_id}")
+        if not game_state:
+            game_state = GameState.objects.get(id=self.game_id)
+            cache.set(f"game_{self.game_id}", game_state, timeout=None)
+        return game_state
 
     def save_game_state(self, game_state):
         cache.set(f"game_{self.game_id}", game_state, timeout=None)

@@ -7,5 +7,4 @@ urlpatterns = [
     path(
         "get_game_state/<int:id>/", views.GetGameState.as_view(), name="get_game_state"
     ),
-    path('test-cors/', views.test_cors, name="test_cors"),
 ]

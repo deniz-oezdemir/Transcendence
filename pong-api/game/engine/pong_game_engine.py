@@ -11,8 +11,11 @@ class PongGameEngine:
         self.paddle_width = 10
 
     def update_game_state(self):
+        print(f"update with state: {self.game_state}")
         if not self.game_state.is_game_running or self.game_state.is_game_ended:
+            print("nothing")
             return
+        print("something")
 
         # Update the positions of the ball
         self.game_state.ball_x_position += self.game_state.ball_x_velocity

@@ -1,5 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
+from django.core.cache import cache
 from .serializers import GameStateSerializer
 from .models import GameState
 
@@ -10,7 +11,19 @@ class CreateGame(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         # Initialize the game state with default values
-        serializer.save()
+        serializer.save()  # TODO: remove save to sqlite db
+
+        # Validate the data without saving to the database
+        validated_data = serializer.validated_data
+
+        game_state = GameState(
+            **validated_data
+        )  # TODO: check GameState class for constructors
+
+        cache_key = f"game_state_{game_state.id}"
+        cache.set(
+            cache_key, game_state, timeout=3600
+        )  # TODO: check cache duration. 1 hour for now
 
 
 class ToggleGame(generics.UpdateAPIView):
@@ -31,8 +44,3 @@ class GetGameState(generics.RetrieveAPIView):
     queryset = GameState.objects.all()
     serializer_class = GameStateSerializer
     lookup_field = "id"
-
-from django.http import JsonResponse
-
-def test_cors(request):
-    return JsonResponse({'message': 'CORS test successful'})
