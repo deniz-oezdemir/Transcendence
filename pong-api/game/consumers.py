@@ -3,8 +3,9 @@ import logging
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+from django.core.cache import cache
 from .models import GameState, GamePlayer, Player
-from .engine.pong_game_engine import PongGameEngine  # Import your game engine
+from .engine.pong_game_engine import PongGameEngine
 
 logger = logging.getLogger(__name__)
 
@@ -92,9 +93,20 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     def update_game_state(self):
         try:
-            game_state = GameState.objects.get(id=self.game_id)
+            game_state = cache.get(f"game_{self.game_id}")
             engine = PongGameEngine(game_state)
             engine.update_game_state()
+            self.save_game_state(game_state)
             return {"x": game_state.ball_x_position, "y": game_state.ball_y_position}
         except GameState.DoesNotExist:
             return {"error": "Game not found"}
+
+    def get_game_state(self):
+       game_state = cache.get(f"game_{self.game_id}")
+       if not game_state:
+           game_state = GameState.objects.get(id=self.game_id)
+           cache.set(f"game_{self.game_id}", game_state, timeout=None)
+       return game_state
+
+    def save_game_state(self, game_state):
+        cache.set(f"game_{self.game_id}", game_state, timeout=None)
