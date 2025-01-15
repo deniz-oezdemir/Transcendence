@@ -1,6 +1,6 @@
 # Transcendence: Pong Game Web App (Work in Progress)
 
-We aim to develop a full-stack 3D Pong multiplayer Pong game with a microservices architecture.
+We aim to develop a full-stack 3D multiplayer Pong game with a microservices architecture.
 
 Key features:
 - Real-time remote multiplayer and tournaments
