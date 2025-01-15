@@ -8,3 +8,4 @@ urlpatterns = [
         "get_game_state/<int:id>/", views.GetGameState.as_view(), name="get_game_state"
     ),
 ]
+
