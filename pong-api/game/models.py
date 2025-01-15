@@ -19,8 +19,10 @@ class GameState(models.Model):
     player_2_id = models.IntegerField(null=True, blank=True)
     player_1_name = models.CharField(max_length=100, default="Player 1")
     player_2_name = models.CharField(max_length=100, default="Player 2")
-    player_1_position = models.IntegerField(default=50)  # Default middle position
-    player_2_position = models.IntegerField(default=50)  # Default middle position
+    player_1_score = models.IntegerField(default=0)
+    player_2_score = models.IntegerField(default=0)
+    player_1_position = models.IntegerField(default=50)
+    player_2_position = models.IntegerField(default=50)
 
     # Ball state
     ball_x_position = models.IntegerField(default=400)
@@ -42,6 +44,8 @@ class GameState(models.Model):
                 "player_2_id": self.player_2_id,
                 "player_1_name": self.player_1_name,
                 "player_2_name": self.player_2_name,
+                "player_1_score": self.player_1_score,
+                "player_2_score": self.player_2_score,
                 "player_1_position": self.player_1_position,
                 "player_2_position": self.player_2_position,
                 "ball_x_position": self.ball_x_position,
@@ -79,6 +83,6 @@ class GameState(models.Model):
             f"With velocity:\n"
             f"  x: {self.ball_x_velocity}\n"
             f"  y: {self.ball_y_velocity}\n"
-            f"Player 1 at position: {self.player_1_name} (ID: {self.player_1_id}, Position: {self.player_1_position})\n"
-            f"Player 2 at position: {self.player_2_name} (ID: {self.player_2_id}, Position: {self.player_2_position})"
+            f"Player 1 at position: {self.player_1_name} (ID: {self.player_1_id}, Position: {self.player_1_position}, Score: {self.player_1_score})\n"
+            f"Player 2 at position: {self.player_2_name} (ID: {self.player_2_id}, Position: {self.player_2_position}, Score: {self.player_2_score})"
         )

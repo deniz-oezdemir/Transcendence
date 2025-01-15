@@ -49,27 +49,34 @@ class PongGameEngine:
 
         # Check for collisions with the paddles
         if (
-            (0 + self.paddle_width)
-            <= self.game_state.ball_x_position
-            <= self.game_width - self.paddle_width
+            self.game_state.ball_x_position <= self.paddle_width
+            or self.game_state.ball_x_position >= self.game_width - self.paddle_width
         ):
+            logger.info(
+                f"Ball collided with paddles position y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}"
+            )
             if self._check_paddle_collision(
                 self.game_state.player_1_id, self.game_state.player_1_name
             ):
                 self.game_state.ball_x_velocity *= -1
-                logger.info("Ball collided with player 1 paddle")
+                self.game_state.ball_x_position += self.game_state.ball_x_velocity
+                logger.info(
+                    f"New ball position after colliding with player_1 y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}"
+                )
             if self._check_paddle_collision(
                 self.game_state.player_2_id, self.game_state.player_2_name
             ):
                 self.game_state.ball_x_velocity *= -1
-                logger.info("Ball collided with player 2 paddle")
+                self.game_state.ball_x_position += self.game_state.ball_x_velocity
+                logger.info(
+                    f"New ball position after colliding with player_2 y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}"
+                )
 
         # Check for scoring
         if self.game_state.ball_x_position <= 0:
             self._score_point(
                 self.game_state.player_2_id, self.game_state.player_2_name
             )
-            logger.info("Player 2 scored a point")
         elif self.game_state.ball_x_position >= self.game_width:
             self._score_point(
                 self.game_state.player_1_id, self.game_state.player_1_name
@@ -162,6 +169,8 @@ class PongGameEngine:
 
     def _score_point(self, player_id, player_name):
         # Increment the player's score
+
+        logger.info(f"_score_point() for player id: {player_id}")
         if player_id == self.game_state.player_1_id:
             self.game_state.player_1_score += 1
         elif player_id == self.game_state.player_2_id:
