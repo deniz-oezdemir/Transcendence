@@ -19,9 +19,7 @@ class CreateGame(generics.CreateAPIView):
         game_id = serializer.validated_data.get("id")
         if GameState.from_cache(game_id):
             raise serializers.ValidationError("Game with this ID already exists.")
-        game_state = GameState(**serializer.validated_data)
-        game_state.save()
-
+        game_state = serializer.save()
         return game_state
 
     def create(self, request, *args, **kwargs):
@@ -48,10 +46,8 @@ class ToggleGame(generics.UpdateAPIView):
             # If not found in cache, try to get it from the database
             game_state = get_object_or_404(GameState, id=game_id)
 
-        print(f"game {game_state.id} to be toggled: {game_state.is_game_running}")
         game_state.is_game_running = not game_state.is_game_running
         game_state.save()
-        print(f"game {game_state.id} toggled: {game_state.is_game_running}")
         logger.info(
             f"Toggled game state for game_id {game_id}. New state: {game_state.is_game_running}"
         )

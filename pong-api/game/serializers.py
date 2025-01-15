@@ -16,6 +16,8 @@ class GameStateSerializer(serializers.ModelSerializer):
             "player_2_id",
             "player_1_name",
             "player_2_name",
+            "player_1_position",
+            "player_2_position",
             "ball_x_position",
             "ball_y_position",
             "ball_x_velocity",
@@ -32,3 +34,12 @@ class GameStateSerializer(serializers.ModelSerializer):
                 "Both player_1_name and player_2_name are required."
             )
         return data
+
+    def create(self, validated_data):
+        validated_data.setdefault("ball_x_position", 400)
+        validated_data.setdefault("ball_y_position", 200)
+        validated_data.setdefault("ball_x_velocity", 10)
+        validated_data.setdefault("ball_y_velocity", 10)
+        validated_data.setdefault("player_1_position", 50)  # Default middle position
+        validated_data.setdefault("player_2_position", 50)  # Default middle position
+        return super().create(validated_data)

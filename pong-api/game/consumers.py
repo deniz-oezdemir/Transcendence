@@ -69,14 +69,32 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     async def send_periodic_updates(self):
         while True:
-            ball_position = await database_sync_to_async(self.update_game_state)()
-            logger.debug(f"ball position: {ball_position}")
-            print(f"ball position: {ball_position}")
+            await database_sync_to_async(self.update_game_state)()
+            game_state = await database_sync_to_async(self.get_game_state)()
+            game_state_data = {
+                "id": game_state.id,
+                "max_score": game_state.max_score,
+                "is_game_running": game_state.is_game_running,
+                "is_game_ended": game_state.is_game_ended,
+                "player_1_id": game_state.player_1_id,
+                "player_2_id": game_state.player_2_id,
+                "player_1_name": game_state.player_1_name,
+                "player_2_name": game_state.player_2_name,
+                "player_1_position": game_state.player_1_position,
+                "player_2_position": game_state.player_2_position,
+                "ball_x_position": game_state.ball_x_position,
+                "ball_y_position": game_state.ball_y_position,
+                "ball_x_velocity": game_state.ball_x_velocity,
+                "ball_y_velocity": game_state.ball_y_velocity,
+            }
+            logger.debug(f"Game state: {game_state_data}")
 
             await self.send(
-                text_data=json.dumps({"type": "ball_update", "position": ball_position})
+                text_data=json.dumps(
+                    {"type": "game_state_update", "state": game_state_data}
+                )
             )
-            await asyncio.sleep(1)
+            await asyncio.sleep(1 / 60)
 
     def update_game_state(self):
         try:
@@ -108,6 +126,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "player_2_id": game_state.player_2_id,
                 "player_1_name": game_state.player_1_name,
                 "player_2_name": game_state.player_2_name,
+                "player_1_position": game_state.player_1_position,
+                "player_2_position": game_state.player_2_position,
                 "ball_x_position": game_state.ball_x_position,
                 "ball_y_position": game_state.ball_y_position,
                 "ball_x_velocity": game_state.ball_x_velocity,
