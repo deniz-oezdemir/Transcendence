@@ -23,6 +23,7 @@ pycparser==2.22
 Pygments==2.18.0
 pyOpenSSL==24.3.0
 redis==5.2.1
+django-redis==5.4.0
 service-identity==24.2.0
 setuptools==75.6.0
 sqlparse==0.5.2

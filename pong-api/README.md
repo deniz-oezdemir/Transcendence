@@ -60,7 +60,12 @@
 
   ```json
   {
-    "max_score": 3
+    "id": 1,
+    "max_score": 3,
+    "player_1_id": 1,
+    "player_1_name": "PlayerOne",
+    "player_2_id": 2,
+    "player_2_name": "PlayerTwo"
   }
   ```
 
@@ -72,11 +77,14 @@
     "max_score": 3,
     "is_game_running": false,
     "is_game_ended": false,
-    "players": [],
+    "player_1_id": 1,
+    "player_1_name": "PlayerOne",
+    "player_2_id": 2,
+    "player_2_name": "PlayerTwo",
     "ball_x_position": 400,
     "ball_y_position": 200,
-    "ball_x_velocity": 30,
-    "ball_y_velocity": 30
+    "ball_x_velocity": 10,
+    "ball_y_velocity": 10
   }
   ```
 
@@ -164,7 +172,14 @@
 ### Creating a Game
 
 ```bash
-curl -X POST http://localhost:8000/game/create_game/ -H "Content-Type: application/json" -d '{"max_score": 3}'
+curl -X POST http://localhost:8000/game/create_game/ -H "Content-Type: application/json" -d '{
+  "id": 1,
+  "max_score": 3,
+  "player_1_id": 1,
+  "player_1_name": "PlayerOne",
+  "player_2_id": 2,
+  "player_2_name": "PlayerTwo"
+}'
 ```
 
 ### Toggle Game On/Off
@@ -207,5 +222,4 @@ socket.onclose = function(event) {
 socket.onerror = function(error) {
   console.error('WebSocket error:', error);
 };
-```
 
