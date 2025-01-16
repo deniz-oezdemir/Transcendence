@@ -39,9 +39,9 @@
 
 ## TODO
 
-- start with connection to frontend: receive game creation and send game info
+- start with connection to frontend: receive game creation and send game info - done
 - check whether it needs to be a websocket or whether rest is sufficient -> websocket for real-time updates of waiting room
-- build api to create game from frontend and api to send back info of created game
+- build api to create game from frontend and api to send back info of created game - done
 
 ## Notes
 
