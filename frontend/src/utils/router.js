@@ -1,4 +1,5 @@
-import { createComponent } from '@components';
+import { createComponent } from '@componentSystem';
+import { createSignal, createEffect } from '@reactivity';
 
 export class Router {
   constructor({
@@ -18,6 +19,17 @@ export class Router {
     this.currentLayout = null;
     this.currentNestedLayout = null;
     this.contentContainer = null;
+    this.currentComponent = null;
+
+    // Handle signals for tracking current Path
+    const [location, setLocation] = createSignal(window.location.pathname);
+    this.location = location;
+    this.setLocation = setLocation;
+
+    // Render on location change
+    createEffect(() => {
+      this.render();
+    });
 
     // Bind methods
     this.navigate = this.navigate.bind(this);
@@ -25,12 +37,11 @@ export class Router {
 
     // Initialize router
     window.addEventListener('popstate', this.handlePopState);
-    // this.render();
+    this.render();
   }
 
   // Match the current path to a route and extract parameters
   matchRoute(path) {
-    console.log('Matching route for:', path);
     for (const route of this.routes) {
       const paramNames = [];
       const regexPath = route.path.replace(/:([^/]+)/g, (_, paramName) => {
@@ -54,7 +65,7 @@ export class Router {
 
   // Render the current route
   render() {
-    const path = window.location.pathname;
+    const path = this.location();
 
     if (path === this.currentRoute?.path) {
       return;
@@ -65,15 +76,30 @@ export class Router {
       if (matched) {
         const { route, params } = matched;
 
+        const queryString = window.location.search;
+        const queryParams = this.parseQueryString(queryString);
+
+        console.log('Params:', params);
+        console.log('Query Params:', queryParams);
+
+        const context = {
+          params,
+          query: queryParams,
+          path,
+          navigate: this.navigate,
+          location: this.location,
+        };
+
         // Render general layoutComponent if not already rendered
         if (
           this.layoutComponent &&
           this.currentLayout !== this.layoutComponent
         ) {
           this.currentLayout = this.layoutComponent;
-          const layoutElement = this.layoutComponent();
-          this.rootElement.replaceChildren(layoutElement);
-          this.contentContainer = layoutElement.querySelector('.route-content');
+          const layoutComponent = this.layoutComponent(context);
+          this.rootElement.replaceChildren(layoutComponent.element);
+          this.contentContainer =
+            layoutComponent.element.querySelector('.route-content');
         }
 
         // Handle nested layout changes
@@ -96,35 +122,32 @@ export class Router {
         // Render new nested layout if applicable
         if (newNestedLayout && this.currentNestedLayout !== newNestedLayout) {
           this.currentNestedLayout = newNestedLayout;
-          const nestedLayoutElement = newNestedLayout();
+          const nestedLayoutElement = newNestedLayout(context);
           if (this.contentContainer) {
-            this.contentContainer.replaceChildren(nestedLayoutElement);
+            this.contentContainer.replaceChildren(nestedLayoutElement.element);
             this.contentContainer =
-              nestedLayoutElement.querySelector('.nested-content') ||
+              nestedLayoutElement.element.querySelector('.nested-content') ||
               this.contentContainer;
           }
         }
 
-        const queryString = window.location.search;
-        const queryParams = this.parseQueryString(queryString);
-
-        console.log('Params:', params);
-        console.log('Query Params:', queryParams);
-
-        const context = {
-          params,
-          query: queryParams,
-          navigate: this.navigate,
-        };
-
+        // Render the route component
         const newComponent = route.component(context);
-        if (this.contentContainer) {
-          this.contentContainer.replaceChildren(newComponent);
-        } else if (
-          !this.rootElement.firstChild ||
-          !this.rootElement.firstChild.isEqualNode(newComponent)
-        ) {
-          this.rootElement.replaceChildren(newComponent);
+
+        if (!this.currentComponent?.element.isEqualNode(newComponent.element)) {
+          if (
+            this.currentComponent &&
+            typeof this.currentComponent.cleanup === 'function'
+          ) {
+            this.currentComponent.cleanup();
+          }
+
+          if (this.contentContainer) {
+            this.contentContainer.replaceChildren(newComponent.element);
+          } else {
+            this.rootElement.replaceChildren(newComponent.element);
+          }
+          this.currentComponent = newComponent;
         }
         this.currentRoute = route;
       } else {
@@ -202,11 +225,12 @@ export class Router {
     } else {
       history.pushState(null, '', path);
     }
-    this.render();
+
+    this.setLocation(path);
   }
 
   // Handle browser back/forward buttons
   handlePopState() {
-    this.render();
+    this.setLocation(window.location.pathname);
   }
 }

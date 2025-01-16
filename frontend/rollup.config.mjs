@@ -33,12 +33,16 @@ export default {
           replacement: path.resolve(__dirname, 'src/utils/router'),
         },
         {
-          find: '@components',
-          replacement: path.resolve(__dirname, 'src/utils/components'),
+          find: '@componentSystem',
+          replacement: path.resolve(__dirname, 'src/utils/componentSystem'),
         },
         {
-          find: '@signals',
-          replacement: path.resolve(__dirname, 'src/utils/signals'),
+          find: '@reactivity',
+          replacement: path.resolve(__dirname, 'src/utils/reactivity'),
+        },
+        {
+          find: '@themeManager',
+          replacement: path.resolve(__dirname, 'src/utils/themeManager'),
         },
         {
           find: '@styles',

@@ -1,5 +1,5 @@
-import { createSignal } from '@signals';
-import { createComponent } from '@components';
+import { createSignal } from '@reactivity';
+import { createComponent } from '@componentSystem';
 import styles from './Score.module.css';
 
 export function Score() {

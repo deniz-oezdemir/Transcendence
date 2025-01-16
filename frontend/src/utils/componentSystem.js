@@ -1,3 +1,15 @@
+import { createEffect } from '@reactivity';
+
+let cleanupContext = null;
+
+export function onCleanup(fn) {
+  if (cleanupContext) {
+    cleanupContext.push(fn);
+  } else {
+    throw new Error('onCleanup must be called during component creation.');
+  }
+}
+
 function setAttributes(element, attributes) {
   Object.keys(attributes).forEach((key) =>
     element.setAttribute(key, attributes[key])
@@ -11,7 +23,7 @@ function setEvents(element, events) {
 }
 
 function setChildren(element, children) {
-  children.forEach((child) => element.appendChild(child));
+  children.forEach((child) => element.appendChild(child.element));
 }
 
 function validateTag(tag) {
@@ -27,6 +39,10 @@ export function createComponent(
   validateTag(tag);
   const element = document.createElement(tag);
 
+  // Context for the component cleanup
+  const cleanupFns = [];
+  cleanupContext = cleanupFns;
+
   if (className) element.className = className;
   if (id) element.id = id;
   if (attributes) setAttributes(element, attributes);
@@ -34,22 +50,26 @@ export function createComponent(
 
   if (typeof content === 'function') {
     const updateContent = () => {
-      console.log('content', content());
-      // element.textContent = content();
-      element.innerHTML = content();
+      const newContent = content();
+      if (newContent !== element.innerHTML) {
+        element.innerHTML = newContent;
+      }
     };
-
-    updateContent();
-
-    content.subscribe(updateContent);
+    createEffect(updateContent);
   } else if (content) {
-    // element.textContent = content;
     element.innerHTML = content;
   }
 
   if (children) setChildren(element, children);
 
-  return element;
+  cleanupContext = null;
+
+  return {
+    element,
+    cleanup: () => {
+      cleanupFns.forEach((fn) => fn());
+    },
+  };
 }
 
 export function Link({ href, content, className = '', events = {} }) {

@@ -1,19 +1,30 @@
-import { createComponent, Link } from '@components';
+import { createComponent, Link } from '@componentSystem';
+import { useLocation } from '@router';
+// import { createSignal } from '@signals';
+// import { createEffect, onCleanup } from '@effects';
 // import styles from './Navbar.module.css';
+import { createSignal, createEffect } from '@reactivity';
 
-// export default function Navbar() {
-//   return createComponent('nav', {
-//     className: 'navbar',
-//     children: [
-//       Link({ href: '/', content: 'Home' }),
-//       Link({ href: '/about', content: 'About' }),
-//       Link({ href: '/admin', content: 'Admin' }),
-//       Link({ href: '/pong-game', content: 'Pong Game' }),
-//     ],
-//   });
-// }
+export default function Navbar({ location, navigate }) {
+  const path = location();
 
-export default function Navbar() {
+  const updateNavLinks = () => {
+    const currentPath = location();
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach((link) => {
+      const href = link.getAttribute('href');
+      if (href === currentPath) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+  };
+
+  createEffect(() => {
+    updateNavLinks();
+  });
+
   return createComponent('nav', {
     className: 'navbar navbar-expand-lg bg-body-tertiary',
     children: [
@@ -22,7 +33,8 @@ export default function Navbar() {
         children: [
           Link({
             href: '/',
-            content: 'Home',
+            content:
+              '<img src="/assets/images/icon.png" alt="Logo" width="32" height="32" class="d-inline-block align-text-top">',
             className: 'navbar-brand',
           }),
           createComponent('button', {
@@ -52,9 +64,9 @@ export default function Navbar() {
                     className: 'nav-item',
                     children: [
                       Link({
-                        href: '/about',
-                        content: 'About',
-                        className: 'nav-link',
+                        href: '/user/username',
+                        content: 'Profile',
+                        className: `nav-link ${path === '/user/username' ? 'active' : ''}`,
                       }),
                     ],
                   }),
@@ -62,9 +74,9 @@ export default function Navbar() {
                     className: 'nav-item',
                     children: [
                       Link({
-                        href: '/admin',
-                        content: 'Admin',
-                        className: 'nav-link active',
+                        href: '/stats',
+                        content: 'Stats',
+                        className: `nav-link ${path === '/stats' ? 'active' : ''}`,
                         attributes: { 'aria-current': 'page' },
                       }),
                     ],
@@ -75,90 +87,29 @@ export default function Navbar() {
                       Link({
                         href: '/pong-game',
                         content: 'Pong Game',
-                        className: 'nav-link active',
+                        className: `nav-link ${path === '/pong-game' ? 'active' : ''}`,
                         attributes: { 'aria-current': 'page' },
-                      }),
-                    ],
-                  }),
-                  createComponent('li', {
-                    className: 'nav-item dropdown',
-                    content: `
-											<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-												Dropdown
-											</a>
-										`,
-                    children: [
-                      createComponent('ul', {
-                        className: 'dropdown-menu',
-                        children: [
-                          createComponent('li', {
-                            children: [
-                              Link({
-                                href: '/admin',
-                                content: 'Action',
-                                className: 'dropdown-item',
-                              }),
-                            ],
-                          }),
-                          createComponent('li', {
-                            children: [
-                              Link({
-                                href: '#',
-                                content: 'Another action',
-                                className: 'dropdown-item',
-                              }),
-                            ],
-                          }),
-                          createComponent('li', {
-                            children: [
-                              createComponent('hr', {
-                                className: 'dropdown-divider',
-                              }),
-                            ],
-                          }),
-                          createComponent('li', {
-                            children: [
-                              Link({
-                                href: '#',
-                                content: 'Something else here',
-                                className: 'dropdown-item',
-                              }),
-                            ],
-                          }),
-                        ],
                       }),
                     ],
                   }),
                   createComponent('li', {
                     className: 'nav-item',
                     children: [
-                      createComponent('a', {
-                        className: 'nav-link disabled',
-                        content: 'Disabled',
-                        attributes: { 'aria-disabled': 'true' },
+                      Link({
+                        href: '/admin',
+                        content: 'Admin',
+                        className: `nav-link ${path === '/admin' ? 'active' : ''}`,
+                        attributes: { 'aria-current': 'page' },
                       }),
                     ],
                   }),
                 ],
               }),
-              createComponent('form', {
-                className: 'd-flex',
-                attributes: { role: 'search' },
-                children: [
-                  createComponent('input', {
-                    className: 'form-control me-2',
-                    attributes: {
-                      type: 'search',
-                      placeholder: 'Search',
-                      'aria-label': 'Search',
-                    },
-                  }),
-                  createComponent('button', {
-                    className: 'btn btn-outline-success',
-                    attributes: { type: 'submit' },
-                    content: 'Search',
-                  }),
-                ],
+              Link({
+                href: '/login',
+                className: 'btn btn-outline-success',
+                attributes: { type: 'button', role: 'button' },
+                content: 'Login',
               }),
             ],
           }),
@@ -167,40 +118,3 @@ export default function Navbar() {
     ],
   });
 }
-
-// <nav class="navbar navbar-expand-lg bg-body-tertiary">
-//   <div class="container-fluid">
-//     <a class="navbar-brand" href="#">Navbar</a>
-//     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-//       <span class="navbar-toggler-icon"></span>
-//     </button>
-//     <div class="collapse navbar-collapse" id="navbarSupportedContent">
-//       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-//         <li class="nav-item">
-//           <a class="nav-link active" aria-current="page" href="#">Home</a>
-//         </li>
-//         <li class="nav-item">
-//           <a class="nav-link" href="#">Link</a>
-//         </li>
-//         <li class="nav-item dropdown">
-//           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-//             Dropdown
-//           </a>
-//           <ul class="dropdown-menu">
-//             <li><a class="dropdown-item" href="#">Action</a></li>
-//             <li><a class="dropdown-item" href="#">Another action</a></li>
-//             <li><hr class="dropdown-divider"></li>
-//             <li><a class="dropdown-item" href="#">Something else here</a></li>
-//           </ul>
-//         </li>
-//         <li class="nav-item">
-//           <a class="nav-link disabled" aria-disabled="true">Disabled</a>
-//         </li>
-//       </ul>
-//       <form class="d-flex" role="search">
-//         <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-//         <button class="btn btn-outline-success" type="submit">Search</button>
-//       </form>
-//     </div>
-//   </div>
-// </nav>
