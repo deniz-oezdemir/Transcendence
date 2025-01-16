@@ -19,6 +19,7 @@ media/
 .venv
 env/
 venv/
+.venv/
 
 # Unit test / coverage reports
 .coverage
