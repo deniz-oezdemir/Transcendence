@@ -11,10 +11,10 @@ class PongGameEngine:
         self.game_width = 1600
         self.paddle_height = 100
         self.paddle_width = 10
-        logger.info("PongGameEngine initialized with game state: %s", game_state)
+        logger.debug("PongGameEngine initialized with game state: %s", game_state)
 
     def update_game_state(self):
-        logger.info("Updating game state")
+        logger.debug("Updating game state")
         if not self.game_state.is_game_running or self.game_state.is_game_ended:
             logger.info("Game is not running or has ended")
             return
@@ -32,18 +32,18 @@ class PongGameEngine:
         if self.game_state.ball_y_position <= 0:
             self.game_state.ball_y_velocity *= -1
             self.game_state.ball_y_position += self.game_state.ball_y_velocity
-            logger.info(
+            logger.debug(
                 f"Ball collided with top wall and bounced back. New velocity: {self.game_state.ball_y_velocity}"
             )
         elif self.game_state.ball_y_position >= self.game_height:
             self.game_state.ball_y_velocity *= -1
             self.game_state.ball_y_position += self.game_state.ball_y_velocity
-            logger.info(
+            logger.debug(
                 f"Ball collided with bottom wall and bounced back. New velocity y: {self.game_state.ball_y_velocity}; x: {self.game_state.ball_x_velocity}"
             )
 
         # Log the ball's position and velocity after handling collisions
-        logger.info(
+        logger.debug(
             f"Ball position y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}, Ball velocity y: {self.game_state.ball_y_velocity}; x: {self.game_state.ball_x_velocity}"
         )
 
