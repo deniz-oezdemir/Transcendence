@@ -58,55 +58,82 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def move_player(self, player_id, direction):
-        try:
-            game_state = self.get_game_state()
-            engine = PongGameEngine(game_state)
-            engine.move_player(player_id, direction)
-            logger.debug(f"Player {player_id} moved to direction {direction}")
-            self.save_game_state(game_state)
-        except Exception as e:
-            logger.error(f"Unexpected error occurred while moving player: {e}")
+        game_state = self.get_game_state()
+        if game_state.is_game_running:
+            try:
+                game_state = self.get_game_state()
+                engine = PongGameEngine(game_state)
+                engine.move_player(player_id, direction)
+                logger.debug(f"Player {player_id} moved to direction {direction}")
+                self.save_game_state(game_state)
+            except Exception as e:
+                logger.error(f"Unexpected error occurred while moving player: {e}")
+        else:
+            logger.debug("Move player exception, game not running")
+            raise RuntimeError("move_player: Game not running")
 
     async def send_periodic_updates(self):
-        while True:
-            await database_sync_to_async(self.update_game_state)()
-            game_state = await database_sync_to_async(self.get_game_state)()
-            game_state_data = {
-                "id": game_state.id,
-                "max_score": game_state.max_score,
-                "is_game_running": game_state.is_game_running,
-                "is_game_ended": game_state.is_game_ended,
-                "player_1_id": game_state.player_1_id,
-                "player_2_id": game_state.player_2_id,
-                "player_1_name": game_state.player_1_name,
-                "player_2_name": game_state.player_2_name,
-                "player_1_position": game_state.player_1_position,
-                "player_2_position": game_state.player_2_position,
-                "ball_x_position": game_state.ball_x_position,
-                "ball_y_position": game_state.ball_y_position,
-                "ball_x_velocity": game_state.ball_x_velocity,
-                "ball_y_velocity": game_state.ball_y_velocity,
-            }
-            logger.debug(f"Game state: {game_state_data}")
+        try:
+            while True:
+                game_state = await database_sync_to_async(self.get_game_state)()
+                if not game_state.is_game_running or game_state.is_game_ended:
+                    logger.info(
+                        f"Disconnect because is_game_running is: {game_state.is_game_running}, is_game_ended is: {game_state.is_game_ended}"
+                    )
+                    await self.close()
+                    break
 
-            await self.send(
-                text_data=json.dumps(
-                    {"type": "game_state_update", "state": game_state_data}
+                await database_sync_to_async(self.update_game_state)()
+                game_state = await database_sync_to_async(self.get_game_state)()
+                game_state_data = {
+                    "id": game_state.id,
+                    "max_score": game_state.max_score,
+                    "is_game_running": game_state.is_game_running,
+                    "is_game_ended": game_state.is_game_ended,
+                    "player_1_id": game_state.player_1_id,
+                    "player_2_id": game_state.player_2_id,
+                    "player_1_name": game_state.player_1_name,
+                    "player_2_name": game_state.player_2_name,
+                    "player_1_score": game_state.player_1_score,
+                    "player_2_score": game_state.player_2_score,
+                    "player_1_position": game_state.player_1_position,
+                    "player_2_position": game_state.player_2_position,
+                    "ball_x_position": game_state.ball_x_position,
+                    "ball_y_position": game_state.ball_y_position,
+                    "ball_x_velocity": game_state.ball_x_velocity,
+                    "ball_y_velocity": game_state.ball_y_velocity,
+                }
+                logger.debug(f"Game state: {game_state_data}")
+
+                await self.send(
+                    text_data=json.dumps(
+                        {"type": "game_state_update", "state": game_state_data}
+                    )
                 )
-            )
-            await asyncio.sleep(1 / 60)
+                await asyncio.sleep(1 / 60)
+        except asyncio.CancelledError:
+            logger.info("Periodic task cancelled")
 
     def update_game_state(self):
-        try:
-            game_state = self.get_game_state()
-            engine = PongGameEngine(game_state)
-            engine.update_game_state()
-            logger.debug("game updated on engine")
-            self.save_game_state(game_state)
-            logger.debug("game saved")
-            return {"x": game_state.ball_x_position, "y": game_state.ball_y_position}
-        except GameState.DoesNotExist:
-            return {"error": "Game not found"}
+        game_state = self.get_game_state()
+
+        if game_state.is_game_running:
+            try:
+                game_state = self.get_game_state()
+                engine = PongGameEngine(game_state)
+                engine.update_game_state()
+                logger.debug("game updated on engine")
+                self.save_game_state(game_state)
+                logger.debug("game saved")
+                return {
+                    "x": game_state.ball_x_position,
+                    "y": game_state.ball_y_position,
+                }
+            except GameState.DoesNotExist:
+                return {"error": "Game not found"}
+        else:
+            logger.debug("update_game_state: game not running")
+            RuntimeError("Game not running")
 
     def get_game_state(self):
         game_state = GameState.from_cache(self.game_id)
@@ -128,6 +155,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "player_2_name": game_state.player_2_name,
                 "player_1_position": game_state.player_1_position,
                 "player_2_position": game_state.player_2_position,
+                "player_1_score": game_state.player_1_score,
+                "player_2_score": game_state.player_2_score,
                 "ball_x_position": game_state.ball_x_position,
                 "ball_y_position": game_state.ball_y_position,
                 "ball_x_velocity": game_state.ball_x_velocity,
