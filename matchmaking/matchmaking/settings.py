@@ -32,6 +32,8 @@ ALLOWED_HOSTS = []
 
 # TODO: comment out not used APPS
 INSTALLED_APPS = [
+    'channels',
+    'corsheaders',
     'waitingRoom.apps.WaitingroomConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -41,7 +43,19 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+ASGI_APPLICATION = "matchmaking.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -123,3 +137,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CORS_ALLOW_ALL_ORIGINS = True  # TODO: Only for development
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
+
+# Security settings to allow WebSocket connections
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+CSP_DEFAULT_SRC = ["'self'", "'unsafe-inline'", "'unsafe-eval'"]
+CSP_CONNECT_SRC = ["'self'", "ws://localhost:8000"]

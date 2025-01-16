@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>WebSocket Test</title>
+</head>
+
+<body>
+	<h1>WebSocket Test</h1>
+	<div id="messages"></div>
+	<script>
+		const socket = new WebSocket('ws://localhost:8000/ws/waiting-room/');
+
+		socket.onopen = function (e) {
+			console.log('WebSocket connection established');
+			socket.send(JSON.stringify({
+				'type': 'create_match',
+				'player_1_id': 42
+			}));
+		};
+
+		socket.onmessage = function (e) {
+			const data = JSON.parse(e.data);
+			console.log('Match created:', data);
+			document.getElementById('messages').innerHTML +=
+				`<p>Match created: ${JSON.stringify(data)}</p>`;
+		};
+
+		socket.onerror = function (e) {
+			console.error('WebSocket error:', e);
+		};
+
+		socket.onclose = function (e) {
+			console.log('WebSocket connection closed');
+		};
+	</script>
+</body>
+
+</html>

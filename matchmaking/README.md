@@ -45,7 +45,13 @@
 
 ## Notes
 
+### Django Admin
 user:	deniz
 pw:		admin
+
+### Testing
+1. redis server
+2. daphne -b 0.0.0.0 -p 8000 matchmaking.asgi:application
+3. open file test_websocket.html with browser
 
 ## Sources
