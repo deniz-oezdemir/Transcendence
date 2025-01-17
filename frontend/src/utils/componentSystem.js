@@ -17,8 +17,17 @@ function setAttributes(element, attributes) {
 }
 
 function setEvents(element, events) {
+  const listeners = [];
   Object.keys(events).forEach((eventType) => {
-    element.addEventListener(eventType, events[eventType]);
+    const handler = events[eventType];
+    element.addEventListener(eventType, handler);
+    listeners.push({ eventType, handler });
+  });
+  // Register event listeners for cleanup
+  onCleanup(() => {
+    listeners.forEach(({ eventType, handler }) => {
+      element.removeEventListener(eventType, handler);
+    });
   });
 }
 
@@ -32,16 +41,30 @@ function validateTag(tag) {
   }
 }
 
+export function createCleanupContext() {
+  const cleanupFns = [];
+  const previousContext = cleanupContext; // Save the previous context
+  cleanupContext = cleanupFns; // Assign the new context
+
+  const cleanup = () => {
+    console.log('cleanup context', cleanupFns);
+    cleanupFns.forEach((fn) => {
+      console.log('cleaning fn: ', fn);
+      fn();
+    });
+    cleanupFns.length = 0; // Clear the functions
+    cleanupContext = previousContext; // Restore the previous context
+  };
+
+  return cleanup;
+}
+
 export function createComponent(
   tag,
-  { className, content, children, id, attributes, events } = {}
+  { className, content, children, id, attributes, events, cleanup } = {}
 ) {
   validateTag(tag);
   const element = document.createElement(tag);
-
-  // Context for the component cleanup
-  const cleanupFns = [];
-  cleanupContext = cleanupFns;
 
   if (className) element.className = className;
   if (id) element.id = id;
@@ -62,13 +85,9 @@ export function createComponent(
 
   if (children) setChildren(element, children);
 
-  cleanupContext = null;
-
   return {
     element,
-    cleanup: () => {
-      cleanupFns.forEach((fn) => fn());
-    },
+    cleanup,
   };
 }
 

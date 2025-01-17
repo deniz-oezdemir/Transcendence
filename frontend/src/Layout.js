@@ -1,8 +1,14 @@
-import { createComponent, LayoutContent } from '@componentSystem';
+import {
+  createComponent,
+  LayoutContent,
+  createCleanupContext,
+} from '@componentSystem';
 import Navbar from './components/Navbar';
 
 export default function AppLayout(context) {
-  const layout = createComponent('div', {
+  createCleanupContext();
+
+  return createComponent('div', {
     className: 'general-layout',
     children: [
       Navbar(context),
@@ -10,6 +16,4 @@ export default function AppLayout(context) {
       createComponent('footer', { className: 'footer', content: 'Footer' }),
     ],
   });
-
-  return layout;
 }
