@@ -125,6 +125,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.CustomUser" #points to my custom user model
 
-# Path where uploaded media will be stored
+# Uploaded avatars
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # The 'media' folder in your project root
 MEDIA_URL = '/media/'  # The URL prefix for accessing media files

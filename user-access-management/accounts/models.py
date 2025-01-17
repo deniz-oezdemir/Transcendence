@@ -9,7 +9,6 @@ class CustomUser(AbstractUser):
         upload_to='avatars/', #this gets added to the MEDIA_ROOT path in settings
         default='avatars/default.png'
     )
-    creation_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=10,
         choices=[

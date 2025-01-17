@@ -22,4 +22,7 @@ from django.conf.urls.static import static #for django to serve media files duri
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-] #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) #for django to serve media files during development. Substitute with a proper web server?
+]
+
+if settings.DEBUG:  # Only in development
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) #for django to serve media files during development. Substitute with a proper web server
