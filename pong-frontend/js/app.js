@@ -14,9 +14,11 @@ document.addEventListener("DOMContentLoaded", function() {
 				return response.json();
 			})
 			.then((data) => {
-				if (data) {
+				if (data && data.id) {
 					gameId = data.id;
 					console.log("Game exists:", data);
+				} else {
+					console.error("Invalid game data:", data);
 				}
 			})
 			.catch((error) => console.error("Error:", error));
@@ -29,12 +31,23 @@ document.addEventListener("DOMContentLoaded", function() {
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ max_score: 3 }),
+			body: JSON.stringify({
+				id: 1,
+				max_score: 3,
+				player_1_id: 1,
+				player_1_name: "PlayerOne",
+				player_2_id: 2,
+				player_2_name: "PlayerTwo"
+			}),
 		})
 			.then((response) => response.json())
 			.then((data) => {
-				gameId = data.id;
-				console.log("Game created:", data);
+				if (data && data.id) {
+					gameId = data.id;
+					console.log("Game created:", data);
+				} else {
+					console.error("Invalid game data:", data);
+				}
 			})
 			.catch((error) => console.error("Error:", error));
 	}
@@ -48,22 +61,29 @@ document.addEventListener("DOMContentLoaded", function() {
 			return;
 		}
 
+		console.log("Toggling game state for game ID:", gameId);
+
 		fetch(`http://localhost:8000/game/toggle_game/${gameId}/`, {
-			method: "PATCH",
+			method: "PUT",
 			headers: {
 				"Content-Type": "application/json",
 			},
 		})
 			.then((response) => response.json())
 			.then((data) => {
-				if (data.is_game_running) {
-					toggleGameBtn.textContent = "Stop Game";
-					connectWebSocket();
-				} else {
-					toggleGameBtn.textContent = "Start Game";
-					if (ws) {
-						ws.close();
+				console.log("Toggle game response:", data);
+				if (data && typeof data.is_game_running !== 'undefined') {
+					if (data.is_game_running) {
+						toggleGameBtn.textContent = "Stop Game";
+						connectWebSocket();
+					} else {
+						toggleGameBtn.textContent = "Start Game";
+						if (ws) {
+							ws.close();
+						}
 					}
+				} else {
+					console.error("Invalid response data:", data);
 				}
 			})
 			.catch((error) => console.error("Error:", error));
@@ -90,3 +110,4 @@ document.addEventListener("DOMContentLoaded", function() {
 		};
 	}
 });
+
