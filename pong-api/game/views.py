@@ -17,8 +17,20 @@ class CreateGame(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         game_id = serializer.validated_data.get("id")
-        if GameState.from_cache(game_id):
-            raise serializers.ValidationError("Game with this ID already exists.")
+        cache_key = f"game_state_{game_id}"
+
+        # Check if the game exists in Redis
+        if cache.get(cache_key):
+            raise serializers.ValidationError(
+                f"Game with ID {game_id} already exists in cache."
+            )
+
+        # Check if the game exists in the database
+        # if GameState.objects.filter(id=game_id).exists():
+        #     raise serializers.ValidationError(
+        #         f"Game with ID {game_id} already exists in the database."
+        #     )
+
         game_state = serializer.save()
         return game_state
 
@@ -60,15 +72,17 @@ class DeleteGame(generics.DestroyAPIView):
     queryset = GameState.objects.all()
     lookup_field = "id"
 
-    def perform_destroy(self, instance):
-        cache.delete(f"game_state:{instance.id}")
-        logger.info(f"Deleted game state for game_id {instance.id} from cache.")
-        # Delete from the database
-        # super().perform_destroy(instance)
-
     def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
-        self.perform_destroy(instance)
+        game_id = kwargs["id"]
+        game_state = GameState.from_cache(game_id)
+
+        if not game_state:
+            # If not found in cache, try to get it from the database
+            game_state = get_object_or_404(GameState, id=game_id)
+
+        cache.delete(f"game_state:{game_id}")
+        # Delete from database
+        game_state.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

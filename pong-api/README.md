@@ -127,12 +127,6 @@
 - **Method:** `DELETE`
 - **Description:** Deletes a game state from the database and Redis cache.
 
-- **Example:**
-
-  ```bash
-  curl -X DELETE http://localhost:8000/api/games/1/
-  ```
-
 ## WebSocket Communication
 
 ### Connect to Game
@@ -209,7 +203,7 @@ curl http://localhost:8000/game/get_game_state/1/
 ### Deleting a Game
 
 ```bash
-curl -X DELETE http://localhost:8000/api/games/1/
+curl -X DELETE http://localhost:8000/game/delete_game/1/
 ```
 
 ### WebSocket Connection
