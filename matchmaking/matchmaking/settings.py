@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,11 +46,12 @@ INSTALLED_APPS = [
 
 ASGI_APPLICATION = "matchmaking.asgi.application"
 
+# Redis/Channels configuration
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [(os.getenv('REDIS_HOST', 'redis'), 6379)],
         },
     },
 }
@@ -91,10 +93,15 @@ WSGI_APPLICATION = 'matchmaking.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'matchmaking_db'),
+        'USER': os.getenv('POSTGRES_USER', 'deniz'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'your_password'),
+        'HOST': os.getenv('POSTGRES_HOST', 'postgres'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }
+
 
 
 # Password validation

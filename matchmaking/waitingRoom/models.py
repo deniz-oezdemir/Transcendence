@@ -14,11 +14,19 @@ class Match(models.Model):
 		(FINISHED, 'Finished'),
 	]
 
-	match_id = models.IntegerField(primary_key=True, editable=False)
-	player_1_id = models.IntegerField()
-	player_2_id = models.IntegerField(null=True, blank=True)
+	match_id = models.BigIntegerField(primary_key=True, editable=False)
+	player_1_id = models.BigIntegerField()
+	player_2_id = models.BigIntegerField(null=True, blank=True)
 	status = models.CharField(
 		max_length=10,
 		choices=STATUS_CHOICES,
-		default=PENDING
+		default=PENDING,
+		db_index=True  # Added index for better performance
 	)
+
+	# Defines database indexes for better query performance in Postgres, useful for e.g. is_player_in_match()
+	class Meta:
+		indexes = [
+			models.Index(fields=['player_1_id', 'player_2_id']),
+			models.Index(fields=['status'])
+		]

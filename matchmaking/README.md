@@ -1,5 +1,20 @@
 # Matchmaking Microservice
 
+## Table of Contents
+
+- [Goals](#goals)
+- [Subject Requirements](#subject-requirements)
+- [User Stories](#user-stories)
+- [Development Steps](#development-steps)
+- [Tables](#tables)
+- [TODO](#todo)
+- [Testing](#testing)
+- [Notes](#notes)
+	- [Django Admin](#django-admin)
+- [Sources](#sources)
+
+
+## Goals
 First version: support only matches - in progress
 
 Second version: support also tournmanets - to do
@@ -60,15 +75,76 @@ Second version: support also tournmanets - to do
 
 4. Switch from Sqllite to postgress
 
+## Testing
+
+1. Start all services using Docker:
+	```bash
+	cd matchmaking/docker
+	docker compose up --build
+	```
+
+2. Open `test_websocket.html` in your browser to test the matchmaking interface.
+
+3. Monitor the databases:
+
+	Check PostgreSQL:
+	```bash
+	# Connect to PostgreSQL container
+	docker exec -it docker-postgres-1 psql -U deniz matchmaking_db
+
+	# List all tables
+	\dt
+
+	# View matches
+	SELECT * FROM "waitingRoom_match";
+
+	# Exit PostgreSQL
+	\q
+	```
+
+	Check Redis:
+	```bash
+	# Connect to Redis container
+	docker exec -it docker-redis-1 redis-cli
+
+	# List all keys
+	KEYS *
+
+	# Monitor real-time updates
+	MONITOR
+
+	# View specific match data
+	GET game_state_1  # Replace 1 with actual match ID
+
+	# Exit Redis
+	exit
+	```
+
+4. Check logs:
+	```bash
+	# View all container logs
+	docker compose logs -f
+
+	# View specific service logs
+	docker compose logs -f matchmaking
+	docker compose logs -f postgres
+	docker compose logs -f redis
+	```
+
+The `WaitingRoomConsumer` uses:
+- PostgreSQL for persistent storage of matches via `Match` model
+- Redis for real-time WebSocket communication via `CHANNEL_LAYERS`
+
 ## Notes
 
 ### Django Admin
 user:	deniz
+
 pw:		admin
 
-### Testing
-1. `redis server`
-2. `daphne -b 0.0.0.0 -p 8000 matchmaking.asgi:application`
-3. open file test_websocket.html with browser
 
 ## Sources
+
+https://docs.djangoproject.com/en/5.1/intro/tutorial01/
+
+https://www.postgresql.org/docs/release/
