@@ -1,5 +1,9 @@
 # Matchmaking Microservice
 
+First version: support only matches - in progress
+
+Second version: support also tournmanets - to do
+
 ## Subject Requirements
 
 - Players must be able to play against each other.
@@ -20,6 +24,7 @@
 6. As Game Engine I want to receive game start data (see pongapi/Readme.md).
 6. As Game Engine I want to send the match result to Matchmaking.
 7. As Game History I want to receive the finished match and/or tournament data.
+8. As Matchmaking I want to delete the finished match and/or tournament data.
 
 ## Development Steps
 
@@ -39,19 +44,21 @@
 
 ## TODO
 
-1. As Frontend I want to create a match.
+1. As Frontend I want to create a match. - done
 - start with connection to frontend: receive game creation and send game info - done
 - check whether it needs to be a websocket or whether rest is sufficient -> websocket for real-time updates of waiting room
 - build api to create game from frontend and api to send back info of created game - done
 - clean all current matches - done: commented out code in consumers.py
 - implement logic that a user can create only one match - done
 
-2. As Frontend I want to get the waiting room info with all matches and tournaments.
-- implement sending waiting room info every time it changes to all websocket connections
+2. As Frontend I want to get the waiting room info with all matches and tournaments. - done
+- implement sending waiting room info every time it changes to all websocket connections - done
 
 3. As Frontend I want to join a match.
-- create functionality to join an existing match via websocket
-- implement logic that a user can only join a match if he is not already in a match
+- create functionality to join an existing match via websocket - done
+- implement logic that a user can only join a match if he is not already in a match - done
+
+4. Switch from Sqllite to postgress
 
 ## Notes
 
@@ -60,8 +67,8 @@ user:	deniz
 pw:		admin
 
 ### Testing
-1. redis server
-2. daphne -b 0.0.0.0 -p 8000 matchmaking.asgi:application
+1. `redis server`
+2. `daphne -b 0.0.0.0 -p 8000 matchmaking.asgi:application`
 3. open file test_websocket.html with browser
 
 ## Sources
