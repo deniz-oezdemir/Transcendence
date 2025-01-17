@@ -47,7 +47,7 @@ function AdminPage() {
         href: '/admin/settings',
         content: 'Go to admin settings',
         className: 'btn btn-primary',
-        attributes: { 'aria-current': 'page' },
+        attributes: { type: 'button', role: 'button' },
       }),
     ],
   });

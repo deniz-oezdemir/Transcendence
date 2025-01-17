@@ -1,12 +1,16 @@
 import { createComponent, Link } from '@componentSystem';
-import { useLocation } from '@router';
-// import { createSignal } from '@signals';
-// import { createEffect, onCleanup } from '@effects';
-// import styles from './Navbar.module.css';
 import { createSignal, createEffect } from '@reactivity';
+import { setTheme, getPreferredTheme } from '@themeManager';
 
 export default function Navbar({ location, navigate }) {
   const path = location();
+
+  const [theme, setThemeState] = createSignal(getPreferredTheme());
+
+  const toggleTheme = () => {
+    const newTheme = theme() === 'dark' ? 'light' : 'dark';
+    setThemeState(newTheme);
+  };
 
   const updateNavLinks = () => {
     const currentPath = location();
@@ -21,8 +25,25 @@ export default function Navbar({ location, navigate }) {
     });
   };
 
+  const themeButton = createComponent('button', {
+    className: 'btn btn-outline-light me-2',
+    attributes: { type: 'button' },
+    content: theme() !== 'dark' ? '🌙 Dark' : '☀️ Light',
+    events: {
+      click: toggleTheme,
+    },
+  });
+
   createEffect(() => {
     updateNavLinks();
+  });
+
+  createEffect(() => {
+    const th = theme();
+    setTheme(th);
+    themeButton.element.textContent = th !== 'dark' ? '🌙 Dark' : '☀️ Light';
+    themeButton.element.classList.toggle('btn-outline-light', th === 'dark');
+    themeButton.element.classList.toggle('btn-outline-dark', th === 'light');
   });
 
   return createComponent('nav', {
@@ -105,11 +126,17 @@ export default function Navbar({ location, navigate }) {
                   }),
                 ],
               }),
-              Link({
-                href: '/login',
-                className: 'btn btn-outline-success',
-                attributes: { type: 'button', role: 'button' },
-                content: 'Login',
+              createComponent('div', {
+                className: 'd-flex align-items-center',
+                children: [
+                  themeButton,
+                  Link({
+                    href: '/login',
+                    className: 'btn btn-outline-success',
+                    attributes: { type: 'button', role: 'button' },
+                    content: 'Login',
+                  }),
+                ],
               }),
             ],
           }),

@@ -1,27 +1,18 @@
-import { createSignal } from '@reactivity';
+import { createEffect } from '@reactivity';
 import { createComponent } from '@componentSystem';
 import styles from './Paddle.module.css';
 
-export function Paddle() {
-  const [position, setPosition] = createSignal(100);
-
-  const element = createComponent('div', {
-    className: styles.paddle,
+export default function Paddle({ position, side }) {
+  const paddleComponent = createComponent('div', {
+    className: styles.paddle || 'paddle',
+    attributes: {
+      style: `top: ${position()}px; ${side}: 20px; ${side === 'left' ? 'background-color: ' + 'var(--bs-primary)' : 'background-color: ' + 'var(--bs-danger)'}`,
+    },
   });
 
-  function updatePaddlePosition() {
-    element.style.top = `${position()}px`;
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp') {
-      setPosition(Math.max(0, position() - 10));
-    } else if (e.key === 'ArrowDown') {
-      setPosition(Math.min(200, position() + 10));
-    }
-    updatePaddlePosition();
+  createEffect(() => {
+    paddleComponent.element.style.top = `${position()}px`;
   });
 
-  updatePaddlePosition();
-  return element;
+  return paddleComponent;
 }

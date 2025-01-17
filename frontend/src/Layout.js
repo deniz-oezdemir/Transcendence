@@ -3,7 +3,9 @@ import {
   LayoutContent,
   createCleanupContext,
 } from '@componentSystem';
+
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 
 export default function AppLayout(context) {
   createCleanupContext();
@@ -12,8 +14,11 @@ export default function AppLayout(context) {
     className: 'general-layout',
     children: [
       Navbar(context),
-      LayoutContent(),
-      createComponent('footer', { className: 'footer', content: 'Footer' }),
+      createComponent('div', {
+        className: 'container',
+        children: [LayoutContent()],
+      }),
+      Footer(),
     ],
   });
 }

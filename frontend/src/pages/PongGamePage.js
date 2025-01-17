@@ -1,9 +1,14 @@
-import { createSignal, createEffect } from '@reactivity';
+import { createSignal } from '@reactivity';
 import {
   createComponent,
   onCleanup,
   createCleanupContext,
 } from '@componentSystem';
+
+import Score from '../components/Score';
+import Paddle from '../components/Paddle';
+import Ball from '../components/Ball';
+import GameControls from '../components/GameControls';
 
 import styles from './PongGamePage.module.css';
 
@@ -12,52 +17,16 @@ export default function PongGamePage() {
   // Signals
   const [positionLeft, setPositionLeft] = createSignal(160);
   const [positionRight, setPositionRight] = createSignal(160);
-  const [ballPosition, setBallPosition] = createSignal({ top: 200, left: 300 });
+  const [ballPosition, setBallPosition] = createSignal({ top: 192, left: 292 });
   const [ballMoving, setBallMoving] = createSignal(false);
+  const [ballDirection, setBallDirection] = createSignal({ x: 2, y: 2 });
+  const [scoreLeft, setScoreLeft] = createSignal(0);
+  const [scoreRight, setScoreRight] = createSignal(0);
 
-  // Ball movement state
-  let ballDirection = { x: 2, y: 2 };
   let ballInterval = null;
 
-  const resetBall = () => {
-    setBallPosition({ top: 200, left: 300 });
-    setBallMoving(false);
-    ballDirection = { x: 2, y: 2 };
-  };
-
-  const handleball = () => {
-    const pos = ballPosition();
-    const newTop = pos.top + ballDirection.y;
-    const newLeft = pos.left + ballDirection.x;
-
-    // Bounce off top and bottom walls
-    if (newTop <= 0 || newTop >= 380) {
-      ballDirection.y *= -1;
-    }
-
-    // Paddle collision
-    if (
-      (newLeft <= 40 &&
-        newTop >= positionLeft() &&
-        newTop <= positionLeft() + 80) ||
-      (newLeft >= 560 &&
-        newTop >= positionRight() &&
-        newTop <= positionRight() + 80)
-    ) {
-      resetBall();
-    }
-
-    // Ball out of bounds
-    if (newLeft <= 0 || newLeft >= 600) {
-      resetBall();
-    }
-
-    return { top: newTop, left: newLeft };
-  };
-
   const startBallMovement = () => {
-    console.log('startBallMovement', ballMoving());
-    if (ballMoving()) return;
+    if (ballInterval) return;
 
     setBallMoving(true);
     ballInterval = setInterval(() => {
@@ -66,22 +35,84 @@ export default function PongGamePage() {
   };
 
   const stopBallMovement = () => {
+    if (!ballInterval) return;
     clearInterval(ballInterval);
     ballInterval = null;
+    setBallMoving(false);
+  };
+
+  const resetBallPosition = () => {
+    stopBallMovement();
+    setBallPosition({ top: 200, left: 296 });
+    setBallDirection({ x: 2, y: 2 });
+  };
+
+  const handleball = () => {
+    const pos = ballPosition();
+    const direction = ballDirection();
+    const newTop = pos.top + direction.y;
+    const newLeft = pos.left + direction.x;
+
+    // Bounce off top and bottom walls
+    if (newTop <= 0 || newTop >= 380) {
+      setBallDirection({ x: direction.x, y: direction.y * -1 });
+    }
+
+    // Paddle collision
+    const left = positionLeft();
+    const right = positionRight();
+    if (
+      (newLeft <= 20 && newTop >= left && newTop <= left + 80) ||
+      (newLeft >= 555 && newTop >= right && newTop <= right + 80)
+    ) {
+      const currentDirection = ballDirection();
+
+      // Increment or decrement speed
+      const newDirection = {
+        x:
+          currentDirection.x > 0
+            ? currentDirection.x + 0.333
+            : currentDirection.x - 0.333,
+        y:
+          currentDirection.y > 0
+            ? currentDirection.y + 0.333
+            : currentDirection.y - 0.333,
+      };
+
+      // Reverse the x direction to reflect the ball
+      setBallDirection({ x: newDirection.x * -1, y: newDirection.y });
+    }
+
+    // Out of bounds
+    if (newLeft <= 0) {
+      setScoreRight(scoreRight() + 1);
+      resetBallPosition();
+      return ballPosition();
+    }
+
+    if (newLeft >= 600) {
+      setScoreLeft(scoreLeft() + 1);
+      resetBallPosition();
+      return ballPosition();
+    }
+
+    return { top: newTop, left: newLeft };
   };
 
   // Keydown handler
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowUp') {
-      setPositionRight(Math.max(40, positionRight() - 10));
+      setPositionRight(Math.max(0, positionRight() - 15));
     } else if (e.key === 'ArrowDown') {
-      setPositionRight(Math.min(300, positionRight() + 10));
+      setPositionRight(Math.min(315, positionRight() + 15));
     } else if (e.key === 'w') {
-      setPositionLeft(Math.max(40, positionLeft() - 10));
+      setPositionLeft(Math.max(0, positionLeft() - 15));
     } else if (e.key === 's') {
-      setPositionLeft(Math.min(300, positionLeft() + 10));
+      setPositionLeft(Math.min(315, positionLeft() + 15));
     } else if (e.key === ' ') {
-      if (!ballMoving()) {
+      if (ballMoving()) {
+        resetBallPosition();
+      } else {
         startBallMovement();
       }
     }
@@ -96,54 +127,19 @@ export default function PongGamePage() {
     document.removeEventListener('keydown', handleKeyDown);
   });
 
-  // Ball Component
-  const ballComponent = createComponent('div', {
-    className: styles.ball,
-    attributes: {
-      style: `top: ${ballPosition().top}px; left: ${ballPosition().left}px;`,
-    },
-  });
-
-  // Paddle Components
-  const paddleLeftComponent = createComponent('div', {
-    className: styles.paddle,
-    attributes: {
-      style: `top: ${positionLeft()}px; left: 20px;`,
-    },
-  });
-
-  const paddleRightComponent = createComponent('div', {
-    className: styles.paddle,
-    attributes: {
-      style: `top: ${positionRight()}px; right: 20px;`,
-    },
-  });
-
-  // Reactive updates for paddle and ball positions
-  createEffect(() => {
-    console.log('inside paddle effect');
-    paddleLeftComponent.element.style.top = `${positionLeft()}px`;
-    paddleRightComponent.element.style.top = `${positionRight()}px`;
-  });
-
-  createEffect(() => {
-    const { top, left } = ballPosition();
-    console.log('top', top, 'left', left);
-    ballComponent.element.style.top = `${top}px`;
-    ballComponent.element.style.left = `${left}px`;
-  });
-
-  // Game Container
   return createComponent('div', {
-    className: styles.gameContainer,
+    className: `container position-relative`,
     children: [
+      Score({ scoreLeft, scoreRight }),
       createComponent('div', {
-        className: styles.score,
-        content: 'Score: 0',
+        className: `${styles.gameContainer}`,
+        children: [
+          Ball({ position: ballPosition }),
+          Paddle({ position: positionLeft, side: 'left' }),
+          Paddle({ position: positionRight, side: 'right' }),
+        ],
       }),
-      ballComponent,
-      paddleLeftComponent,
-      paddleRightComponent,
+      GameControls(),
     ],
     cleanup,
   });
