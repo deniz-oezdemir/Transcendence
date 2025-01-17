@@ -46,8 +46,8 @@ Second version: support also tournmanets - to do
 1. Learn REST and websocket APIs - done: snapshot vs. realtime data
 2. Learn redis, decide whether its necessary or postgres is sufficient - done: redis better here
 3. Build only logic for matches first (no tournaments) and add unit tests.
-4. Try integration with redis if needed.
-5. Dockerize.
+4. Try integration with redis if needed. - done
+5. Dockerize. - done
 6. Build all other logic as described in User Stories above and add unit test.
 7. Integrate with other services.
 
@@ -73,9 +73,9 @@ Second version: support also tournmanets - to do
 - create functionality to join an existing match via websocket - done
 - implement logic that a user can only join a match if he is not already in a match - done
 
-4. Switch from Sqllite to postgres - done
+4. Switch from Sqlite to Postgres. - done
 
-5. tbd
+5. Add REST API for Game Engine Service.
 
 ## Testing
 
