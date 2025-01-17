@@ -69,11 +69,13 @@ Second version: support also tournmanets - to do
 2. As Frontend I want to get the waiting room info with all matches and tournaments. - done
 - implement sending waiting room info every time it changes to all websocket connections - done
 
-3. As Frontend I want to join a match.
+3. As Frontend I want to join a match. - done
 - create functionality to join an existing match via websocket - done
 - implement logic that a user can only join a match if he is not already in a match - done
 
-4. Switch from Sqllite to postgress
+4. Switch from Sqllite to postgres - done
+
+5. tbd
 
 ## Testing
 
@@ -142,6 +144,37 @@ user:	deniz
 
 pw:		admin
 
+### Is Redis not sufficient as a database? Why also use PostgreSQL?
+
+Both PostgreSQL and Redis serve different purposes in the matchmaking service:
+
+ PostgreSQL's Role:
+- **Persistent Storage**: Stores `Match` records permanently.
+- **Data Integrity**: Enforces database schema and constraints.
+- **Complex Queries**: Supports composite indexes on `player_1_id` and `player_2_id`.
+- **Transaction Support**: Ensures data consistency.
+- **Relationship Management**: Useful when adding tournament support.
+
+Redis's Role:
+- **Real-time Communication**: Used by `CHANNEL_LAYERS` for WebSocket communication.
+- **In-memory Speed**: Provides fast access for active matches.
+- **Pub/Sub**: Handles WebSocket group messaging.
+- **Temporary Data**: Manages active connections and game states.
+
+While one could theoretically use only Redis:
+
+1. **Drawbacks**:
+	- No data persistence by default.
+	- Limited query capabilities.
+	- No schema enforcement.
+	- No built-in relationship support for tournaments.
+
+2. **Benefits of the current setup**:
+	- PostgreSQL handles permanent storage via the `Match` model.
+	- Redis handles real-time communication via `CHANNEL_LAYERS`.
+	- Clean separation of concerns.
+
+For the matchmaking service's requirements (especially with future tournament support), keeping both databases is recommended.
 
 ## Sources
 
