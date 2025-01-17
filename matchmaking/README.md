@@ -13,8 +13,8 @@
 ## User Stories
 
 1. As Frontend I want to create a match.
-2. As Frontend I want to join a match.
-3. As Frontend I want to get the waiting room info with all matches and tournaments.
+2. As Frontend I want to get the waiting room info with all matches and tournaments.
+3. As Frontend I want to join a match.
 4. As Frontend I want to get the match result.
 5. As AI Player I want to be initiated when necessary.
 6. As Game Engine I want to receive game start data (see pongapi/Readme.md).
@@ -39,9 +39,19 @@
 
 ## TODO
 
+1. As Frontend I want to create a match.
 - start with connection to frontend: receive game creation and send game info - done
 - check whether it needs to be a websocket or whether rest is sufficient -> websocket for real-time updates of waiting room
 - build api to create game from frontend and api to send back info of created game - done
+- clean all current matches - done: commented out code in consumers.py
+- implement logic that a user can create only one match - done
+
+2. As Frontend I want to get the waiting room info with all matches and tournaments.
+- implement sending waiting room info every time it changes to all websocket connections
+
+3. As Frontend I want to join a match.
+- create functionality to join an existing match via websocket
+- implement logic that a user can only join a match if he is not already in a match
 
 ## Notes
 

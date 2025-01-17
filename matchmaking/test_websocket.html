@@ -3,36 +3,78 @@
 
 <head>
 	<title>WebSocket Test</title>
+	<style>
+		#messages {
+			margin-top: 20px;
+			padding: 10px;
+			border: 1px solid #ccc;
+			height: 400px;
+			overflow-y: auto;
+		}
+
+		.button-group {
+			margin: 20px 0;
+		}
+
+		button {
+			padding: 10px 20px;
+			margin-right: 10px;
+		}
+	</style>
 </head>
 
 <body>
 	<h1>WebSocket Test</h1>
+	<div class="button-group">
+		<button onclick="createMatch(1)">Create Match as Player 1</button>
+		<button onclick="createMatch(2)">Create Match as Player 2</button>
+		<button onclick="createMatch(3)">Create Match as Player 3</button>
+	</div>
 	<div id="messages"></div>
 	<script>
 		const socket = new WebSocket('ws://localhost:8000/ws/waiting-room/');
 
-		socket.onopen = function (e) {
-			console.log('WebSocket connection established');
+		function createMatch(playerId) {
 			socket.send(JSON.stringify({
 				'type': 'create_match',
-				'player_1_id': 42
+				'player_1_id': playerId
 			}));
+		}
+
+		socket.onopen = function (e) {
+			console.log('WebSocket connection established');
+			addMessage('System', 'Connected to server');
 		};
 
 		socket.onmessage = function (e) {
 			const data = JSON.parse(e.data);
-			console.log('Match created:', data);
-			document.getElementById('messages').innerHTML +=
-				`<p>Match created: ${JSON.stringify(data)}</p>`;
+			if (data.type === "error") {
+				addMessage('Error', data.message, true);
+			} else {
+				addMessage('Success', `Match created with ID: ${data.match_id} by Player ${data.player_1_id}`);
+				addMessage('Status', `Current matches: ${JSON.stringify(data.all_matches, null, 2)}`);
+			}
 		};
 
 		socket.onerror = function (e) {
 			console.error('WebSocket error:', e);
+			addMessage('Error', 'WebSocket error occurred', true);
 		};
 
 		socket.onclose = function (e) {
-			console.log('WebSocket connection closed');
+			addMessage('System', 'Connection closed');
 		};
+
+		function addMessage(type, text, isError = false) {
+			const messages = document.getElementById('messages');
+			const time = new Date().toLocaleTimeString();
+			messages.innerHTML += `
+                <p style="color: ${isError ? 'red' : 'black'}">
+                    [${time}] <strong>${type}:</strong> ${text}
+                </p>
+            `;
+			messages.scrollTop = messages.scrollHeight;
+		}
 	</script>
 </body>
 
