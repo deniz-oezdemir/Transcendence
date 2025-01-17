@@ -56,9 +56,32 @@ class ToggleGame(generics.UpdateAPIView):
         )
 
 
+class DeleteGame(generics.DestroyAPIView):
+    queryset = GameState.objects.all()
+    lookup_field = "id"
+
+    def perform_destroy(self, instance):
+        cache.delete(f"game_state:{instance.id}")
+        logger.info(f"Deleted game state for game_id {instance.id} from cache.")
+        # Delete from the database
+        # super().perform_destroy(instance)
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class GetGameState(generics.RetrieveAPIView):
     serializer_class = GameStateSerializer
     lookup_field = "id"
+
+    def perform_create(self, serializer):
+        game_id = serializer.validated_data.get("id")
+        if not GameState.from_cache(game_id):
+            raise serializers.ValidationError("Game with this ID does not exist.")
+        game_state = serializer.save()
+        return game_state
 
     def get_object(self):
         if settings.USE_REDIS:

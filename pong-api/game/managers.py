@@ -11,7 +11,7 @@ class GameStateManager(models.Manager):
             return super().get_queryset()
 
     def _get_ids_from_redis(self):
-        keys = cache.keys("game_state_*")
+        keys = cache.keys("game_*")
         ids = []
         for key in keys:
             try:
@@ -21,4 +21,3 @@ class GameStateManager(models.Manager):
             except (IndexError, ValueError):
                 continue
         return ids
-

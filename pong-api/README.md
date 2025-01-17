@@ -117,8 +117,20 @@
     "ball_x_position": 400,
     "ball_y_position": 200,
     "ball_x_velocity": 30,
-    "ball_y_velocity": 30
+        "ball_y_velocity": 30
   }
+  ```
+
+### Delete Game
+
+- **Endpoint:** `/api/games/<id>/`
+- **Method:** `DELETE`
+- **Description:** Deletes a game state from the database and Redis cache.
+
+- **Example:**
+
+  ```bash
+  curl -X DELETE http://localhost:8000/api/games/1/
   ```
 
 ## WebSocket Communication
@@ -192,6 +204,12 @@ curl -X PUT http://localhost:8000/game/toggle_game/1/
 
 ```bash
 curl http://localhost:8000/game/get_game_state/1/
+```
+
+### Deleting a Game
+
+```bash
+curl -X DELETE http://localhost:8000/api/games/1/
 ```
 
 ### WebSocket Connection
