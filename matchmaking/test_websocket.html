@@ -1,0 +1,128 @@
+<!-- Only for testing purposes -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>WebSocket Test</title>
+	<style>
+		#messages {
+			margin-top: 20px;
+			padding: 10px;
+			border: 1px solid #ccc;
+			height: 400px;
+			overflow-y: auto;
+		}
+
+		.button-group {
+			margin: 20px 0;
+		}
+
+		button {
+			padding: 10px 20px;
+			margin-right: 10px;
+		}
+
+		select {
+			padding: 10px;
+			margin-right: 10px;
+			min-width: 200px;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>WebSocket Test</h1>
+	<div class="button-group">
+		<button onclick="createMatch(1)">Create Match as Player 1</button>
+		<button onclick="createMatch(2)">Create Match as Player 2</button>
+		<button onclick="createMatch(3)">Create Match as Player 3</button>
+	</div>
+	<div class="button-group">
+		<select id="matchId">
+			<option value="">Select a match...</option>
+		</select>
+		<button onclick="joinMatch(1)">Join as Player 1</button>
+		<button onclick="joinMatch(2)">Join as Player 2</button>
+		<button onclick="joinMatch(3)">Join as Player 3</button>
+	</div>
+	<div id="messages"></div>
+	<script>
+		const socket = new WebSocket('ws://localhost:8000/ws/waiting-room/');
+
+		function createMatch(playerId) {
+			socket.send(JSON.stringify({
+				'type': 'create_match',
+				'player_1_id': playerId
+			}));
+		}
+
+		function joinMatch(playerId) {
+			const select = document.getElementById('matchId');
+			if (!select.value) {
+				addMessage('Error', 'Please select a match', true);
+				return;
+			}
+			socket.send(JSON.stringify({
+				'type': 'join_match',
+				'match_id': parseInt(select.value),
+				'player_2_id': playerId
+			}));
+		}
+
+		function updateMatchList(matches) {
+			const select = document.getElementById('matchId');
+			select.innerHTML = '<option value="">Select a match...</option>';
+
+			matches.filter(match => !match.player_2_id).forEach(match => {
+				select.innerHTML += `
+                    <option value="${match.match_id}">
+                        Match ${match.match_id} (Player ${match.player_1_id})
+                    </option>
+                `;
+			});
+		}
+
+		socket.onopen = function (e) {
+			console.log('WebSocket connection established');
+			addMessage('System', 'Connected to server');
+		};
+
+		socket.onmessage = function (e) {
+			const data = JSON.parse(e.data);
+			if (data.type === "error") {
+				addMessage('Error', data.message, true);
+			} else if (data.type === "match_created") {
+				addMessage('Success', `Match created with ID: ${data.match_id} by Player ${data.player_1_id}`);
+				addMessage('Status', `Current matches: ${JSON.stringify(data.all_matches, null, 2)}`);
+				updateMatchList(data.all_matches);
+			} else if (data.type === "match_updated") {
+				addMessage('Success', `Player ${data.player_2_id} joined match ${data.match_id}`);
+				addMessage('Status', `Current matches: ${JSON.stringify(data.all_matches, null, 2)}`);
+				updateMatchList(data.all_matches);
+			}
+		};
+
+		socket.onerror = function (e) {
+			console.error('WebSocket error:', e);
+			addMessage('Error', 'WebSocket error occurred', true);
+		};
+
+		socket.onclose = function (e) {
+			addMessage('System', 'Connection closed');
+		};
+
+		function addMessage(type, text, isError = false) {
+			const messages = document.getElementById('messages');
+			const time = new Date().toLocaleTimeString();
+			messages.innerHTML += `
+                <p style="color: ${isError ? 'red' : 'black'}">
+                    [${time}] <strong>${type}:</strong> ${text}
+                </p>
+            `;
+			messages.scrollTop = messages.scrollHeight;
+		}
+	</script>
+</body>
+
+</html>
