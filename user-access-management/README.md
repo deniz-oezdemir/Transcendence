@@ -19,21 +19,30 @@ Make sure the following are installed on your system:
 ## Setup Instructions
 
 1. Clone the Repository
+```sh
 git clone <repository_url>
-cd <repository_folder>
+cd Transcendence/user-access-management
+```
 
 2. Create & activate a Virtual Environment
+```sh
 python -m venv .venv
 source .venv/bin/activate  # On Linux/Mac
 venv\Scripts\activate     # On Windows
+```
 
 3. Install Dependencies
+```sh
 pip install -r requirements.txt
+```
 
 4. ~~Configure the Database~~
 - Install PostgreSQL and create a database:
+```sh
 createdb users_db
+```
 - Update settings.py with your database credentials:
+```js
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -44,6 +53,7 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+```
 
 5. Apply Migrations
 Run the migrations to create the database schema:
