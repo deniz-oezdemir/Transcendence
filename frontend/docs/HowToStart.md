@@ -63,13 +63,27 @@ This document serves as a step-by-step guide to set up the project locally, unde
    docker build -t image-name .
    ```
 
-2. Run the Docker container:
+2. Run the Docker container always interactive mode because the server is in watch mode, that avoid automatic exits:
 
    ```bash
-   docker run -p 3000:3000 image-name
+   docker run -it -p 3000:3000 image-name
    ```
 
-3. Open your browser and navigate to:
+3. You can run the Docker container also in detach mode to let the terminal free:
+
+   ```bash
+   docker run -it -d -p 3000:3000 image-name
+   ```
+
+4. You can run the Docker container with a name and use it to stop or start the same container, and re use the same container always:
+
+   ```bash
+   docker run -it -d -p 3000:3000 --name container-name image-name
+   docker stop container-name
+   docker start container-name
+   ```
+
+5. Open your browser and navigate to:
 
    ```
    http://localhost:3000
