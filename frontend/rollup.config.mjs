@@ -30,19 +30,19 @@ export default {
         },
         {
           find: '@router',
-          replacement: path.resolve(__dirname, 'src/utils/router'),
+          replacement: path.resolve(__dirname, 'src/core/router'),
         },
         {
-          find: '@componentSystem',
-          replacement: path.resolve(__dirname, 'src/utils/componentSystem'),
+          find: '@component',
+          replacement: path.resolve(__dirname, 'src/core/componentSystem'),
         },
         {
           find: '@reactivity',
-          replacement: path.resolve(__dirname, 'src/utils/reactivity'),
+          replacement: path.resolve(__dirname, 'src/core/reactivitySystem'),
         },
         {
           find: '@themeManager',
-          replacement: path.resolve(__dirname, 'src/utils/themeManager'),
+          replacement: path.resolve(__dirname, 'src/core/themeManager'),
         },
         {
           find: '@styles',

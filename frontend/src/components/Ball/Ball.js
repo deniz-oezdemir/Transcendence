@@ -1,4 +1,4 @@
-import { createComponent } from '@componentSystem';
+import { createComponent } from '@component';
 import { createEffect } from '@reactivity';
 import styles from './Ball.module.css';
 

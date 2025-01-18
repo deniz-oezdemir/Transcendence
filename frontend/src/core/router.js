@@ -1,4 +1,4 @@
-import { createComponent } from '@componentSystem';
+import { createComponent } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 
 export class Router {

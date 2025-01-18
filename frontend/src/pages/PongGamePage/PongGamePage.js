@@ -1,14 +1,10 @@
 import { createSignal } from '@reactivity';
-import {
-  createComponent,
-  onCleanup,
-  createCleanupContext,
-} from '@componentSystem';
+import { createComponent, onCleanup, createCleanupContext } from '@component';
 
-import Score from '../components/Score';
-import Paddle from '../components/Paddle';
-import Ball from '../components/Ball';
-import GameControls from '../components/GameControls';
+import Score from '@/components/Score/Score';
+import Paddle from '@/components/Paddle/Paddle';
+import Ball from '@/components/Ball/Ball';
+import GameControls from '@/components/GameControls/GameControls';
 
 import styles from './PongGamePage.module.css';
 

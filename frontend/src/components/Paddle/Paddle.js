@@ -1,5 +1,5 @@
 import { createEffect } from '@reactivity';
-import { createComponent } from '@componentSystem';
+import { createComponent } from '@component';
 import styles from './Paddle.module.css';
 
 export default function Paddle({ position, side }) {

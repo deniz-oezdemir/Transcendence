@@ -1,14 +1,14 @@
 import { Router } from '@router';
-import { createComponent, Link, NestedLayoutContent } from '@componentSystem';
+import { createComponent, Link, NestedLayoutContent } from '@component';
 import { applyInitialTheme, addSystemThemeListener } from '@themeManager';
 
 import AppLayout from './Layout';
-import HomePage from './pages/HomePage';
-import ProfilePage from './pages/ProfilePage';
-import LoginPage from './pages/LoginPage';
-import StatsPage from './pages/StatsPage';
-import PongGamePage from './pages/PongGamePage';
-import ErrorPage from './pages/ErrorPage';
+import HomePage from './pages/HomePage/HomePage';
+import ProfilePage from './pages/ProfilePage/ProfilePage';
+import LoginPage from './pages/LoginPage/LoginPage';
+import StatsPage from './pages/StatsPage/StatsPage';
+import PongGamePage from './pages/PongGamePage/PongGamePage';
+import ErrorPage from './pages/ErrorPage/ErrorPage';
 
 import '@popperjs/core';
 import 'bootstrap';

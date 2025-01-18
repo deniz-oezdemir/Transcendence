@@ -1,4 +1,4 @@
-import { createComponent } from '@componentSystem';
+import { createComponent } from '@component';
 
 import styles from './GameControls.module.css';
 

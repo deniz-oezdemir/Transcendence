@@ -1,8 +1,7 @@
-import { createComponent, Link, createCleanupContext } from '@componentSystem';
-import { createSignal, createEffect } from '@reactivity';
+import { createComponent, Link, createCleanupContext } from '@component';
 import styles from './HomePage.module.css';
 
-import CounterExample from '../components/CounterExample';
+import CounterExample from '@/components/CounterExample/CounterExample';
 
 export default function HomePage() {
   const cleanup = createCleanupContext();

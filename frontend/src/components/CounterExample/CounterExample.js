@@ -1,4 +1,4 @@
-import { createComponent, onCleanup } from '@componentSystem';
+import { createComponent, onCleanup } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './CounterExample.module.css';
 

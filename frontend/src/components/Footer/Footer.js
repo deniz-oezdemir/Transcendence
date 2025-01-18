@@ -1,4 +1,4 @@
-import { createComponent } from '@componentSystem';
+import { createComponent } from '@component';
 import styles from './Footer.module.css';
 
 export default function Footer() {

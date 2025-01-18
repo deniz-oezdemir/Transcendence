@@ -1,137 +1,106 @@
-# Router Class
+# Documentation for `router.js`
 
-The `Router` class is a lightweight and versatile client-side routing system designed for single-page applications (SPAs). It provides features such as dynamic route matching, middleware support, and centralized error handling.
-
-## Constructor
-
-### `Router(options)`
-
-#### Parameters
-
-- **`routes`**: `Array` (required)
-
-  - An array of route objects. Each route object must have the following structure:
-
-    ```javascript
-    {
-      path: '/example/:id', // Route path with optional parameters
-      component: (context) => HTMLElement // Function that returns an HTML element
-    }
-    ```
-
-- **`rootElement`**: `HTMLElement` (required)
-
-  - The root DOM element where the matched component will be rendered.
-
-- **`middlewares`**: `Array` (optional, default: `[]`)
-
-  - An array of middleware functions to execute before navigating to a new route.
-  - Each middleware function receives the following arguments:
-    - `path`: `string` - The target path.
-    - `context`: `object` - Additional context (e.g., `currentPath`, `nextPath`).
-  - Middleware functions should return `false` to block navigation or any other value to allow it.
-
-- **`errorComponent`**: `Function` (optional, default: `null`)
-  - A function that renders a custom error component when an error occurs.
-  - The function receives the following arguments:
-    - `code`: `number` - The error code (e.g., `404`, `500`).
-    - `message`: `string` - The error message.
-    - `stack`: `string` (optional) - The stack trace (if available).
-
-### Example
-
-```javascript
-const routes = [
-  {
-    path: '/',
-    component: () =>
-      document
-        .createElement('div')
-        .appendChild(document.createTextNode('Home Page')),
-  },
-  {
-    path: '/about',
-    component: () =>
-      document
-        .createElement('div')
-        .appendChild(document.createTextNode('About Page')),
-  },
-];
-
-const router = new Router({
-  routes,
-  rootElement: document.getElementById('app'),
-  errorComponent: ({ code, message }) => {
-    const errorDiv = document.createElement('div');
-    errorDiv.innerHTML = `<h1>Error ${code}</h1><p>${message}</p>`;
-    return errorDiv;
-  },
-});
-```
+This file implements a lightweight client-side router inspired by modern frameworks. It provides a robust mechanism for managing routes, rendering layouts and components, handling middleware, and processing navigation events. Below is an in-depth explanation of its functionality.
 
 ---
 
-## Methods
+## Core Class: `Router`
+
+### Overview
+
+The `Router` class is responsible for:
+
+- Matching URLs to routes.
+- Rendering layouts and components.
+- Executing middleware for navigation.
+- Handling errors gracefully.
+
+### Constructor
+
+#### `new Router(options)`
+
+Initializes the router.
+
+- **Parameters**:
+  - `routes` (array): An array of route definitions.
+    - Each route should include:
+      - `path` (string): The URL path.
+      - `component` (function): The component to render for this route.
+      - `layoutComponent` (optional function): Nested layout for the route.
+  - `rootElement` (HTMLElement): The root container for rendering components.
+  - `layoutComponent` (optional function): The general layout component for all routes.
+  - `middlewares` (optional array): Functions to execute before navigating to a route.
+  - `errorComponent` (optional function): A component to render in case of errors.
+
+---
+
+## Router Methods
 
 ### `matchRoute(path)`
 
-Matches the given `path` against the defined routes and extracts route parameters.
+Matches the given path to a route and extracts parameters.
 
-#### Parameters
+- **Parameters**:
 
-- **`path`**: `string` - The URL path to match.
+  - `path` (string): The URL path to match.
 
-#### Returns
-
-- `object | null`
-
-  - If matched:
-
-    ```javascript
-    {
-      route: { path: '/example/:id', component: Function },
-      params: { id: 'value' },
-    }
-    ```
-
-  - If no match, returns `null`.
+- **Returns**:
+  - An object containing the `route` and `params`, or `null` if no match is found.
 
 ---
 
 ### `render()`
 
-Renders the current route based on the `window.location.pathname`.
+Renders the current route based on the URL path.
 
-- If a matching route is found, its component is rendered.
-- If no match is found, a 404 error is thrown and handled by `renderError()`.
+- **Process**:
+  1. Matches the path to a route using `matchRoute`.
+  2. Executes middleware for navigation.
+  3. Updates layouts, nested layouts, and route components.
+  4. Handles 404 errors if no route is matched.
 
 ---
 
 ### `renderError(error)`
 
-Renders an error component when an error occurs during rendering.
+Renders the error component for a given error.
 
-#### Parameters
+- **Parameters**:
 
-- **`error`**: `object`
-  - `code`: `number` (default: `500`) - The error code.
-  - `message`: `string` (default: `'An unexpected error occurred.'`) - The error message.
-  - `stack`: `string` (optional) - The stack trace (for debugging).
+  - `error` (object): Contains `code`, `message`, and optional `stack`.
+
+- **Default Behavior**:
+  If no custom `errorComponent` is provided, it uses a fallback component.
 
 ---
 
-### `createFallbackErrorComponent({ code, message })`
+### `createFallbackErrorComponent(context)`
 
-Creates a default error component if no `errorComponent` is provided.
+Creates a default error component for fallback cases.
 
-#### Parameters
+- **Parameters**:
+  - `context` (object): Contains `code` (number) and `message` (string).
 
-- **`code`**: `number` - The error code.
-- **`message`**: `string` - The error message.
+---
 
-#### Returns
+### `navigate(path, options)`
 
-- `HTMLElement` - The fallback error component.
+Navigates to a new route programmatically.
+
+- **Parameters**:
+
+  - `path` (string): The target URL path.
+  - `options` (object): Contains:
+    - `replace` (boolean): Whether to replace the current history state.
+
+- **Middleware Execution**:
+  Executes all middleware before navigation. If any middleware returns `false`, navigation is canceled.
+
+---
+
+### `handlePopState()`
+
+Handles browser back/forward navigation by updating the current path.
 
 ---
 
@@ -139,79 +108,121 @@ Creates a default error component if no `errorComponent` is provided.
 
 Parses a query string into an object.
 
-#### Parameters
+- **Parameters**:
 
-- **`queryString`**: `string` - The query string from the URL.
+  - `queryString` (string): The query string part of a URL.
 
-#### Returns
-
-- `object` - Key-value pairs of the parsed query string.
-
-#### Example
-
-```javascript
-const query = router.parseQueryString('?id=123&name=John');
-console.log(query); // { id: '123', name: 'John' }
-```
+- **Returns**:
+  - An object where keys are parameter names and values are their corresponding values.
 
 ---
 
 ### `executeMiddlewares(path, context)`
 
-Executes all middleware functions in sequence.
+Executes middleware functions before navigating to a route.
 
-#### Parameters
+- **Parameters**:
 
-- **`path`**: `string` - The target path.
-- **`context`**: `object` - Additional context for middlewares.
+  - `path` (string): The target URL path.
+  - `context` (object): Contains information about the current and next paths.
 
-#### Returns
-
-- `Promise<boolean>` - Resolves to `false` if any middleware blocks the navigation, otherwise `true`.
+- **Returns**:
+  - A boolean indicating whether navigation should proceed.
 
 ---
 
-### `navigate(path, options)`
+## Example Usage
 
-Navigates to a new route.
-
-#### Parameters
-
-- **`path`**: `string` - The target path.
-- **`options`**: `object` (optional)
-  - `replace`: `boolean` (default: `false`) - If `true`, replaces the current history entry instead of adding a new one.
-
-#### Example
+### Defining Routes
 
 ```javascript
-router.navigate('/about');
-router.navigate('/home', { replace: true });
+const routes = [
+  {
+    path: '/',
+    component: (context) => createComponent('div', { content: 'Home Page' }),
+  },
+  {
+    path: '/about',
+    component: (context) => createComponent('div', { content: 'About Us' }),
+  },
+  {
+    path: '/user/:id',
+    component: (context) =>
+      createComponent('div', { content: `User ID: ${context.params.id}` }),
+  },
+];
 ```
 
 ---
 
-### `handlePopState()`
+### Initializing the Router
 
-Handles browser back/forward navigation by re-rendering the current route.
+```javascript
+const router = new Router({
+  routes,
+  rootElement: document.getElementById('app'),
+  layoutComponent: (context) => createComponent('div', { className: 'layout' }),
+  errorComponent: ({ code, message }) =>
+    createComponent('div', { content: `<h1>${code}</h1><p>${message}</p>` }),
+});
+```
+
+---
+
+### Navigating Programmatically
+
+```javascript
+router.navigate('/about');
+```
+
+---
+
+### Adding Middleware
+
+```javascript
+const authMiddleware = async (path, context) => {
+  if (path === '/protected' && !context.user.isAuthenticated) {
+    alert('You must log in to access this page.');
+    return false;
+  }
+  return true;
+};
+
+const routerWithMiddleware = new Router({
+  routes,
+  rootElement: document.getElementById('app'),
+  middlewares: [authMiddleware],
+});
+```
+
+---
+
+## Lifecycle Management
+
+### General Layout
+
+The `layoutComponent` is rendered once and reused across route changes, reducing re-rendering overhead.
+
+### Nested Layouts
+
+Each route can define a `layoutComponent` for nested layouts, enabling modular layout composition.
+
+### Cleanup
+
+The router ensures proper cleanup of previous components, layouts, and event listeners to prevent memory leaks.
 
 ---
 
 ## Error Handling
 
-Errors during rendering or navigation are automatically caught and passed to `renderError()`. Use a custom `errorComponent` to customize error pages based on error codes or messages.
+Custom error components or the default fallback component can be used to display user-friendly error messages during navigation failures or 404s.
 
-#### Example
+---
 
-```javascript
-const ErrorComponent = ({ code, message }) => {
-  const div = document.createElement('div');
-  div.innerHTML = `<h1>Error ${code}</h1><p>${message}</p>`;
-  return div;
-};
+## Features
 
-const router = new Router({
-  routes,
-  rootElement: document.getElementById('app'),
-  errorComponent: ErrorComponent,
-});
-```
+- **Dynamic Route Matching**: Supports parameterized routes like `/user/:id`.
+- **Middleware Support**: Allows pre-navigation checks and transformations.
+- **Reactive Rendering**: Automatically updates UI on navigation.
+- **Error Handling**: Graceful fallback for unexpected errors or unmatched routes.
+- **Modular Layouts**: General and nested layouts for flexible UI composition.

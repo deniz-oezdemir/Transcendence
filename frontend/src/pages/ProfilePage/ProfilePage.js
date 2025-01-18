@@ -1,4 +1,4 @@
-import { createComponent } from '@componentSystem';
+import { createComponent } from '@component';
 
 export default function ProfilePage({ params, query }) {
   return createComponent('div', {

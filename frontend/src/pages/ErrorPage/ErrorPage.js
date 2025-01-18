@@ -1,4 +1,4 @@
-import { createComponent } from '@componentSystem';
+import { createComponent } from '@component';
 
 export default function errorComponent({ code, message, stack }) {
   return createComponent('div', {

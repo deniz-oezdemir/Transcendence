@@ -1,4 +1,4 @@
-import { createComponent, Link } from '@componentSystem';
+import { createComponent, Link } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import { setTheme, getPreferredTheme } from '@themeManager';
 
