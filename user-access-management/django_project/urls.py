@@ -16,12 +16,13 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings #for django to serve media files during development
 from django.conf.urls.static import static #for django to serve media files during development
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", include("accounts.urls")),
 ]
 
 if settings.DEBUG:  # Only in development

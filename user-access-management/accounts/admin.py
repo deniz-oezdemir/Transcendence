@@ -10,6 +10,7 @@ class CustomUserAdmin(UserAdmin):
     list_display = [
     "username",
     "email",
+    "avatar_url",
     "date_joined",
     "status",
     "last_login",

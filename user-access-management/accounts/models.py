@@ -7,6 +7,8 @@ from django.db import models
 class CustomUser(AbstractUser):
     avatar_url = models.ImageField(
         upload_to='avatars/', #this gets added to the MEDIA_ROOT path in settings
+        null=True,
+        blank=True,
         default='avatars/default.png'
     )
     status = models.CharField(
@@ -22,6 +24,8 @@ class CustomUser(AbstractUser):
         blank=True,#for user input validation vs null=True which is for the db (not necessary here though)
         symmetrical=True #indicates mutual relationship (if A is friend of B, then B is friend of A)
     )
+
+    #add Meta class to specify table name, permissions, etc.
 
     def __str__(self):
         return self.username
