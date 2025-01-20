@@ -59,6 +59,13 @@ class GameState(models.Model):
             super().save(*args, **kwargs)
             logger.info(f"Saved game state to database with id {self.id}")
 
+    def delete(self, *args, **kwargs):
+        if settings.USE_REDIS:
+            cache_key = f"game_state_{self.id}"
+            cache.delete(cache_key)
+            logger.info(f"Deleted game state from cache with key {cache_key}")
+        super().delete(*args, **kwargs)
+
     @classmethod
     def from_cache(cls, game_id):
         cache_key = f"game_state_{game_id}"

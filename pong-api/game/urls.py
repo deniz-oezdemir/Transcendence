@@ -7,5 +7,5 @@ urlpatterns = [
     path(
         "get_game_state/<int:id>/", views.GetGameState.as_view(), name="get_game_state"
     ),
+    path("delete_game/<int:id>/", views.DeleteGame.as_view(), name="delete_game"),
 ]
-

@@ -1,4 +1,3 @@
-````markdown
 # Documentation for `componentSystem.js`
 
 This file provides a minimalistic framework for building and managing UI components in a reactive manner. It offers tools for creating DOM elements, managing attributes, event listeners, and lifecycle cleanups, inspired by modern SPA frameworks. Below is an explanation of the key concepts and functions.
@@ -37,8 +36,6 @@ Creates a custom DOM element with specified attributes, events, content, and chi
     events: { click: () => alert('Button clicked!') },
   });
   ```
-````
-
 ---
 
 ### `Link(options)`
