@@ -1,6 +1,6 @@
 import { createComponent } from '@component';
 
-export default function errorComponent({ code, message, stack }) {
+export default function ErrorPage({ code, message, stack }) {
   return createComponent('div', {
     className: 'error-page',
     content: `

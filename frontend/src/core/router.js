@@ -171,9 +171,9 @@ export class Router {
 
     const newComponent = this.errorComponent(errorContext);
     if (this.contentContainer) {
-      this.contentContainer.replaceChildren(newComponent);
+      this.contentContainer.replaceChildren(newComponent.element);
     } else {
-      this.rootElement.replaceChildren(newComponent);
+      this.rootElement.replaceChildren(newComponent.element);
     }
   }
 
