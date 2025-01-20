@@ -125,24 +125,19 @@ class PongGameEngine:
         )
 
     def _check_paddle_collision(self, player_id, player_name):
-        # Log each variable separately before the if/elif conditions
         logger.debug(
-            "Checking paddle collision for player_id=%s, player_name=%s",
+            "Checking paddle collision for player_id=%s, player_name=%s, \
+            player_1_id=%s, player_2_id=%s, player_1_position=%s, \
+            player_2_position=%s",
             player_id,
             player_name,
-        )
-        logger.debug(
-            "player_1_id=%s, player_2_id=%s",
             self.game_state.player_1_id,
             self.game_state.player_2_id,
-        )
-        logger.debug(
-            "player_1_position=%s, player_2_position=%s",
             self.game_state.player_1_position,
             self.game_state.player_2_position,
         )
 
-        # Check if the ball collides with the player's paddle
+        # Check if player ID exists and find paddle top position
         if player_id == self.game_state.player_1_id:
             paddle_top = self.game_state.player_1_position
         elif player_id == self.game_state.player_2_id:
@@ -166,6 +161,30 @@ class PongGameEngine:
             "Paddle collision result for player_id=%s: %s", player_id, collision
         )
         return collision
+
+    def _handle_paddle_collision(self, player_id, player_name):
+        logger.debug(
+            "Handling paddle collision for player_id=%s, player_name=%s, \
+            player_1_id=%s, player_2_id=%s, player_1_position=%s, \
+            player_2_position=%s",
+            player_id,
+            player_name,
+            self.game_state.player_1_id,
+            self.game_state.player_2_id,
+            self.game_state.player_1_position,
+            self.game_state.player_2_position,
+        )
+
+        paddle_bottom = paddle_top + self.paddle_height
+        paddle_middle = (paddle_top + paddle_bottom) / 2
+        ball_y = self.game_state.ball_y_position
+        self.ball_x_velocity *= -1 # reverse ball's X direction
+
+        # find new ball's Y direction in a range of 0.5 to -0.5
+        if ball_y < paddle_middle:
+            # paddle hit in top half, should bounce towards top
+        elif:
+            # paddle hit in lower half, should bounce towards bottom
 
     def _score_point(self, player_id, player_name):
         # Increment the player's score
