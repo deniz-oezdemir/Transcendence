@@ -16,7 +16,10 @@ do
 done
 echo "Redis is up and running!"
 
-# Apply database migrations
+# Make migrations and migrate
+echo "Creating database migrations..."
+python manage.py makemigrations waitingRoom
+
 echo "Applying database migrations..."
 python manage.py migrate
 

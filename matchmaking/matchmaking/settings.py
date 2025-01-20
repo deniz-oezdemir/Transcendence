@@ -33,16 +33,26 @@ ALLOWED_HOSTS = []
 
 # TODO: comment out not used APPS
 INSTALLED_APPS = [
-    'channels',
-    'corsheaders',
-    'waitingRoom.apps.WaitingroomConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 3rd party
+    'channels',
+    'corsheaders',
+    'rest_framework',
+    # Local
+    'waitingRoom.apps.WaitingroomConfig',
 ]
+
+# TODO: change permissions
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
+}
 
 ASGI_APPLICATION = "matchmaking.asgi.application"
 

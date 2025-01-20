@@ -10,7 +10,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 		await self.channel_layer.group_add("waiting_room", self.channel_name)
 		await self.accept()
 		# Delete all matches for testing purposes
-		await self.delete_all_matches()
+		#await self.delete_all_matches()
 
 	# Called when WebSocket disconnects. Removes connection from waiting_room group
 	async def disconnect(self, close_code):
