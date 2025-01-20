@@ -21,4 +21,3 @@ class GameStateManager(models.Manager):
             except (IndexError, ValueError):
                 continue
         return ids
-
