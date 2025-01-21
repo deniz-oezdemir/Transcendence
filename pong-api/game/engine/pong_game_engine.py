@@ -21,8 +21,8 @@ class PongGameEngine:
             return
 
         # Update the positions of the ball
-        self.game_state.ball_x_position += self.game_state.ball_x_velocity
-        self.game_state.ball_y_position += self.game_state.ball_y_velocity
+        self.game_state.ball_x_position += self.game_state.ball_x_direction
+        self.game_state.ball_y_position += self.game_state.ball_y_direction
         logger.debug(
             "Ball position updated: x=%s, y=%s",
             self.game_state.ball_x_position,
@@ -31,21 +31,21 @@ class PongGameEngine:
 
         # Check for collisions with the top and bottom walls
         if self.game_state.ball_y_position <= 0:
-            self.game_state.ball_y_velocity *= -1
-            self.game_state.ball_y_position += self.game_state.ball_y_velocity
+            self.game_state.ball_y_direction *= -1
+            self.game_state.ball_y_position += self.game_state.ball_y_direction
             logger.debug(
-                f"Ball collided with top wall and bounced back. New velocity: {self.game_state.ball_y_velocity}"
+                f"Ball collided with top wall and bounced back. New direction: {self.game_state.ball_y_direction}"
             )
         elif self.game_state.ball_y_position >= self.game_height:
-            self.game_state.ball_y_velocity *= -1
-            self.game_state.ball_y_position += self.game_state.ball_y_velocity
+            self.game_state.ball_y_direction *= -1
+            self.game_state.ball_y_position += self.game_state.ball_y_direction
             logger.debug(
-                f"Ball collided with bottom wall and bounced back. New velocity y: {self.game_state.ball_y_velocity}; x: {self.game_state.ball_x_velocity}"
+                f"Ball collided with bottom wall and bounced back. New direction y: {self.game_state.ball_y_direction}; x: {self.game_state.ball_x_direction}"
             )
 
-        # Log the ball's position and velocity after handling collisions
+        # Log the ball's position and direction after handling collisions
         logger.debug(
-            f"Ball position y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}, Ball velocity y: {self.game_state.ball_y_velocity}; x: {self.game_state.ball_x_velocity}"
+            f"Ball position y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}, Ball direction y: {self.game_state.ball_y_direction}; x: {self.game_state.ball_x_direction}"
         )
 
         # Check for collisions with the paddles
@@ -59,16 +59,16 @@ class PongGameEngine:
             if self._check_paddle_collision(
                 self.game_state.player_1_id, self.game_state.player_1_name
             ):
-                self.game_state.ball_x_velocity *= -1
-                self.game_state.ball_x_position += self.game_state.ball_x_velocity
+                self.game_state.ball_x_direction *= -1
+                self.game_state.ball_x_position += self.game_state.ball_x_direction
                 logger.info(
                     f"New ball position after colliding with player_1 y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}"
                 )
             if self._check_paddle_collision(
                 self.game_state.player_2_id, self.game_state.player_2_name
             ):
-                self.game_state.ball_x_velocity *= -1
-                self.game_state.ball_x_position += self.game_state.ball_x_velocity
+                self.game_state.ball_x_direction *= -1
+                self.game_state.ball_x_position += self.game_state.ball_x_direction
                 logger.info(
                     f"New ball position after colliding with player_2 y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}"
                 )
@@ -188,13 +188,13 @@ class PongGameEngine:
         paddle_bottom = paddle_top + self.paddle_height
         paddle_middle = (paddle_top + paddle_bottom) / 2
         ball_y = self.game_state.ball_y_position
-        self.ball_x_velocity *= -1  # reverse ball's X direction
+        self.ball_x_direction *= -1  # reverse ball's X direction
 
         # find new ball's Y direction in a range of 0.5 to -0.5
         hit_distance_to_center = ball_y - paddle_middle
         normalized_hit_distance = hit_distance_to_center / (self.paddle_height / 2)
         normalized_hit_distance = max(-1, min(1, normalized_hit_distance))
-        self.ball_y_velocity = normalized_hit_distance
+        self.ball_y_direction = normalized_hit_distance
 
         if hit_distance_to_center > (paddle_bottom - paddle_middle):
             logger.info(
@@ -221,11 +221,11 @@ class PongGameEngine:
             self.game_state.player_2_score,
         )
 
-        # Reset the ball position and velocity
+        # Reset the ball position and direction
         self.game_state.ball_x_position = self.game_width // 2
         self.game_state.ball_y_position = self.game_height // 2
-        self.game_state.ball_x_velocity *= -1
-        self.game_state.ball_y_velocity *= -1
+        self.game_state.ball_x_direction *= -1
+        self.game_state.ball_y_direction *= -1
 
         # Check if the game has ended
         if self.game_state.player_1_score >= self.game_state.max_score:
