@@ -1,4 +1,5 @@
 from ..models import GameState
+import math
 import logging
 
 logger = logging.getLogger("pongApi")
@@ -125,24 +126,19 @@ class PongGameEngine:
         )
 
     def _check_paddle_collision(self, player_id, player_name):
-        # Log each variable separately before the if/elif conditions
         logger.debug(
-            "Checking paddle collision for player_id=%s, player_name=%s",
+            "Checking paddle collision for player_id=%s, player_name=%s, \
+            player_1_id=%s, player_2_id=%s, player_1_position=%s, \
+            player_2_position=%s",
             player_id,
             player_name,
-        )
-        logger.debug(
-            "player_1_id=%s, player_2_id=%s",
             self.game_state.player_1_id,
             self.game_state.player_2_id,
-        )
-        logger.debug(
-            "player_1_position=%s, player_2_position=%s",
             self.game_state.player_1_position,
             self.game_state.player_2_position,
         )
 
-        # Check if the ball collides with the player's paddle
+        # Check if player ID exists and find paddle top position
         if player_id == self.game_state.player_1_id:
             paddle_top = self.game_state.player_1_position
         elif player_id == self.game_state.player_2_id:
@@ -166,6 +162,47 @@ class PongGameEngine:
             "Paddle collision result for player_id=%s: %s", player_id, collision
         )
         return collision
+
+    def _handle_paddle_collision(self, player_id, player_name):
+        logger.debug(
+            "Handling paddle collision for player_id=%s, player_name=%s, \
+            player_1_id=%s, player_2_id=%s, player_1_position=%s, \
+            player_2_position=%s",
+            player_id,
+            player_name,
+            self.game_state.player_1_id,
+            self.game_state.player_2_id,
+            self.game_state.player_1_position,
+            self.game_state.player_2_position,
+        )
+
+        # Check if player ID exists and find paddle top position
+        if player_id == self.game_state.player_1_id:
+            paddle_top = self.game_state.player_1_position
+        elif player_id == self.game_state.player_2_id:
+            paddle_top = self.game_state.player_2_position
+        else:
+            logger.warning("Invalid player_id for paddle collision: %s", player_id)
+            return False
+
+        paddle_bottom = paddle_top + self.paddle_height
+        paddle_middle = (paddle_top + paddle_bottom) / 2
+        ball_y = self.game_state.ball_y_position
+        self.ball_x_velocity *= -1  # reverse ball's X direction
+
+        # find new ball's Y direction in a range of 0.5 to -0.5
+        hit_distance_to_center = ball_y - paddle_middle
+        normalized_hit_distance = hit_distance_to_center / (self.paddle_height / 2)
+        normalized_hit_distance = max(-1, min(1, normalized_hit_distance))
+        self.ball_y_velocity = normalized_hit_distance
+
+        if hit_distance_to_center > (paddle_bottom - paddle_middle):
+            logger.info(
+                "ERROR: hit distance is larger than distance from \
+            paddle center to paddle bottom. Setting hit_distance_to_center \
+            to paddle_bottom - paddle_middle. Needs review"
+            )
+            hit_distance_to_center = paddle_bottom - paddle_middle
 
     def _score_point(self, player_id, player_name):
         # Increment the player's score
