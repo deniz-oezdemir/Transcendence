@@ -7,11 +7,10 @@ logger = logging.getLogger("pongApi")
 class PongGameEngine:
     def __init__(self, game_state: GameState):
         self.game_state = game_state
-        self.game_height = 1200
-        self.game_width = 1600
-        self.paddle_height = 100
-        self.paddle_width = 10
-        self.paddle_offset = 10
+        self.game_height = game_state.game_height
+        self.game_width = game_state.game_width
+        self.paddle_height = game_state.paddle_height
+        self.paddle_width = game_state.paddle_width
         logger.debug("PongGameEngine initialized with game state: %s", game_state)
 
     def update_game_state(self):
