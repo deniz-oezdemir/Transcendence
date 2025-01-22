@@ -61,7 +61,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(os.getenv('REDIS_HOST', 'redis'), 6379)],
+            "hosts": [(os.getenv('REDIS_HOST', 'matchmaking-redis'), 6379)],
         },
     },
 }
@@ -107,7 +107,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', 'matchmaking_db'),
         'USER': os.getenv('POSTGRES_USER', 'deniz'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'your_password'),
-        'HOST': os.getenv('POSTGRES_HOST', 'postgres'),
+        'HOST': os.getenv('POSTGRES_HOST', 'matchmaking-postgres'),
         'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }

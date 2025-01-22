@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Wait for PostgreSQL
-until nc -z postgres 5432
+until nc -z matchmaking-postgres 5432
 do
   echo "Waiting for PostgreSQL..."
   sleep 1
@@ -9,7 +9,7 @@ done
 echo "PostgreSQL is up and running!"
 
 # Wait for Redis
-until nc -z redis 6379
+until nc -z matchmaking-redis 6379
 do
   echo "Waiting for Redis..."
   sleep 1

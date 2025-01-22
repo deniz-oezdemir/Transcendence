@@ -17,9 +17,9 @@ Info: match and game are used synonymously.
 
 
 ## Goals
-First version: support only matches - in progress
+First version: support only matches - work in progress
 
-Second version: support also tournmanets - to do
+Second version: support also tournmanets - TODO
 
 ## Subject Requirements
 
@@ -77,9 +77,9 @@ Second version: support also tournmanets - to do
 
 4. Switch from Sqlite to Postgres. - done
 
-5. Add REST API for Game Engine Service.
-- to create game: use game engine's rest api - done by game engine service
-- to consume game result: expose a rest api for post requests - TODO!
+5. As Game Engine I want to send the match result to Matchmaking.
+- to create game: use game engine's rest api (done by game engine service) write logic to create game when active - TODO
+- to consume game result: expose a rest api for post requests - done
 
 ## Testing
 

@@ -1,12 +1,31 @@
-version: '3'
 services:
-  backend:
-    build:
-      context: ./pong-api
-    ports:
-      - "8000:8000"
-  frontend:
-    build:
-      context: ./pong-frontend
-    ports:
-      - "8080:8080"
+  # ...other services...
+
+  # Matchmaking service
+  matchmaking:
+    extends:
+      file: ./matchmaking/docker/docker-compose.yml
+      service: matchmaking
+    networks:
+      - transcendence
+
+  matchmaking-postgres:
+    extends:
+      file: ./matchmaking/docker/docker-compose.yml
+      service: matchmaking-postgres
+    networks:
+      - transcendence
+
+  matchmaking-redis:
+    extends:
+      file: ./matchmaking/docker/docker-compose.yml
+      service: matchmaking-redis
+    networks:
+      - transcendence
+
+networks:
+  transcendence:
+    driver: bridge
+
+volumes:
+  matchmaking_postgres_data:

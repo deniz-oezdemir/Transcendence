@@ -1,5 +1,5 @@
 services:
-  postgres:
+  matchmaking-postgres:
     image: postgres:16.6
     environment:
       POSTGRES_DB: matchmaking_db
@@ -8,14 +8,14 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - matchmaking_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U deniz -d matchmaking_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  redis:
+  matchmaking-redis:
     image: redis:latest
     ports:
       - "6379:6379"
@@ -32,16 +32,16 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
+      matchmaking-postgres:
         condition: service_healthy
-      redis:
+      matchmaking-redis:
         condition: service_healthy
     environment:
       - DJANGO_SETTINGS_MODULE=matchmaking.settings
-      - DATABASE_URL=postgres://deniz:your_password@postgres:5432/matchmaking_db
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgres://deniz:your_password@matchmaking-postgres:5432/matchmaking_db
+      - REDIS_URL=redis://matchmaking-redis:6379/0
     volumes:
       - ../:/app
 
 volumes:
-  postgres_data:
+  matchmaking_postgres_data:
