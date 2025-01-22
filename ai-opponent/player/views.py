@@ -1,6 +1,4 @@
-from django.shortcuts import render
 from .models import AIPlayer
-from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics, serializers
@@ -30,8 +28,8 @@ class CreateAIPlayer(generics.CreateAPIView):
         # Connect to the WebSocket server
         try:
             ws_client = WebSocketClient(
-                f"ws://localhost:8001/ws/game/{target_game_id}/"
-            )
+                f"ws://localhost:8001/ws/game/{target_game_id}/", ai_player
+            )  # TODO: chech the uri
             ws_client.start()
             logger.info(
                 f"Successfully connected to WebSocket for game {target_game_id}"
