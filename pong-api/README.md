@@ -1,5 +1,26 @@
 # Pong Game API
 
+## Index
+- [Getting Started](#getting-started)
+  - [Install and Activate Python Environment](#install-and-activate-python-environment)
+  - [Run the Servers](#run-the-servers)
+  - [Running Tests](#running-tests)
+- [API Endpoints](#api-endpoints)
+  - [Create Game](#create-game)
+  - [Get Game State](#get-game-state)
+  - [Delete Game](#delete-game)
+- [WebSocket Communication](#websocket-communication)
+  - [Connect to Game](#connect-to-game)
+  - [Move Player](#move-player)
+  - [Receive Game Updates](#receive-game-updates)
+- [Game Board Description](#game-board-description)
+- [Example Usage](#example-usage)
+  - [Creating a Game](#creating-a-game)
+  - [Toggle Game On/Off](#toggle-game-onoff)
+  - [Retrieving Game State](#retrieving-game-state)
+  - [Deleting a Game](#deleting-a-game)
+  - [WebSocket Connection](#websocket-connection)
+
 ## Getting Started
 
 ### Install and Activate Python Environment
@@ -84,7 +105,11 @@
     "ball_x_position": 400,
     "ball_y_position": 200,
     "ball_x_direction": 10,
-    "ball_y_direction": 10
+    "ball_y_direction": 10,
+    "game_height": 1200,
+    "game_width": 1600,
+    "paddle_height": 100,
+    "paddle_width": 20
   }
   ```
 
@@ -117,7 +142,11 @@
     "ball_x_position": 400,
     "ball_y_position": 200,
     "ball_x_direction": 30,
-        "ball_y_direction": 30
+    "ball_y_direction": 30,
+    "game_height": 1200,
+    "game_width": 1600,
+    "paddle_height": 100,
+    "paddle_width": 20
   }
   ```
 
@@ -168,10 +197,33 @@
           "player_direction": -1,
           "player_score": 0
         }
-      ]
+      ],
+      "game_height": 1200,
+      "game_width": 1600,
+      "paddle_height": 100,
+      "paddle_width": 20
     }
   }
   ```
+
+## Game Board Description
+
+The game board is a rectangular area where the game takes place. The coordinate system used for the game board is as follows:
+- The origin (0, 0) is located at the top-left corner of the game board.
+- The x-axis increases to the right.
+- The y-axis increases downwards.
+
+Here is a simple diagram for reference:
+
+```
+(0,0) ----------------------> x
+  |
+  |
+  |
+  |
+  v
+  y
+```
 
 ## Example Usage
 
