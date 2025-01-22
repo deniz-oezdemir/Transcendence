@@ -13,7 +13,7 @@ export default function PongGamePage() {
   // Signals
   const [positionLeft, setPositionLeft] = createSignal(160);
   const [positionRight, setPositionRight] = createSignal(160);
-  const [ballPosition, setBallPosition] = createSignal({ top: 192, left: 292 });
+  const [ballPosition, setBallPosition] = createSignal({ top: 190, left: 290 });
   const [ballMoving, setBallMoving] = createSignal(false);
   const [ballDirection, setBallDirection] = createSignal({ x: 2, y: 2 });
   const [scoreLeft, setScoreLeft] = createSignal(0);

@@ -120,13 +120,18 @@ export default function OnlinePongGamePage() {
   const [scorePlayer2, setScorePlayer2] = createSignal(0);
   const [maxScore, setMaxScore] = createSignal(0);
   const [isGameEnded, setIsGameEnded] = createSignal(false);
+  const [gameSize, setGameSize] = createSignal({ x: 600, y: 400 });
+  const [paddleSize, setPaddleSize] = createSignal({ x: 10, y: 80 });
 
   createEffect(async () => {
     if (gameId() < 0) {
       setIsLoading(true);
       const data = await fetchCreateGame();
       // setIsLoading(false);
-      if (!data) return;
+      if (!data) {
+        await fetchDeleteGame(1);
+        return;
+      }
       setGameId(data.id);
       setIsGameRunning(data.is_game_running);
       setIsGameEnded(data.is_game_ended);
@@ -134,40 +139,44 @@ export default function OnlinePongGamePage() {
         top: data.ball_y_position,
         left: data.ball_x_position,
       });
-      setBallDirection({ x: data.ball_x_velocity, y: data.ball_y_velocity });
+      setBallDirection({ x: data.ball_x_direction, y: data.ball_y_direction });
       setPlayersInfo({
         player1: { id: data.player_1_id, name: data.player_1_name },
-        player2: { id: data.player_2_id, player_2_name: data.player_2_name },
+        player2: { id: data.player_2_id, name: data.player_2_name },
       });
       setPositionPlayer1(data.player_1_position);
       setPositionPlayer2(data.player_2_position);
       setScorePlayer1(data.player_1_score);
       setScorePlayer2(data.player_2_score);
       setMaxScore(data.max_score);
+      setGameSize({ x: data.game_width, y: data.game_height });
+      setPaddleSize({ x: data.paddle_width, y: data.paddle_height });
       console.log(`
-  		gameId: ${gameId()},
-  		isGameRunning: ${isGameRunning()},
-  		isGameEnded: ${isGameEnded()},
-  		ballPosition: ${ballPosition()},
-  		ballDirection: ${ballDirection()},
-  		playersInfo: ${playersInfo()},
-  		positionPlayer1: ${positionPlayer1()},
-  		positionPlayer2: ${positionPlayer2()},
-  		scorePlayer1: ${scorePlayer1()},
-  		scorePlayer2: ${scorePlayer2()},
-  		maxScore: ${maxScore()}
+				gameId: ${gameId()},
+				isGameRunning: ${isGameRunning()},
+				isGameEnded: ${isGameEnded()},
+				ballPosition: top=${ballPosition().top}, left=${ballPosition().left},
+				ballDirection: x=${ballDirection().x}, y=${ballDirection().y},
+				playersInfo: player1=[${playersInfo().player1.id}]${playersInfo().player1.name}, player2=[${playersInfo().player2.id}]${playersInfo().player2.name},
+				positionPlayer1: ${positionPlayer1()},
+				positionPlayer2: ${positionPlayer2()},
+				scorePlayer1: ${scorePlayer1()},
+				scorePlayer2: ${scorePlayer2()},
+				maxScore: ${maxScore()},
+				gameSize: x=${gameSize().x}, y=${gameSize().y},
+				paddleSize: x=${paddleSize().x}, y=${paddleSize().y},
   	`);
       setIsLoading(false);
     }
   });
 
-  createEffect(async () => {
+  const toogleGame = async () => {
     if (!isLoading()) {
       const data = await fetchToggleGame(gameId());
       console.log(data);
       setIsGameRunning(data.is_game_running);
     }
-  });
+  };
 
   // Signals
 
@@ -260,7 +269,8 @@ export default function OnlinePongGamePage() {
       if (isGameRunning()) {
         resetBallPosition();
       } else {
-        startBallMovement();
+        toogleGame();
+        // startBallMovement();
       }
     }
   };
