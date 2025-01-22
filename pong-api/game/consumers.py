@@ -106,7 +106,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                     "game_width": game_state.game_width,
                     "paddle_height": game_state.paddle_height,
                     "paddle_width": game_state.paddle_width,
-                    "paddle_offset": game_state.paddle_offset,
                 }
                 logger.debug(f"Game state: {game_state_data}")
 
@@ -170,7 +169,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "game_width": game_state.game_width,
                 "paddle_height": game_state.paddle_height,
                 "paddle_width": game_state.paddle_width,
-                "paddle_offset": game_state.paddle_offset,
             }
             cache.set(cache_key, json.dumps(game_state_data), timeout=None)
             logger.debug("game saved in Redis")

@@ -16,8 +16,7 @@ class GameState(models.Model):
     game_height = models.IntegerField(default=1200)
     game_width= models.IntegerField(default=1600)
     paddle_height = models.IntegerField(default=10)
-    paddle_width= models.IntegerField(default=10)
-    paddle_offset= models.IntegerField(default=10)
+    paddle_width= models.IntegerField(default=20)
 
     # Players
     player_1_id = models.IntegerField(null=True, blank=True)
@@ -61,7 +60,6 @@ class GameState(models.Model):
                 "game_width": self.game_width,
                 "paddle_height": self.paddle_height,
                 "paddle_width": self.paddle_width,
-                "paddle_offset": self.paddle_offset,
             }
             cache.set(cache_key, json.dumps(game_state_data), timeout=None)
             logger.info(f"Saved game state to cache with key {cache_key}")
