@@ -24,6 +24,11 @@ class GameStateSerializer(serializers.ModelSerializer):
             "ball_y_position",
             "ball_x_direction",
             "ball_y_direction",
+            "game_height",
+            "game_width",
+            "paddle_height",
+            "paddle_width",
+            "paddle_offset",
         )
 
     def validate(self, data):
@@ -46,4 +51,9 @@ class GameStateSerializer(serializers.ModelSerializer):
         validated_data.setdefault("player_2_position", 50)  # Default middle position
         validated_data.setdefault("player_1_score", 0)  # Default score
         validated_data.setdefault("player_2_score", 0)  # Default score
+        validated_data.setdefault("game_height", 1200)  # Fixed default size
+        validated_data.setdefault("game_width", 1600)  # Fixed default size
+        validated_data.setdefault("paddle_height", 100)  # Fixed default size
+        validated_data.setdefault("paddle_width", 10)  # Fixed default size
+        validated_data.setdefault("paddle_offset", 10)  # Fixed default size
         return super().create(validated_data)

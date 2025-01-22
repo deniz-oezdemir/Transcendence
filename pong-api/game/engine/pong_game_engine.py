@@ -1,5 +1,4 @@
 from ..models import GameState
-import math
 import logging
 
 logger = logging.getLogger("pongApi")
@@ -12,6 +11,7 @@ class PongGameEngine:
         self.game_width = 1600
         self.paddle_height = 100
         self.paddle_width = 10
+        self.paddle_offset = 10
         logger.debug("PongGameEngine initialized with game state: %s", game_state)
 
     def update_game_state(self):
