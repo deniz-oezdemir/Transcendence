@@ -83,8 +83,8 @@
     "player_2_name": "PlayerTwo",
     "ball_x_position": 400,
     "ball_y_position": 200,
-    "ball_x_velocity": 10,
-    "ball_y_velocity": 10
+    "ball_x_direction": 10,
+    "ball_y_direction": 10
   }
   ```
 
@@ -116,8 +116,8 @@
     ],
     "ball_x_position": 400,
     "ball_y_position": 200,
-    "ball_x_velocity": 30,
-        "ball_y_velocity": 30
+    "ball_x_direction": 30,
+        "ball_y_direction": 30
   }
   ```
 

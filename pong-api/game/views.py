@@ -24,13 +24,6 @@ class CreateGame(generics.CreateAPIView):
             raise serializers.ValidationError(
                 f"Game with ID {game_id} already exists in cache."
             )
-
-        # Check if the game exists in the database
-        # if GameState.objects.filter(id=game_id).exists():
-        #     raise serializers.ValidationError(
-        #         f"Game with ID {game_id} already exists in the database."
-        #     )
-
         game_state = serializer.save()
         return game_state
 
