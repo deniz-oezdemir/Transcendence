@@ -120,34 +120,26 @@
 - **Response:**
 
   ```json
-  {
     "id": 1,
     "max_score": 3,
     "is_game_running": false,
     "is_game_ended": false,
-    "players": [
-      {
-        "player": 1,
-        "player_position": 150,
-        "player_direction": 150,
-        "player_score": 0
-      },
-      {
-        "player": 2,
-        "player_position": 150,
-        "player_direction": 150,
-        "player_score": 0
-      }
-    ],
+    "player_1_id": 1,
+    "player_1_name": "Player 1",
+    "player_2_id": 2,
+    "player_2_name": "Player 2",
+    "player_1_score": 0,
+    "player_2_score": 0,
+    "player_1_position": 50,
+    "player_2_position": 50,
     "ball_x_position": 400,
     "ball_y_position": 200,
-    "ball_x_direction": 30,
-    "ball_y_direction": 30,
+    "ball_x_direction": 10,
+    "ball_y_direction": 10,
     "game_height": 1200,
     "game_width": 1600,
     "paddle_height": 100,
     "paddle_width": 20
-  }
   ```
 
 ### Delete Game
