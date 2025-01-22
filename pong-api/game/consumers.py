@@ -102,6 +102,11 @@ class GameConsumer(AsyncWebsocketConsumer):
                     "ball_y_position": game_state.ball_y_position,
                     "ball_x_direction": game_state.ball_x_direction,
                     "ball_y_direction": game_state.ball_y_direction,
+                    "game_height": game_state.game_height,
+                    "game_width": game_state.game_width,
+                    "paddle_height": game_state.paddle_height,
+                    "paddle_width": game_state.paddle_width,
+                    "paddle_offset": game_state.paddle_offset,
                 }
                 logger.debug(f"Game state: {game_state_data}")
 
@@ -161,6 +166,11 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "ball_y_position": game_state.ball_y_position,
                 "ball_x_direction": game_state.ball_x_direction,
                 "ball_y_direction": game_state.ball_y_direction,
+                "game_height": game_state.game_height,
+                "game_width": game_state.game_width,
+                "paddle_height": game_state.paddle_height,
+                "paddle_width": game_state.paddle_width,
+                "paddle_offset": game_state.paddle_offset,
             }
             cache.set(cache_key, json.dumps(game_state_data), timeout=None)
             logger.debug("game saved in Redis")
