@@ -32,7 +32,10 @@ function setEvents(element, events) {
 }
 
 function setChildren(element, children) {
-  children.forEach((child) => element.appendChild(child.element));
+  children.forEach((child) => {
+    // console.log(child);
+    element.appendChild(child.element);
+  });
 }
 
 function validateTag(tag) {
@@ -74,8 +77,10 @@ export function createComponent(
   if (typeof content === 'function') {
     const updateContent = () => {
       const newContent = content();
-      if (newContent !== element.innerHTML) {
-        element.innerHTML = newContent;
+      if (!newContent.element) {
+        element.innerHTML = content;
+      } else if (newContent.element !== element.innerHTML) {
+        element.replaceChildren(newContent.element);
       }
     };
     createEffect(updateContent);
