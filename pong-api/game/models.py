@@ -13,6 +13,10 @@ class GameState(models.Model):
     max_score = models.PositiveIntegerField(default=3)
     is_game_running = models.BooleanField(default=False)
     is_game_ended = models.BooleanField(default=False)
+    game_height = models.IntegerField(default=1200)
+    game_width= models.IntegerField(default=1600)
+    paddle_height = models.IntegerField(default=10)
+    paddle_width= models.IntegerField(default=20)
 
     # Players
     player_1_id = models.IntegerField(null=True, blank=True)
@@ -21,14 +25,14 @@ class GameState(models.Model):
     player_2_name = models.CharField(max_length=100, default="Player 2")
     player_1_score = models.IntegerField(default=0)
     player_2_score = models.IntegerField(default=0)
-    player_1_position = models.IntegerField(default=50)
-    player_2_position = models.IntegerField(default=50)
+    player_1_position = models.IntegerField(default=160)
+    player_2_position = models.IntegerField(default=160)
 
     # Ball state
-    ball_x_position = models.IntegerField(default=400)
-    ball_y_position = models.IntegerField(default=200)
-    ball_x_velocity = models.IntegerField(default=10)
-    ball_y_velocity = models.IntegerField(default=10)
+    ball_x_position = models.IntegerField(default=290)
+    ball_y_position = models.IntegerField(default=190)
+    ball_x_direction = models.IntegerField(default=3)
+    ball_y_direction = models.IntegerField(default=3)
 
     objects = GameStateManager()
 
@@ -50,8 +54,12 @@ class GameState(models.Model):
                 "player_2_position": self.player_2_position,
                 "ball_x_position": self.ball_x_position,
                 "ball_y_position": self.ball_y_position,
-                "ball_x_velocity": self.ball_x_velocity,
-                "ball_y_velocity": self.ball_y_velocity,
+                "ball_x_direction": self.ball_x_direction,
+                "ball_y_direction": self.ball_y_direction,
+                "game_height": self.game_height,
+                "game_width": self.game_width,
+                "paddle_height": self.paddle_height,
+                "paddle_width": self.paddle_width,
             }
             cache.set(cache_key, json.dumps(game_state_data), timeout=None)
             logger.info(f"Saved game state to cache with key {cache_key}")
@@ -87,9 +95,9 @@ class GameState(models.Model):
             f"Ball at position:\n"
             f"  x: {self.ball_x_position}\n"
             f"  y: {self.ball_y_position}\n"
-            f"With velocity:\n"
-            f"  x: {self.ball_x_velocity}\n"
-            f"  y: {self.ball_y_velocity}\n"
+            f"With direction:\n"
+            f"  x: {self.ball_x_direction}\n"
+            f"  y: {self.ball_y_direction}\n"
             f"Player 1 at position: {self.player_1_name} (ID: {self.player_1_id}, Position: {self.player_1_position}, Score: {self.player_1_score})\n"
             f"Player 2 at position: {self.player_2_name} (ID: {self.player_2_id}, Position: {self.player_2_position}, Score: {self.player_2_score})"
         )
