@@ -11,6 +11,7 @@ class PongGameEngine:
         self.game_width = game_state.game_width
         self.paddle_height = game_state.paddle_height
         self.paddle_width = game_state.paddle_width
+        self.player_move_step = 10
         logger.debug("PongGameEngine initialized with game state: %s", game_state)
 
     def update_game_state(self):
@@ -102,9 +103,9 @@ class PongGameEngine:
             return
 
         if direction == 1:
-            player_position -= 10
+            player_position += self.player_move_step
         elif direction == -1:
-            player_position += 10
+            player_position -= self.player_move_step
 
         # Ensure the player doesn't move out of bounds
         player_position = max(
