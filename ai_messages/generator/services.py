@@ -1,26 +1,36 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
 
 class AIMessageGenerator:
     def __init__(self):
-        # Load model and tokenizer once during initialization
-        self.tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
-        self.model = AutoModelForCausalLM.from_pretrained("distilgpt2")
+        self.tokenizer = AutoTokenizer.from_pretrained('distilgpt2')
+        self.model = AutoModelForCausalLM.from_pretrained('distilgpt2')
 
-    def generate_message(self, context, max_length=50):
-        # Encode the input context
-        inputs = self.tokenizer.encode(context, return_tensors='pt')
+    def generate_message(self, prompt):
+        inputs = self.tokenizer.encode(prompt, return_tensors='pt')
 
-        # Generate response
+        # Updated generation parameters to address warnings
         outputs = self.model.generate(
             inputs,
-            max_length=max_length,
-            num_return_sequences=1,
-            temperature=0.7,
-            pad_token_id=self.tokenizer.eos_token_id,
-            no_repeat_ngram_size=2
+            max_new_tokens=30,      # Shorter responses
+            min_new_tokens=5,       # Ensure some minimum response
+            do_sample=True,         # Enable sampling
+            temperature=0.7,        # Control randomness
+            top_p=0.9,             # Nucleus sampling
+            no_repeat_ngram_size=2, # Avoid repetition
+            num_beams=3,           # Add beam search
+            early_stopping=True,    # Now works with beam search
+            pad_token_id=self.tokenizer.eos_token_id
         )
 
-        # Decode and return the generated text
+        # Extract and clean the generated response
         message = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        message = message.replace(prompt, "").strip()
+
+        # Get first sentence only to keep responses focused
+        message = message.split('.')[0].strip()
+
+        # Return empty if message is too short
+        if len(message) < 5:
+            return self.generate_message(prompt)
+
         return message
