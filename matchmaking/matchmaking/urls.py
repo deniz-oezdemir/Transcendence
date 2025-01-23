@@ -18,6 +18,9 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
-    path("waitingRoom/", include("waitingRoom.urls")),
     path('admin/', admin.site.urls),
+    # websocket
+    path("waitingRoom/", include("waitingRoom.urls")),
+    # rest
+    path('api/', include("waitingRoom.urls")),
 ]
