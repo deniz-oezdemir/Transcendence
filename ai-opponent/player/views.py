@@ -7,6 +7,7 @@ from rest_framework import generics, serializers
 from django.core.cache import cache
 from .serializers import AIPlayerSerializer
 import logging
+from .consumers import WebSocketClient
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ class CreateAIPlayer(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         ai_player_id = serializer.validated_data.get("ai_player_id")
+        target_game_id = serializer.validated_data.get("target_game_id")
         cache_key = f"ai_player_{ai_player_id}"
 
         # Check if the player exists in Redis
@@ -24,6 +26,21 @@ class CreateAIPlayer(generics.CreateAPIView):
                 f"Player with ai_player_id {ai_player_id} already exists in cache."
             )
         ai_player = serializer.save()
+
+        # Connect to the WebSocket server
+        try:
+            ws_client = WebSocketClient(
+                f"ws://localhost:8001/ws/game/{target_game_id}/"
+            )
+            ws_client.start()
+            logger.info(
+                f"Successfully connected to WebSocket for game {target_game_id}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to connect to WebSocket for game {target_game_id}: {e}"
+            )
+
         return ai_player
 
     def create(self, request, *args, **kwargs):
@@ -31,6 +48,7 @@ class CreateAIPlayer(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         ai_player = self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+
         return Response(
             AIPlayerSerializer(ai_player).data,
             status=status.HTTP_201_CREATED,

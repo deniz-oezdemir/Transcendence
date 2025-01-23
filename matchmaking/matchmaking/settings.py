@@ -33,16 +33,26 @@ ALLOWED_HOSTS = []
 
 # TODO: comment out not used APPS
 INSTALLED_APPS = [
-    'channels',
-    'corsheaders',
-    'waitingRoom.apps.WaitingroomConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 3rd party
+    'channels',
+    'corsheaders',
+    'rest_framework',
+    # Local
+    'waitingRoom.apps.WaitingroomConfig',
 ]
+
+# TODO: change permissions
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
+}
 
 ASGI_APPLICATION = "matchmaking.asgi.application"
 
@@ -51,7 +61,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(os.getenv('REDIS_HOST', 'redis'), 6379)],
+            "hosts": [(os.getenv('REDIS_HOST', 'matchmaking-redis'), 6379)],
         },
     },
 }
@@ -97,7 +107,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', 'matchmaking_db'),
         'USER': os.getenv('POSTGRES_USER', 'deniz'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'your_password'),
-        'HOST': os.getenv('POSTGRES_HOST', 'postgres'),
+        'HOST': os.getenv('POSTGRES_HOST', 'matchmaking-postgres'),
         'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }

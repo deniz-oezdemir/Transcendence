@@ -1,4 +1,5 @@
 import json
+import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db import models
@@ -10,7 +11,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 		await self.channel_layer.group_add("waiting_room", self.channel_name)
 		await self.accept()
 		# Delete all matches for testing purposes
-		await self.delete_all_matches()
+		# await self.delete_all_matches()
 
 	# Called when WebSocket disconnects. Removes connection from waiting_room group
 	async def disconnect(self, close_code):
@@ -126,9 +127,36 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 			match.player_2_id = player_2_id
 			match.status = Match.ACTIVE
 			match.save()
+
+			# Create game in pong-api when match becomes active
+			await self.create_game_in_pong_api(match)
 			return match
 		except Match.DoesNotExist:
 			return None
+
+	# TODO: test with pong-api running
+	async def create_game_in_pong_api(self, match):
+		url = "http://pong-api:8000/game/create_game/"
+		game_data = {
+			"id": match.match_id,  # Use same ID as match
+			"max_score": 3,
+			"player_1_id": match.player_1_id,
+			"player_1_name": f"Player {match.player_1_id}",
+			"player_2_id": match.player_2_id,
+			"player_2_name": f"Player {match.player_2_id}"
+		}
+
+		async with aiohttp.ClientSession() as session:
+			try:
+				async with session.post(url, json=game_data) as response:
+					if response.status != 201:
+						error_data = await response.json()
+						logger.error(f"Failed to create game: {error_data}")
+						return None
+					return await response.json()
+			except Exception as e:
+				logger.error(f"Error creating game in pong-api: {str(e)}")
+				return None
 
 	# Retrieves all matches from database with their current state
 	# Returns: list of dicts containing match details

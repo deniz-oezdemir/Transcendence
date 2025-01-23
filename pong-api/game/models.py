@@ -25,14 +25,14 @@ class GameState(models.Model):
     player_2_name = models.CharField(max_length=100, default="Player 2")
     player_1_score = models.IntegerField(default=0)
     player_2_score = models.IntegerField(default=0)
-    player_1_position = models.IntegerField(default=50)
-    player_2_position = models.IntegerField(default=50)
+    player_1_position = models.IntegerField(default=160)
+    player_2_position = models.IntegerField(default=160)
 
     # Ball state
-    ball_x_position = models.IntegerField(default=400)
-    ball_y_position = models.IntegerField(default=200)
-    ball_x_direction = models.IntegerField(default=10)
-    ball_y_direction = models.IntegerField(default=10)
+    ball_x_position = models.IntegerField(default=290)
+    ball_y_position = models.IntegerField(default=190)
+    ball_x_direction = models.IntegerField(default=3)
+    ball_y_direction = models.IntegerField(default=3)
 
     objects = GameStateManager()
 
