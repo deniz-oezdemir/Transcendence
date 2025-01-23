@@ -9,20 +9,15 @@ export default function GameControls() {
       <h4 class="${styles.title}">🎮 Game Controls</h4>
       <ul class="${styles.keysContainer}">
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-primary);">W</span> Up | Left Player
+          <span class="${styles.key}" style="background-color: var(--bs-primary);">␣</span> Start/Stop Ball
         </li>
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-primary);">S</span> Down | Left Player
+          <span class="${styles.key}" style="background-color: var(--bs-primary);">W</span> Left Player <br> Up | Down
+          <span class="${styles.key}" style="background-color: var(--bs-primary);">S</span>
         </li>
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-warning);">␣</span> Start/Stop Ball
-        </li>
-        <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-danger);">↑</span> Up | Right Player
-        </li>
-        <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-danger);">↓</span> Down | Right Player
-        </li>
+          <span class="${styles.key}" style="background-color: var(--bs-success);">↑</span> Right Player <br> Up | Down
+          <span class="${styles.key}" style="background-color: var(--bs-success);">↓</span>
       </ul>
     `,
   });
