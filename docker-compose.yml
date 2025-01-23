@@ -23,6 +23,14 @@ services:
     networks:
       - transcendence
 
+  # AI messages service
+  ai-messages:
+    extends:
+      file: ./ai_messages/docker/docker-compose.yml
+      service: ai-messages
+    networks:
+      - transcendence
+
 networks:
   transcendence:
     driver: bridge
