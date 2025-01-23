@@ -78,8 +78,8 @@ Second version: support also tournmanets - TODO
 4. Switch from Sqlite to Postgres. - done
 
 5. As Game Engine I want to send the match result to Matchmaking.
-- to create game: use game engine's rest api (done by game engine service) write logic to create game when active - TODO
-- to consume game result: expose a rest api for post requests - done
+- to create game: use game engine's rest api (done by game engine service) write logic to create game when active - done and to be tested with pong api and to be integrated with pong API
+- to consume game result: expose a rest api for post requests - done and to be integrated with pong API
 
 ## Testing
 
