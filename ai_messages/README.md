@@ -1,60 +1,52 @@
-# Sources
-https://huggingface.co/distilbert/distilgpt2
+# AI messages services
 
-Knowledge Distillation: As described in Sanh et al. (2019), “knowledge distillation is a compression technique in which a compact model – the student – is trained to reproduce the behavior of a larger model – the teacher – or an ensemble of models.” Also see Bucila et al. (2006) and Hinton et al. (2015).
+TODO: delete sqlite
 
-# Test with tests/tests.sh or below separate tests
+## Frontend Integration Guide
+- Plan API requests in advance to account for 1-2 second response times
+- Consider implementing an AI message toggle feature
+- Add a Beta disclaimer for AI message service due to potential sensitive content
 
-# Test opponent scoring
-curl -X POST http://localhost:8000/generate/ \
+## Testing Guide
+
+### Using Test Script
+Run all tests using:
+```bash
+./tests/tests.sh
+```
+
+### Manual Testing with cURL
+
+#### Game Events
+Test different game scenarios using these cURL commands:
+
+```bash
+# Game Start
+curl -X POST http://localhost:8001/generate/ \
 -H "Content-Type: application/json" \
--d '{
-    "type": "opponent_scored",
-    "game_context": {
-        "score": "2-1",
-        "opponent_name": "Player 2"
-    }
-}'
+-d '{"type": "game_start"}'
 
-# Test AI scoring
-curl -X POST http://localhost:8000/generate/ \
+# Scoring Events
+curl -X POST http://localhost:8001/generate/ \
 -H "Content-Type: application/json" \
--d '{
-    "type": "ai_scored",
-    "game_context": {
-        "score": "3-1",
-        "opponent_name": "Player 2"
-    }
-}'
+-d '{"type": "opponent_scored"}'
 
-# Test game start
-curl -X POST http://localhost:8000/generate/ \
+curl -X POST http://localhost:8001/generate/ \
 -H "Content-Type: application/json" \
--d '{
-    "type": "game_start",
-    "game_context": {
-        "opponent_name": "Player 2"
-    }
-}'
+-d '{"type": "ai_scored"}'
 
-# Test victory
-curl -X POST http://localhost:8000/generate/ \
+# Game End Events
+curl -X POST http://localhost:8001/generate/ \
 -H "Content-Type: application/json" \
--d '{
-    "type": "game_end_victory",
-    "game_context": {
-        "score": "5-3",
-        "opponent_name": "Player 2"
-    }
-}'
+-d '{"type": "game_end_victory"}'
 
-# Test defeat
-curl -X POST http://localhost:8000/generate/ \
+curl -X POST http://localhost:8001/generate/ \
 -H "Content-Type: application/json" \
--d '{
-    "type": "game_end_defeat",
-    "game_context": {
-        "score": "3-5",
-        "opponent_name": "Player 2"
-    }
-}'
+-d '{"type": "game_end_defeat"}'
+```
+
+## Technical Reference
+Model: [DistilGPT2 on Hugging Face](https://huggingface.co/distilbert/distilgpt2)
+
+**Knowledge Distillation**: A compression technique where a compact model (student) is trained to reproduce the behavior of a larger model (teacher).
+*Reference: Sanh et al. (2019), Bucila et al. (2006), Hinton et al. (2015)*

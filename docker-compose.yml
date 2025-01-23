@@ -1,3 +1,5 @@
+#TODO: make services wait for each other with starting by using 'depends on:'
+
 services:
   # ...other services...
 

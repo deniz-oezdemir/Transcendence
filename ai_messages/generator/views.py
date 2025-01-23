@@ -15,9 +15,8 @@ class GenerateMessage(APIView):
 				f"In a Pong game, generate a short, competitive greeting as the AI player "
 				f"starting a match against another player. "
 				f"Example responses:\n"
-				f"'Ready to lose to a machine?'\n"
-				f"'Do you really want to loose against a computer?'\n"
-				f"'Here to collect your defeat of the day?'\n"
+				f"'Ready to loose to a machine?'\n"
+				f"'Why are you trying again?'\n"
 				f"Generate a new, similar competitive greeting:"
 			),
 			'opponent_scored': (
@@ -26,35 +25,31 @@ class GenerateMessage(APIView):
 				f"Example responses:\n"
 				f"'Great shot! Your accuracy is improving!'\n"
 				f"'Impressive move! Keep that up!'\n"
-				f"'Nice one! Let's go!'\n"
 				f"Generate a new, similar response:"
 			),
 			'ai_scored': (
-				f"In a Pong game, generate a short, playful insult as the AI player "
-				f"after scoring against another player. "
-				f"Example responses:\n"
-				f"'Too slow! Need to work on those reflexes!'\n"
-				f"'Did you blink and miss that one?'\n"
-				f"'Maybe I'm just better than you?'\n"
-				f"Generate a new, similar playful insult:"
+				f"In a Pong game, generate a short, mocking taunt as the AI player "
+				f"after scoring. Example responses:\n"
+				f"'Is that the best defense you've got?'\n"
+				f"'Your reflexes are embarrassingly slow!'\n"
+				f"'Maybe you should stick to checkers!'\n"
+				f"Generate a new, similar mocking taunt:"
 			),
 			'game_victory': (
-				f"In a Pong game, generate a short victory message as the AI player "
+				f"In a Pong game, generate a short message after having won as the AI player. "
 				f"Example responses:\n"
-				f"'My superior processing power wins again! Good game though!'\n"
-				f"'The machine learning was strong in me! Thanks for playing!'\n"
-				f"'My superiority is confirmed! Good game!'\n"
-				f"Generate a new, similar victory message:"
+				f"'As expected, I won!'\n"
+				f"'I wish you better luck in your next attempt!'\n"
+				f"Generate a new, similar gloating message:"
 			),
 			'game_defeat': (
-				f"In a Pong game, generate a short defeat message as the AI player "
+				f"In a Pong game, generate a short message after having lost as the AI player "
 				f"Example responses:\n"
 				f"'You've defeated me! Well played!'\n"
 				f"'You got me this time! Congrats!'\n"
-				f"'How could you do that to me? You played too good!'\n"
 				f"Generate a new, similar defeat message:"
 			)
 		}
 
-		message = self.generator.generate_message(prompts[message_type])
+		message = self.generator.generate_message(prompts[message_type], message_type)
 		return Response({'message': message})

@@ -1,28 +1,26 @@
 #!/bin/bash
 
 # Colors for output
-GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Base URL
-API_URL="http://localhost:8000/generate/"
+API_URL="http://localhost:8001/generate/"
 
 # Helper function to test endpoint
 test_message() {
 	local test_name=$1
 	local payload=$2
-
+	local iterations=10
 	echo -e "\n${BLUE}Testing: ${test_name}${NC}"
-	echo "Payload: $payload"
-	echo -e "\nResponse:"
 
-	response=$(curl -s -X POST $API_URL \
-		-H "Content-Type: application/json" \
-		-d "$payload")
+	for ((i=1; i<=iterations; i++)); do
+		response=$(curl -s -X POST $API_URL \
+			-H "Content-Type: application/json" \
+			-d "$payload")
 
-	echo $response | jq '.'
-	echo -e "\n${GREEN}------------------------${NC}"
+		echo "Message $i: $(echo $response | jq -r '.message')"
+	done
 }
 
 # Run all tests
