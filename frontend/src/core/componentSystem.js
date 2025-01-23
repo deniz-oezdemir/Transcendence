@@ -78,7 +78,7 @@ export function createComponent(
     const updateContent = () => {
       const newContent = content();
       if (!newContent.element) {
-        element.innerHTML = content;
+        element.innerHTML = newContent;
       } else if (newContent.element !== element.innerHTML) {
         element.replaceChildren(newContent.element);
       }

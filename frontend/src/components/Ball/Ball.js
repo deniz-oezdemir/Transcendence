@@ -2,11 +2,11 @@ import { createComponent } from '@component';
 import { createEffect } from '@reactivity';
 import styles from './Ball.module.css';
 
-export default function Ball({ position }) {
+export default function Ball({ position, size }) {
   const ballComponent = createComponent('div', {
     className: styles.ball || 'ball',
     attributes: {
-      style: `top: ${position().top}px; left: ${position().left}px;`,
+      style: `width: ${size()}px; height: ${size()}px; top: ${position().top}px; left: ${position().left}px;`,
     },
   });
 
@@ -16,6 +16,7 @@ export default function Ball({ position }) {
     console.log('top', top, 'left', left);
     ballComponent.element.style.top = `${top}px`;
     ballComponent.element.style.left = `${left}px`;
+    ballComponent.element.style.width = `${size()}px`;
   });
 
   return ballComponent;
