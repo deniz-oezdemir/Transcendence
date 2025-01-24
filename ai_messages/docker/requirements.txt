@@ -1,0 +1,6 @@
+django==5.0.1
+djangorestframework==3.14.0
+numpy<2.0.0 
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.1.2+cpu
+transformers==4.36.2

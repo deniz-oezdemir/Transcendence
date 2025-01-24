@@ -1,3 +1,5 @@
+#TODO: make services wait for each other with starting by using 'depends on:'
+
 services:
 
   # Pong-api service
@@ -35,6 +37,14 @@ services:
       service: matchmaking-redis
     networks:
       - matchmaking_internal
+
+  # AI messages service
+  ai-messages:
+    extends:
+      file: ./ai_messages/docker/docker-compose.yml
+      service: ai-messages
+    networks:
+      - transcendence
 
 networks:
   transcendence:
