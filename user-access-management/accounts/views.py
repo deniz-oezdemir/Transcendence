@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers.register_serializer import RegisterSerializer
+from .serializers.friend_request_serializer import FriendRequestSerializer
 
 class RegisterView(APIView):
     def post(self, request):
@@ -35,7 +36,7 @@ class FriendRequestView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Friend added."}, status=status.HTTP_201_CREATED)
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     # def put(self, request):
     #     pass
 
