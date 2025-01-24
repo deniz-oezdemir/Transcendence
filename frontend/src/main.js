@@ -15,6 +15,7 @@ import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import '@styles/global.css';
+import SignupPage from './pages/SignupPage.js/SignupPage';
 
 // Authentication Middleware
 const isAuthenticated = async (path, context) => {
@@ -91,6 +92,7 @@ const root = document.getElementById('app');
 // Routes
 const routes = [
   { path: '/', component: HomePage },
+  { path: '/signup', component: SignupPage },
   { path: '/login', component: LoginPage },
   { path: '/user/:username', component: ProfilePage },
   { path: '/stats', component: StatsPage },
