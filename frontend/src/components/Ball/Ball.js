@@ -9,7 +9,7 @@ export default function Ball({ gameDimensions, gamePositions }) {
   const ballComponent = createComponent('div', {
     className: styles.ball || 'ball',
     attributes: {
-      style: `width: ${ballDimensions.width}px; height: ${ballDimensions.height}px; top: ${ballPosition.height}px; left: ${ballPosition.width}px;`,
+      style: `width: ${ballDimensions.width}px; height: ${ballDimensions.height}px; top: ${ballPosition.y}px; left: ${ballPosition.x}px;`,
     },
   });
 
@@ -17,10 +17,9 @@ export default function Ball({ gameDimensions, gamePositions }) {
   createEffect(() => {
     const { ball: ballPosition } = gamePositions();
     const { ball: ballDimensions } = gameDimensions();
-    console.log('ballPosition', ballPosition, 'ballDimensions', ballDimensions);
 
-    ballComponent.element.style.top = `${ballPosition.height}px`;
-    ballComponent.element.style.left = `${ballPosition.width}px`;
+    ballComponent.element.style.top = `${ballPosition.y}px`;
+    ballComponent.element.style.left = `${ballPosition.x}px`;
     ballComponent.element.style.width = `${ballDimensions.width}px`;
     ballComponent.element.style.height = `${ballDimensions.height}px`;
   });
