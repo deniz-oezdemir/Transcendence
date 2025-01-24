@@ -179,18 +179,19 @@ class GameConsumer(AsyncWebsocketConsumer):
             logger.debug("Initiating HTTP request to matchmaking service")
             async with aiohttp.ClientSession() as session:
                 async with session.post(matchmaking_url, json=game_result) as response:
+                    response_text = await response.text()
+                    logger.debug(f"Matchmaking response: {response_text}")
                     if response.status == 200:
                         logger.info(
-                            f"Game {self.game_id} result successfully sent to matchmaking"
+                            f"Game {self.game_id} result successfully sent to matchmaking. Response: {response_text}"
                         )
                     else:
-                        error_text = await response.text()
                         logger.error(
-                            f"Failed to send game result. Status: {response.status}, Error: {error_text}"
+                            f"Failed to send game result. Status: {response.status}, Error: {response_text}"
                         )
         except Exception as e:
             logger.error(
-                f"Error sending game result to matchmaking: {str(e)}", exc_info=True
+            f"Error sending game result to matchmaking: {str(e)}", exc_info=True
             )
 
     def get_game_state(self):
