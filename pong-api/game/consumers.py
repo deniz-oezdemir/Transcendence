@@ -1,6 +1,8 @@
 import json
 import logging
 import asyncio
+import aiohttp
+from django.utils import timezone
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.core.cache import cache
@@ -15,11 +17,11 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.game_id = self.scope["url_route"]["kwargs"]["game_id"]
         self.game_group_name = f"game_{self.game_id}"
+        self.game_start_time = timezone.now()  # Store start time
 
         await self.channel_layer.group_add(self.game_group_name, self.channel_name)
         await self.accept()
         logger.debug(f"WebSocket connected: {self.channel_name}")
-        print(f"WebSocket connected: {self.channel_name}")
         self.periodic_task = asyncio.create_task(self.send_periodic_updates())
 
     async def disconnect(self, close_code):
@@ -74,6 +76,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     async def send_periodic_updates(self):
         try:
+            game_state = None
             while True:
                 game_state = await database_sync_to_async(self.get_game_state)()
                 if not game_state.is_game_running or game_state.is_game_ended:
@@ -118,6 +121,25 @@ class GameConsumer(AsyncWebsocketConsumer):
         except asyncio.CancelledError:
             logger.info("Periodic task cancelled")
 
+        # Check if game ended and send results
+        if game_state and game_state.is_game_ended:
+            winner_id = (
+                game_state.player_1_id
+                if game_state.player_1_score > game_state.player_2_score
+                else game_state.player_2_id
+            )
+            logger.info(
+                f"Game ended. Winner: {winner_id}, Score: {game_state.player_1_score}-{game_state.player_2_score}"
+            )
+            asyncio.create_task(
+                self.send_game_result_to_matchmaking(
+                    winner_id=winner_id,
+                    player1_score=game_state.player_1_score,
+                    player2_score=game_state.player_2_score,
+                )
+            )
+            logger.debug("Created task to send game results to matchmaking service")
+
     def update_game_state(self):
         game_state = self.get_game_state()
 
@@ -129,15 +151,48 @@ class GameConsumer(AsyncWebsocketConsumer):
                 logger.debug("game updated on engine")
                 self.save_game_state(game_state)
                 logger.debug("game saved")
-                return {
-                    "x": game_state.ball_x_position,
-                    "y": game_state.ball_y_position,
-                }
+
             except GameState.DoesNotExist:
                 return {"error": "Game not found"}
         else:
             logger.debug("update_game_state: game not running")
             RuntimeError("Game not running")
+
+    async def send_game_result_to_matchmaking(
+        self, winner_id, player1_score, player2_score
+    ):
+        """Sends game result to matchmaking service when game ends"""
+        logger.info(f"Preparing to send game result for game {self.game_id}")
+        matchmaking_url = f"http://matchmaking:8000/api/match/{self.game_id}/result/"
+        logger.debug(f"Matchmaking URL: {matchmaking_url}")
+
+        game_result = {
+            "winner_id": winner_id,
+            "player1_score": player1_score,
+            "player2_score": player2_score,
+            "start_time": self.game_start_time.isoformat(),
+            "end_time": timezone.now().isoformat(),
+        }
+        logger.debug(f"Game result data: {game_result}")
+
+        try:
+            logger.debug("Initiating HTTP request to matchmaking service")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(matchmaking_url, json=game_result) as response:
+                    response_text = await response.text()
+                    logger.debug(f"Matchmaking response: {response_text}")
+                    if response.status == 200:
+                        logger.info(
+                            f"Game {self.game_id} result successfully sent to matchmaking. Response: {response_text}"
+                        )
+                    else:
+                        logger.error(
+                            f"Failed to send game result. Status: {response.status}, Error: {response_text}"
+                        )
+        except Exception as e:
+            logger.error(
+            f"Error sending game result to matchmaking: {str(e)}", exc_info=True
+            )
 
     def get_game_state(self):
         game_state = GameState.from_cache(self.game_id)

@@ -2,6 +2,18 @@
 
 This guide explains how the Docker Compose files work together in this project and how to setup containerization for a service.
 
+## Table of Contents
+
+- [Example Docker Compose Structure](#example-docker-compose-structure)
+	- [Main Compose File: `./docker-compose.yml`](#main-compose-file-docker-composeyml)
+	- [Microservice Compose File](#microservice-compose-file)
+- [How it Works](#how-it-works)
+- [How to Structure Other Services](#how-to-structure-other-services)
+- [Benefits](#benefits)
+- [Managing Services](#managing-services)
+- [Current Port Usage](#current-port-usage)
+
+
 ## Example Docker Compose Structure
 
 ### Main Compose File: `./docker-compose.yml`
@@ -85,3 +97,16 @@ make up      # Start all services
 make down    # Stop all services
 make clean   # Clean up Docker resources
 ```
+
+## Current Port Usage
+
+| Service      | Port |
+|--------------|------|
+| Frontend     | tbd  |
+| Matchmaking  | 8001 |
+| Game engine  | 8002 |
+| Game history | tbd  |
+| UAM          | tbd  |
+| AI messages  | tbd  |
+| AI player    | tbd  |
+

@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-_h%747czzi&@)_fm#7itn6vglk&0=qkhcg04$0ner$!tr78hh!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1', 'pong-api']
 
 
 # Application definition
@@ -57,14 +57,26 @@ REST_FRAMEWORK = {
 ASGI_APPLICATION = "matchmaking.asgi.application"
 
 # Redis/Channels configuration
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://matchmaking-redis:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(os.getenv('REDIS_HOST', 'matchmaking-redis'), 6379)],
+            "hosts": [("matchmaking-redis", 6379)],
         },
-    },
+    }
 }
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
