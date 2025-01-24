@@ -5,7 +5,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Base URL
-API_URL="http://localhost:8001/generate/"
+API_URL="http://localhost:8003/generate/"
 
 # Helper function to test endpoint
 test_message() {
