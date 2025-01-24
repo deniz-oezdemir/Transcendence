@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer
+from .serializers.register_serializer import RegisterSerializer
 
 class RegisterView(APIView):
     def post(self, request):
@@ -10,3 +10,34 @@ class RegisterView(APIView):
             user = serializer.save() #calls the create method in the specified serializer
             return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class LoginView(APIView):
+    def post(self, request):
+        pass
+
+class LogoutView(APIView):
+    def post(self, request):
+        pass
+
+class ProfileView(APIView):
+    def get(self, request):
+        pass
+
+    def put(self, request):
+        pass
+
+    def delete(self, request):
+        pass
+
+class FriendRequestView(APIView):
+    def post(self, request):
+        serializer = FriendRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Friend added."}, status=status.HTTP_201_CREATED)
+
+    # def put(self, request):
+    #     pass
+
+    # def delete(self, request):
+    #     pass

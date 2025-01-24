@@ -1,6 +1,6 @@
 import re
 from rest_framework import serializers
-from .models import CustomUser
+from accounts.models import CustomUser
 
 #transforms model instances into JSON. Uses the CustomUser model and outputs the table fields
 class RegisterSerializer(serializers.ModelSerializer):
