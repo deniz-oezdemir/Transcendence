@@ -62,6 +62,9 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 				}))
 				return
 
+			# Create game in pong-api after match becomes active
+			await self.create_pong_game(match)
+
 			matches = await self.get_all_matches()
 			await self.channel_layer.group_send(
 				"waiting_room",
@@ -130,41 +133,36 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 			match.player_2_id = player_2_id
 			match.status = Match.ACTIVE
 			match.save()
-
-			# Create game in pong-api when match becomes active
-			# self.create_game_in_pong_api(match)
-			# logger.info(f"Match {match.match_id} joined by player {player_2_id}")
 			return match
 		except Match.DoesNotExist:
 			return None
 
-	# # TODO: test with pong-api running
-	# async def create_game_in_pong_api(self, match):
-	# 	url = "http://pong-api:8005/game/create_game/"
-	# 	game_data = {
-	# 		"id": match.match_id,
-	# 		"max_score": 3,
-	# 		"player_1_id": match.player_1_id,
-	# 		"player_1_name": f"Player {match.player_1_id}",
-	# 		"player_2_id": match.player_2_id,
-	# 		"player_2_name": f"Player {match.player_2_id}"
-	# 	}
+	# Creates new Pong game via API when match becomes active
+	# Args: match (Match) - the active match to create a game for
+	# Posts game data to pong-api and logs result
+	async def create_pong_game(self, match):
+		"""Creates a new game in pong-api when a match becomes active"""
+		pong_api_url = "http://pong-api:8000/game/create_game/"
 
-	# 	async with aiohttp.ClientSession() as session:
-	# 		try:
-	# 			async with session.post(url, json=game_data) as response:
-	# 				response_data = await response.json()
-	# 				logger.info(f"Response status: {response.status}")
-	# 				logger.info(f"Response headers: {response.headers}")
-	# 				logger.info(f"Response body: {response_data}")
+		game_data = {
+			"id": match.match_id,
+			"max_score": 3,
+			"player_1_id": match.player_1_id,
+			"player_1_name": f"Player {match.player_1_id}",
+			"player_2_id": match.player_2_id,
+			"player_2_name": f"Player {match.player_2_id}"
+		}
 
-	# 				if response.status != 201:
-	# 					logger.error(f"Failed to create game: {response_data}")
-	# 					return None
-	# 				return response_data
-	# 		except Exception as e:
-	# 			logger.error(f"Error creating game in pong-api: {str(e)}")
-	# 			return None
+		try:
+			async with aiohttp.ClientSession() as session:
+				async with session.post(pong_api_url, json=game_data) as response:
+					if response.status == 201:  # Created
+						logger.info(f"Game created in pong-api for match {match.match_id}")
+					else:
+						error_text = await response.text()
+						logger.error(f"Failed to create game in pong-api: {error_text}")
+		except Exception as e:
+			logger.error(f"Error creating game in pong-api: {str(e)}")
 
 	# Retrieves all matches from database with their current state
 	# Returns: list of dicts containing match details

@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-5t9wmgpb1zgr=d9-s4v^j@zrmc+u2_&3-n2io=jst3c=pe^%=#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1', 'pong-api']
 
 
 # Application definition
@@ -194,7 +194,7 @@ CHANNEL_LAYERS = {
         "CONFIG": {
             "hosts": [("localhost", 6379)],
         },
-    },
+    }
 }
 
 USE_REDIS = True
