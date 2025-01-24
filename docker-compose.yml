@@ -2,6 +2,14 @@
 
 services:
 
+  # AI Opponent
+  ai-opponent:
+    extends:
+      file: ./ai-opponent/docker/docker-compose.yml
+      service: ai-opponent
+    networks:
+      - transcendence
+
   # Pong-api service
   pong-api:
     extends:

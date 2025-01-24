@@ -1,0 +1,23 @@
+services:
+  ai-opponent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8004:8000"
+    volumes:
+      - ..:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=AIOpponent.settings
+    networks:
+      - transcendence
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  transcendence:
+    external: true
+
