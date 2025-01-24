@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-5t9wmgpb1zgr=d9-s4v^j@zrmc+u2_&3-n2io=jst3c=pe^%=#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1', 'pong-api']
+ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", "pong-api"]
 
 
 # Application definition
@@ -36,7 +36,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{levelname} {asctime} {module} {message}",
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
             "style": "{",
         },
         "simple": {
@@ -46,7 +46,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "INFO",
+            "level": "DEBUG",  # Changed from INFO to DEBUG
             "class": "logging.StreamHandler",
             "formatter": "simple",
         },
@@ -54,10 +54,15 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": os.path.join(BASE_DIR, "debug.log"),
-            "formatter": "verbose",
+            "formatter": "simple",
         },
     },
     "loggers": {
+        "": {  # Root logger
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
         "django": {
             "handlers": ["console", "file"],
             "level": "DEBUG",
