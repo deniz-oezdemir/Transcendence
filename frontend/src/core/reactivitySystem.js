@@ -30,7 +30,10 @@ export function createSignal(initialValue) {
     return value;
   };
 
-  const write = (newValue) => {
+  const write = (newValueOrFn) => {
+    const newValue =
+      typeof newValueOrFn === 'function' ? newValueOrFn(value) : newValueOrFn;
+
     if (value !== newValue) {
       value = newValue;
       for (const observer of [...subscriptions]) {

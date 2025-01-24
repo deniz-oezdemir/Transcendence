@@ -2,24 +2,38 @@ import { createEffect } from '@reactivity';
 import { createComponent } from '@component';
 import styles from './Paddle.module.css';
 
-export default function Paddle({ position, size, offset, side }) {
-  console.log('Paddle', position(), size(), offset(), side);
+export default function Paddle({ gameDimensions, gamePositions, side }) {
+  const { paddle: paddleDimensions } = gameDimensions();
+  let playerPosition;
+  if (side === 'left') {
+    playerPosition = gamePositions().player1Position;
+  } else {
+    playerPosition = gamePositions().player2Position;
+  }
+
   const paddleComponent = createComponent('div', {
     className: styles.paddle || 'paddle',
     attributes: {
-      style: `width: ${size().x}px; height: ${size().y}px; top: ${position()}px; ${side}: ${offset()}; ${side === 'left' ? 'background-color: ' + 'var(--bs-primary)' : 'background-color: ' + 'var(--bs-danger)'}`,
+      style: `width: ${paddleDimensions.width}px; height: ${paddleDimensions.height}px; top: ${playerPosition}px; ${side}: ${paddleDimensions.offset}; ${side === 'left' ? 'background-color: ' + 'var(--bs-primary)' : 'background-color: ' + 'var(--bs-danger)'}`,
     },
   });
 
   createEffect(() => {
-    const currentSize = size();
-    paddleComponent.element.style.top = `${position()}px`;
-    paddleComponent.element.style.width = `${currentSize.x}px`;
-    paddleComponent.element.style.height = `${currentSize.y}px`;
+    const { paddle: paddleDimensions } = gameDimensions();
+    let playerPosition;
     if (side === 'left') {
-      paddleComponent.element.style.left = `${offset()}px`;
+      playerPosition = gamePositions().player1Position;
     } else {
-      paddleComponent.element.style.right = `${offset()}px`;
+      playerPosition = gamePositions().player2Position;
+    }
+
+    paddleComponent.element.style.top = `${playerPosition}px`;
+    paddleComponent.element.style.width = `${paddleDimensions.width}px`;
+    paddleComponent.element.style.height = `${paddleDimensions.height}px`;
+    if (side === 'left') {
+      paddleComponent.element.style.left = `${paddleDimensions.offset}px`;
+    } else {
+      paddleComponent.element.style.right = `${paddleDimensions.offset}px`;
     }
   });
 

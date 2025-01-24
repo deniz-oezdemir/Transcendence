@@ -5,42 +5,34 @@ import Ball from '@/components/Ball/Ball';
 
 import styles from './GameBoard.module.css';
 
-export default function GameBoard({
-  gameSize,
-  ballSize,
-  ballPosition,
-  positionPlayer1,
-  positionPlayer2,
-  paddleSize,
-  paddleOffset,
-}) {
+export default function GameBoard({ gameDimensions, gamePositions }) {
+  const { game } = gameDimensions();
+
   const boardComponent = createComponent('div', {
     className: `${styles.gameContainer}`,
     children: [
-      Ball({ position: ballPosition, size: ballSize }),
+      Ball({ gameDimensions: gameDimensions, gamePositions: gamePositions }),
       Paddle({
-        position: positionPlayer1,
-        size: paddleSize,
-        offset: paddleOffset,
+        gameDimensions: gameDimensions,
+        gamePositions: gamePositions,
         side: 'left',
       }),
       Paddle({
-        position: positionPlayer2,
-        size: paddleSize,
-        offset: paddleOffset,
+        gameDimensions: gameDimensions,
+        gamePositions: gamePositions,
         side: 'right',
       }),
     ],
     attributes: {
-      style: `width: ${gameSize().x}px; height: ${gameSize().y}px;`,
+      style: `width: ${game.width}px; height: ${game.height}px;`,
     },
   });
 
   createEffect(() => {
-    const gs = gameSize();
-    console.log('gs.x, gs.y', gs.x, gs.y);
-    boardComponent.element.style.width = `${gs.x}px`;
-    boardComponent.element.style.height = `${gs.y}px`;
+    const { game } = gameDimensions();
+
+    boardComponent.element.style.width = `${game.width}px`;
+    boardComponent.element.style.height = `${game.height}px`;
   });
 
   return boardComponent;
