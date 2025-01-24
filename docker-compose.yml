@@ -1,31 +1,44 @@
 services:
   # ...other services...
 
+  # Pong-api service
+  pong-api:
+    extends:
+      file: ./pong-api/docker/docker-compose.yml
+      service: pong-api
+    build:
+      context: ./pong-api
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ./pong-api:/app
+    networks:
+      - transcendence
+
   # Matchmaking service
-  matchmaking:
-    extends:
-      file: ./matchmaking/docker/docker-compose.yml
-      service: matchmaking
-    networks:
-      - transcendence
+#   matchmaking:
+#     extends:
+#       file: ./matchmaking/docker/docker-compose.yml
+#       service: matchmaking
+#     networks:
+#       - transcendence
 
-  matchmaking-postgres:
-    extends:
-      file: ./matchmaking/docker/docker-compose.yml
-      service: matchmaking-postgres
-    networks:
-      - transcendence
+#   matchmaking-postgres:
+#     extends:
+#       file: ./matchmaking/docker/docker-compose.yml
+#       service: matchmaking-postgres
+#     networks:
+#       - transcendence
 
-  matchmaking-redis:
-    extends:
-      file: ./matchmaking/docker/docker-compose.yml
-      service: matchmaking-redis
-    networks:
-      - transcendence
+#   matchmaking-redis:
+#     extends:
+#       file: ./matchmaking/docker/docker-compose.yml
+#       service: matchmaking-redis
+#     networks:
+#       - transcendence
 
 networks:
   transcendence:
     driver: bridge
 
-volumes:
-  matchmaking_postgres_data:
+# volumes:
+#   matchmaking_postgres_data:
