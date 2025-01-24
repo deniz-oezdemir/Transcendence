@@ -256,6 +256,11 @@ export default function OnlinePongGamePage({ navigate }) {
       await endGame(gameId());
     };
 
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setWebsocket(null);
+    };
+
     onCleanup(() => {
       ws.close();
     });
@@ -284,7 +289,7 @@ export default function OnlinePongGamePage({ navigate }) {
       ws.send(
         JSON.stringify({
           player_id: gameScore().players.player2.id,
-          direction: 'up',
+          direction: 1,
         })
       );
     } else if (e.key === 'ArrowDown') {
@@ -301,7 +306,7 @@ export default function OnlinePongGamePage({ navigate }) {
       ws.send(
         JSON.stringify({
           player_id: gameScore().players.player2.id,
-          direction: 'down',
+          direction: -1,
         })
       );
     } else if (e.key === 'w') {
@@ -315,7 +320,7 @@ export default function OnlinePongGamePage({ navigate }) {
       ws.send(
         JSON.stringify({
           player_id: gameScore().players.player1.id,
-          direction: 'up',
+          direction: 1,
         })
       );
     } else if (e.key === 's') {
@@ -332,7 +337,7 @@ export default function OnlinePongGamePage({ navigate }) {
       ws.send(
         JSON.stringify({
           player_id: gameScore().players.player1.id,
-          direction: 'down',
+          direction: -1,
         })
       );
     } else if (e.key === ' ') {
