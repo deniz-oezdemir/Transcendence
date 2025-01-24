@@ -7,9 +7,6 @@ import GameControls from '@/components/GameControls/GameControls';
 
 import styles from './OnlinePongGamePage.module.css';
 
-// let BASE_GAME_DIMENSIONS;
-// let BASE_GAME_POSITIONS;
-
 export default function OnlinePongGamePage({ navigate }) {
   const cleanup = createCleanupContext();
 
@@ -163,6 +160,7 @@ export default function OnlinePongGamePage({ navigate }) {
       console.log('Create Game: Success:', gameData);
     } catch (error) {
       console.error('Game initialization failed:', error);
+      navigate('/');
     }
   }
 
@@ -215,7 +213,6 @@ export default function OnlinePongGamePage({ navigate }) {
       }
       console.log('WebSocket closed.');
 
-      navigate('/');
       return true;
     } catch (error) {
       console.error('Game deletion failed:', error);
@@ -225,9 +222,7 @@ export default function OnlinePongGamePage({ navigate }) {
 
   // WebSocket Connection
   function connectWebSocket() {
-    console.log('hello from ws');
     const ws = new WebSocket(`ws://localhost:8000/ws/game/${gameId()}/`);
-    console.log('ws: ', ws);
     ws.onopen = () => {
       console.log('WebSocket connected.');
       setWebsocket(ws);
@@ -236,6 +231,23 @@ export default function OnlinePongGamePage({ navigate }) {
     ws.onmessage = function (event) {
       const data = JSON.parse(event.data);
       console.log('Data from server:', data);
+      if (data.type === 'game_state_update') {
+        const { scaleFactor } = gameDimensions();
+        setGamePositions((prevPositions) => ({
+          ...prevPositions,
+          player1Position: data.state.player_1_position * scaleFactor,
+          player2Position: data.state.player_2_position * scaleFactor,
+          ball: {
+            x: data.state.ball_x_position * scaleFactor,
+            y: data.state.ball_y_position * scaleFactor,
+          },
+        }));
+        setGameScore((prevScore) => ({
+          ...prevScore,
+          player1: { score: data.state.player_1_score },
+          player2: { score: data.state.player_2_score },
+        }));
+      }
     };
 
     ws.onclose = async () => {
@@ -266,6 +278,15 @@ export default function OnlinePongGamePage({ navigate }) {
         ...prevPositions,
         player2Position: Math.max(0, prevPositions.player2Position - 15),
       }));
+      const ws = websocket();
+      if (ws === null) return;
+      console.log('player2 up');
+      ws.send(
+        JSON.stringify({
+          player_id: gameScore().players.player2.id,
+          direction: 'up',
+        })
+      );
     } else if (e.key === 'ArrowDown') {
       setGamePositions((prevPositions) => ({
         ...prevPositions,
@@ -274,11 +295,29 @@ export default function OnlinePongGamePage({ navigate }) {
           prevPositions.player2Position + 15
         ),
       }));
+      const ws = websocket();
+      if (ws === null) return;
+      console.log('player 2 down');
+      ws.send(
+        JSON.stringify({
+          player_id: gameScore().players.player2.id,
+          direction: 'down',
+        })
+      );
     } else if (e.key === 'w') {
       setGamePositions((prevPositions) => ({
         ...prevPositions,
         player1Position: Math.max(0, prevPositions.player1Position - 15),
       }));
+      const ws = websocket();
+      if (ws === null) return;
+      console.log('player 1 up');
+      ws.send(
+        JSON.stringify({
+          player_id: gameScore().players.player1.id,
+          direction: 'up',
+        })
+      );
     } else if (e.key === 's') {
       setGamePositions((prevPositions) => ({
         ...prevPositions,
@@ -287,10 +326,20 @@ export default function OnlinePongGamePage({ navigate }) {
           prevPositions.player1Position + 15
         ),
       }));
+      const ws = websocket();
+      if (ws === null) return;
+      console.log('player 1 down');
+      ws.send(
+        JSON.stringify({
+          player_id: gameScore().players.player1.id,
+          direction: 'down',
+        })
+      );
     } else if (e.key === ' ') {
       toogleGame();
     } else if (e.key === 'Escape') {
       endGame(gameId());
+      navigate('/');
     }
   };
 
