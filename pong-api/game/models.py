@@ -13,10 +13,10 @@ class GameState(models.Model):
     max_score = models.PositiveIntegerField(default=3)
     is_game_running = models.BooleanField(default=False)
     is_game_ended = models.BooleanField(default=False)
-    game_height = models.IntegerField(default=1200)
-    game_width= models.IntegerField(default=1600)
-    paddle_height = models.IntegerField(default=10)
-    paddle_width= models.IntegerField(default=20)
+    game_height = models.IntegerField(default=400)
+    game_width = models.IntegerField(default=600)
+    paddle_height = models.IntegerField(default=80)
+    paddle_width = models.IntegerField(default=20)
 
     # Players
     player_1_id = models.IntegerField(null=True, blank=True)
