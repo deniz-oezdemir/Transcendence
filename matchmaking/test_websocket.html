@@ -48,7 +48,7 @@
 	</div>
 	<div id="messages"></div>
 	<script>
-		const socket = new WebSocket('ws://localhost:8000/ws/waiting-room/');
+		const socket = new WebSocket('ws://localhost:8001/ws/waiting-room/');
 
 		function createMatch(playerId) {
 			socket.send(JSON.stringify({
