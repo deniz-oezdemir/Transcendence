@@ -102,11 +102,11 @@ make clean   # Clean up Docker resources
 
 | Service      | Port |
 |--------------|------|
-| Frontend     | tbd  |
+| Frontend     | 8005  |
 | Matchmaking  | 8001 |
 | Game engine  | 8002 |
 | Game history | tbd  |
 | UAM          | tbd  |
-| AI messages  | tbd  |
-| AI player    | 8003  |
+| AI messages  | 8003  |
+| AI player    | 8004  |
 
