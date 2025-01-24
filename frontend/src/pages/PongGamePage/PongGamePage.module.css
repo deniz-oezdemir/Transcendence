@@ -4,7 +4,7 @@
   height: 400px;
   margin: 0 auto;
   background-color: #000;
-  overflow: hidden;
+  overflow: visible;
   border: 2px solid #fff;
   border-radius: 10px;
 }

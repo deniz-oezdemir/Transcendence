@@ -1,21 +1,21 @@
-import json
-import aiohttp
-from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db import models
 from .models import Match
 import logging
+import json
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
-class WaitingRoomConsumer(AsyncWebsocketConsumer):
-    # Called when WebSocket connects. Adds connection to waiting_room group
+class WaitingRoomConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         await self.channel_layer.group_add("waiting_room", self.channel_name)
         await self.accept()
-        # Delete all matches for testing purposes
-        await self.delete_all_matches()
+        # Send current matches on connection
+        matches = await self.get_all_matches()
+        await self.send_json({"type": "match_created", "all_matches": matches})
 
     # Called when WebSocket disconnects. Removes connection from waiting_room group
     async def disconnect(self, close_code):
@@ -26,6 +26,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
 
+        # Create match
         if data["type"] == "create_match":
             if await self.is_player_in_match(data["player_1_id"]):
                 await self.send(
@@ -48,6 +49,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 },
             )
 
+        # Join match
         elif data["type"] == "join_match":
             if await self.is_player_in_match(data["player_2_id"]):
                 await self.send(
@@ -81,6 +83,13 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 },
             )
 
+        # Delete all matches - For testing with test_websocket.html
+        elif data["type"] == "delete_all_matches":
+            await self.delete_all_matches()
+            await self.channel_layer.group_send(
+                "waiting_room", {"type": "matches_deleted", "all_matches": []}
+            )
+
     # Broadcasts match creation event to all connections in waiting_room group
     # Includes match details and current list of all matches
     async def match_created(self, event):
@@ -105,6 +114,18 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "match_id": event["match_id"],
                     "player_1_id": event["player_1_id"],
                     "player_2_id": event["player_2_id"],
+                    "all_matches": event["all_matches"],
+                }
+            )
+        )
+
+    # Broadcasts match deletion event to all connections in waiting_room group
+    # Sends empty match list to indicate all matches were deleted
+    async def matches_deleted(self, event):
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "all matches deleted",
                     "all_matches": event["all_matches"],
                 }
             )
