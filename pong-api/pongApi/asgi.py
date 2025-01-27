@@ -1,4 +1,9 @@
 import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pongApi.settings")
+django.setup()
+
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from game.routing import websocket_urlpatterns
@@ -17,7 +22,6 @@ Source: https://forum.djangoproject.com/t/i-get-the-error-apps-arent-loaded-yet-
 """
 
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pongApi.settings")
 django_asgi_app = get_asgi_application()
 
 print("Loading ASGI application...")

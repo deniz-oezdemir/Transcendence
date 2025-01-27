@@ -1,36 +1,10 @@
 services:
-  matchmaking-postgres:
-    image: postgres:16.6
-    environment:
-      POSTGRES_DB: matchmaking_db
-      POSTGRES_USER: deniz
-      POSTGRES_PASSWORD: your_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - matchmaking_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U deniz -d matchmaking_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  matchmaking-redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   matchmaking:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     ports:
-      - "8000:8000"
+      - "8001:8000"
     depends_on:
       matchmaking-postgres:
         condition: service_healthy
@@ -42,6 +16,41 @@ services:
       - REDIS_URL=redis://matchmaking-redis:6379/0
     volumes:
       - ../:/app
+    networks:
+      - transcendence
+      - matchmaking_internal
+
+  matchmaking-postgres:
+    image: postgres:16.6
+    environment:
+      POSTGRES_DB: matchmaking_db
+      POSTGRES_USER: deniz
+      POSTGRES_PASSWORD: your_password
+    volumes:
+      - matchmaking_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deniz -d matchmaking_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - matchmaking_internal
+
+  matchmaking-redis:
+    image: redis:latest
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - matchmaking_internal
+
+networks:
+  transcendence:
+    external: true
+  matchmaking_internal:
+    driver: bridge
 
 volumes:
   matchmaking_postgres_data:

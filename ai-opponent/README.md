@@ -1,24 +1,3 @@
-# AI Opponent Django Service
-
-## Setup
-
-1. **Clone the repository:**
-   ```sh
-   git clone <repository_url>
-   cd ai-opponent
-   ```
-
-2. **Build and run the Docker container:**
-   ```sh
-   docker build -t ai-opponent .
-   docker run -p 8000:8000 ai-opponent
-   ```
-
-3. **Run migrations:**
-   ```sh
-   docker exec -it <container_id> python manage.py migrate
-   ```
-
 ## API Endpoints
 
 ### Create AI Player
@@ -33,7 +12,7 @@
   ```
 - **Curl Command:**
   ```sh
-  curl -X POST http://localhost:8000/ai_player/create_ai_player/ -H "Content-Type: application/json" -d '{"ai_player_id": 1, "target_game_id": 100}'
+  curl -X POST http://localhost:8004/ai_player/create_ai_player/ -H "Content-Type: application/json" -d '{"ai_player_id": 1, "target_game_id": 100}'
   ```
 
 ### Delete AI Player
@@ -41,39 +20,191 @@
 - **Method:** `DELETE`
 - **Curl Command:**
   ```sh
-  curl -X DELETE http://localhost:8000/ai_player/delete_ai_player/1/
+  curl -X DELETE http://localhost:8004/ai_player/delete_ai_player/1/
   ```
 
-## Project Structure
+## Pong Game API
 
-- **AIOpponent/**: Main Django project directory.
-  - `__init__.py`
-  - `asgi.py`
-  - `settings.py`
-  - `urls.py`
-  - `wsgi.py`
-- **player/**: App directory.
-  - `__init__.py`
-  - `admin.py`
-  - `apps.py`
-  - `managers.py`
-  - `models.py`
-  - `serializers.py`
-  - `tests.py`
-  - `urls.py`
-  - `views.py`
-  - **migrations/**: Database migrations.
-    - `0001_initial.py`
-    - `__init__.py`
-- **Dockerfile**: Docker configuration.
-- **manage.py**: Django management script.
-- **requirements.txt**: Python dependencies.
-- **README.md**: Project documentation.
-- **main.py**: Entry point for the application (currently empty).
+### Create Game
 
-## Important Notes
+- **Endpoint:** `/game/create_game/`
+- **Method:** `POST`
+- **Request:**
+  ```json
+  {
+    "id": 1,
+    "max_score": 3,
+    "player_1_id": 1,
+    "player_1_name": "PlayerOne",
+    "player_2_id": 2,
+    "player_2_name": "PlayerTwo"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "id": 1,
+    "max_score": 3,
+    "is_game_running": false,
+    "is_game_ended": false,
+    "player_1_id": 1,
+    "player_1_name": "PlayerOne",
+    "player_2_id": 2,
+    "player_2_name": "PlayerTwo",
+    "ball_x_position": 400,
+    "ball_y_position": 200,
+    "ball_x_direction": 10,
+    "ball_y_direction": 10,
+    "game_height": 1200,
+    "game_width": 1600,
+    "paddle_height": 100,
+    "paddle_width": 20
+  }
+  ```
 
-- Ensure Redis is running on `127.0.0.1:6379` for caching.
-- The service uses Django Channels for handling WebSockets.
-- Update `ALLOWED_HOSTS` in `settings.py` for production use.
+### Get Game State
+
+- **Endpoint:** `/game/get_game_state/<int:pk>/`
+- **Method:** `GET`
+- **Response:**
+  ```json
+  {
+    "id": 1,
+    "max_score": 3,
+    "is_game_running": false,
+    "is_game_ended": false,
+    "player_1_id": 1,
+    "player_1_name": "Player 1",
+    "player_2_id": 2,
+    "player_2_name": "Player 2",
+    "player_1_score": 0,
+    "player_2_score": 0,
+    "player_1_position": 50,
+    "player_2_position": 50,
+    "ball_x_position": 400,
+    "ball_y_position": 200,
+    "ball_x_direction": 10,
+    "ball_y_direction": 10,
+    "game_height": 1200,
+    "game_width": 1600,
+    "paddle_height": 100,
+    "paddle_width": 20
+  }
+  ```
+
+### Delete Game
+
+- **Endpoint:** `/api/games/<id>/`
+- **Method:** `DELETE`
+- **Description:** Deletes a game state from the database and Redis cache.
+
+## WebSocket Communication
+
+### Connect to Game
+
+- **WebSocket URL:** `ws://localhost:8004/ws/game/<game_id>/`
+
+### Move Player
+
+- **Message:**
+  ```json
+  {
+    "action": "move",
+    "player_id": 1,
+    "direction": 1
+  }
+  ```
+
+### Receive Game Updates
+
+- **Example Update:**
+  ```json
+  {
+    "type": "game_state_update",
+    "state": {
+      "ball_x_position": 100,
+      "ball_y_position": 100,
+      "players": [
+        {
+          "player": 1,
+          "player_position": 150,
+          "player_direction": 1,
+          "player_score": 0
+        },
+        {
+          "player": 2,
+          "player_position": 150,
+          "player_direction": -1,
+          "player_score": 0
+        }
+      ],
+      "game_height": 1200,
+      "game_width": 1600,
+      "paddle_height": 100,
+      "paddle_width": 20
+    }
+  }
+  ```
+
+## Example Usage
+
+### Creating a Game
+
+```bash
+curl -X POST http://localhost:8004/game/create_game/ -H "Content-Type: application/json" -d '{
+  "id": 1,
+  "max_score": 3,
+  "player_1_id": 1,
+  "player_1_name": "PlayerOne",
+  "player_2_id": 2,
+  "player_2_name": "PlayerTwo"
+}'
+```
+
+### Toggle Game On/Off
+
+```bash
+curl -X PUT http://localhost:8004/game/toggle_game/1/
+```
+
+### Retrieving Game State
+
+```bash
+curl http://localhost:8004/game/get_game_state/1/
+```
+
+### Deleting a Game
+
+```bash
+curl -X DELETE http://localhost:8004/game/delete_game/1/
+```
+
+### WebSocket Connection
+
+**JavaScript Example:**
+
+```javascript
+const socket = new WebSocket('ws://localhost:8004/ws/game/1/');
+
+socket.onopen = function(event) {
+  console.log('WebSocket is connected.');
+  socket.send(JSON.stringify({
+    action: 'move',
+    player_id: 1,
+    direction: 1
+  }));
+};
+
+socket.onmessage = function(event) {
+  const message = JSON.parse(event.data);
+  console.log('Game update:', message);
+};
+
+socket.onclose = function(event) {
+  console.log('WebSocket is closed.');
+};
+
+socket.onerror = function(error) {
+  console.error('WebSocket error:', error);
+};
 
