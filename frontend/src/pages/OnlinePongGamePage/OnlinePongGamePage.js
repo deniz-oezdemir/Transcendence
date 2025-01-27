@@ -5,11 +5,10 @@ import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
 import GameControls from '@/components/GameControls/GameControls';
 
-import styles from './OnlinePongGamePage.module.css';
-
 export default function OnlinePongGamePage({ navigate }) {
   const cleanup = createCleanupContext();
 
+  // Game state signals
   const [isLoading, setIsLoading] = createSignal(true);
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameId, setGameId] = createSignal(-1);
@@ -35,8 +34,13 @@ export default function OnlinePongGamePage({ navigate }) {
     },
   });
   const [websocket, setWebsocket] = createSignal(null);
+  const [pageContent, setPageContent] = createSignal(null);
 
-  // Responsive Dimension Calculation
+  /**
+   * Calculates responsive game dimensions based on window size
+   * @param {Object} originalDimensions - Initial game dimensions
+   * @returns {Object} Scaled dimensions maintaining aspect ratio
+   */
   function calculateResponsiveDimensions(originalDimensions) {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
@@ -72,6 +76,10 @@ export default function OnlinePongGamePage({ navigate }) {
     };
   }
 
+  /**
+   * Initializes the game by creating a new game session on the server
+   * Sets up initial game state and dimensions
+   */
   async function initializeGame() {
     try {
       const response = await fetch('http://localhost:8000/game/create_game/', {
@@ -163,6 +171,10 @@ export default function OnlinePongGamePage({ navigate }) {
     }
   }
 
+  /**
+   * Toggles game state between running and paused
+   * Establishes WebSocket connection when game starts
+   */
   async function toogleGame() {
     try {
       const response = await fetch(
@@ -190,6 +202,11 @@ export default function OnlinePongGamePage({ navigate }) {
     }
   }
 
+  /**
+   * Ends the game session and cleans up WebSocket connection
+   * @param {number} id - Game ID to end
+   * @returns {Promise<boolean>} Success status of game deletion
+   */
   async function endGame(id) {
     try {
       const response = await fetch(
@@ -219,7 +236,10 @@ export default function OnlinePongGamePage({ navigate }) {
     }
   }
 
-  // WebSocket Connection
+  /**
+   * Establishes WebSocket connection for real-time game updates
+   * Handles game state updates and score changes
+   */
   function connectWebSocket() {
     const ws = new WebSocket(`ws://localhost:8000/ws/game/${gameId()}/`);
     ws.onopen = () => {
@@ -279,10 +299,15 @@ export default function OnlinePongGamePage({ navigate }) {
     setIsLoading(false);
   });
 
-  // Keydown handler
+  /**
+   * Handles keyboard input for player movement and game controls
+   * w/s: Player 1 movement
+   * Arrow Up/Down: Player 2 movement
+   * Space: Toggle game state
+   * Escape: End game
+   */
   const handleKeyDown = (e) => {
     e.preventDefault();
-    const d = gameDimensions();
     if (e.key === 'ArrowUp') {
       const ws = websocket();
       if (ws === null) return;
@@ -306,6 +331,7 @@ export default function OnlinePongGamePage({ navigate }) {
         })
       );
     } else if (e.key === 'w') {
+      const ws = websocket();
       if (ws === null) return;
       console.log('player 1 up');
       ws.send(
@@ -336,12 +362,15 @@ export default function OnlinePongGamePage({ navigate }) {
 
   window.addEventListener('keydown', handleKeyDown);
 
-  // Cleanup listeners and intervals
+  // Cleanup listeners and close connections
   onCleanup(async () => {
     await endGame(gameId());
     window.removeEventListener('keydown', handleKeyDown);
   });
 
+  /**
+   * Creates loading screen component
+   */
   const loadingElement = () => {
     const content = createComponent('div', {
       className: `container position-relative`,
@@ -354,6 +383,9 @@ export default function OnlinePongGamePage({ navigate }) {
     return content;
   };
 
+  /**
+   * Creates main game component with score, board, and controls
+   */
   const gameElement = () => {
     const content = createComponent('div', {
       className: `container position-relative`,
@@ -370,8 +402,7 @@ export default function OnlinePongGamePage({ navigate }) {
     return content;
   };
 
-  const [pageContent, setPageContent] = createSignal(loadingElement());
-
+  // Update page content based on loading state
   createEffect(() => {
     if (!isLoading()) {
       setPageContent(gameElement());
