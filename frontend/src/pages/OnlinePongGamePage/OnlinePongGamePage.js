@@ -35,7 +35,6 @@ export default function OnlinePongGamePage({ navigate }) {
     },
   });
   const [websocket, setWebsocket] = createSignal(null);
-  const [isGameEnded, setIsGameEnded] = createSignal(false);
 
   // Responsive Dimension Calculation
   function calculateResponsiveDimensions(originalDimensions) {
@@ -230,7 +229,7 @@ export default function OnlinePongGamePage({ navigate }) {
 
     ws.onmessage = function (event) {
       const data = JSON.parse(event.data);
-      console.log('Data from server:', data);
+      // console.log('Data from server:', data);
       if (data.type === 'game_state_update') {
         const { scaleFactor } = gameDimensions();
         setGamePositions((prevPositions) => ({
@@ -242,11 +241,17 @@ export default function OnlinePongGamePage({ navigate }) {
             y: data.state.ball_y_position * scaleFactor,
           },
         }));
-        setGameScore((prevScore) => ({
-          ...prevScore,
-          player1: { score: data.state.player_1_score },
-          player2: { score: data.state.player_2_score },
-        }));
+        const currentGameScore = gameScore();
+        if (
+          data.state.player_1_score !== currentGameScore.player1.score ||
+          data.state.player_2_score !== currentGameScore.player2.score
+        ) {
+          setGameScore((prevScore) => ({
+            ...prevScore,
+            player1: { score: data.state.player_1_score },
+            player2: { score: data.state.player_2_score },
+          }));
+        }
       }
     };
 
@@ -279,65 +284,46 @@ export default function OnlinePongGamePage({ navigate }) {
     e.preventDefault();
     const d = gameDimensions();
     if (e.key === 'ArrowUp') {
-      setGamePositions((prevPositions) => ({
-        ...prevPositions,
-        player2Position: Math.max(0, prevPositions.player2Position - 15),
-      }));
       const ws = websocket();
       if (ws === null) return;
       console.log('player2 up');
       ws.send(
         JSON.stringify({
+          action: 'move',
           player_id: gameScore().players.player2.id,
-          direction: 1,
+          direction: -1,
         })
       );
     } else if (e.key === 'ArrowDown') {
-      setGamePositions((prevPositions) => ({
-        ...prevPositions,
-        player2Position: Math.min(
-          d.game.height - d.paddle.height,
-          prevPositions.player2Position + 15
-        ),
-      }));
       const ws = websocket();
       if (ws === null) return;
       console.log('player 2 down');
       ws.send(
         JSON.stringify({
+          action: 'move',
           player_id: gameScore().players.player2.id,
-          direction: -1,
+          direction: 1,
         })
       );
     } else if (e.key === 'w') {
-      setGamePositions((prevPositions) => ({
-        ...prevPositions,
-        player1Position: Math.max(0, prevPositions.player1Position - 15),
-      }));
-      const ws = websocket();
       if (ws === null) return;
       console.log('player 1 up');
       ws.send(
         JSON.stringify({
+          action: 'move',
           player_id: gameScore().players.player1.id,
-          direction: 1,
+          direction: -1,
         })
       );
     } else if (e.key === 's') {
-      setGamePositions((prevPositions) => ({
-        ...prevPositions,
-        player1Position: Math.min(
-          d.game.height - d.paddle.height,
-          prevPositions.player1Position + 15
-        ),
-      }));
       const ws = websocket();
       if (ws === null) return;
       console.log('player 1 down');
       ws.send(
         JSON.stringify({
+          action: 'move',
           player_id: gameScore().players.player1.id,
-          direction: -1,
+          direction: 1,
         })
       );
     } else if (e.key === ' ') {
