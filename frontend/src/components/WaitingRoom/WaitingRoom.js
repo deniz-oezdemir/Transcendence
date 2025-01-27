@@ -3,7 +3,7 @@ import { createComponent } from '@component';
 import styles from './WaitingRoom.module.css';
 
 export default function WaitingRoom() {
-  const [matches, setMatches] = createSignal([]);
+  const [matches, setMatches] = createSignal();
   const [socket, setSocket] = createSignal(null);
 
   createEffect(() => {
@@ -21,10 +21,10 @@ export default function WaitingRoom() {
   
         if (data.type === 'match_created' || data.type === 'match_updated') {
           if (Array.isArray(data.all_matches)) {
-            setMatches(data.all_matches);
+            setMatches(JSON.stringify(data.all_matches, null, 2));
             console.log('Updated matches:', matches());
           } else {
-            console.error('Invalid matches format:', data.all_matches);
+            console.error('Invalid matches format:', JSON.stringify(data.all_matches, null, 2));
           }
         }
       } catch (err) {
@@ -56,13 +56,13 @@ export default function WaitingRoom() {
     }));
   };
 
+
   return createComponent('div', {
     className: styles.waitingRoom,
     children: [
       createComponent('button', {
         className: styles.createButton,
         content: 'Create Match',
-        content: JSON.stringify(matches(), null, 2),
         events: { click: createMatch }
       }),
       createComponent('div', {
@@ -70,7 +70,7 @@ export default function WaitingRoom() {
         children: [
           createComponent('pre', {
             style: 'color: white;',  // Make sure text is visible
-            content: JSON.stringify(matches(), null, 2)  // Format JSON with indentation
+            content: matches,  // Format JSON with indentation
           })
         ]
       })
