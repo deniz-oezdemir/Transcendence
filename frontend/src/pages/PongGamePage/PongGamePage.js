@@ -1,6 +1,7 @@
 import { createSignal } from '@reactivity';
 import { createComponent, onCleanup, createCleanupContext } from '@component';
 
+import WaitingRoom from '@/components/WaitingRoom/WaitingRoom';
 import Score from '@/components/Score/Score';
 import Paddle from '@/components/Paddle/Paddle';
 import Ball from '@/components/Ball/Ball';
@@ -133,6 +134,7 @@ export default function PongGamePage() {
           Ball({ position: ballPosition }),
           Paddle({ position: positionLeft, side: 'left' }),
           Paddle({ position: positionRight, side: 'right' }),
+          WaitingRoom()
         ],
       }),
       GameControls(),

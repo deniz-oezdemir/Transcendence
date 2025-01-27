@@ -1,5 +1,5 @@
 """
-URL configuration for matchmaking project.
+URL configuration for ai_messages project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.0/topics/http/urls/
@@ -15,12 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import path
+from generator.views import GenerateMessage
 
 urlpatterns = [
+    path('generate/', GenerateMessage.as_view(), name='generate_message'),
     path('admin/', admin.site.urls),
-    # websocket
-    path("waitingRoom/", include("waitingRoom.urls")),
-    # rest
-    path('api/', include("waitingRoom.urls")),
 ]

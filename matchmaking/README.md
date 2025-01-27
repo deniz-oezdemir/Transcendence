@@ -1,5 +1,7 @@
 # Matchmaking Microservice
 
+Info: match and game are used synonymously.
+
 ## Table of Contents
 
 - [Goals](#goals)
@@ -15,9 +17,9 @@
 
 
 ## Goals
-First version: support only matches - in progress
+First version: support only matches - work in progress
 
-Second version: support also tournmanets - to do
+Second version: support also tournmanets - TODO
 
 ## Subject Requirements
 
@@ -75,54 +77,76 @@ Second version: support also tournmanets - to do
 
 4. Switch from Sqlite to Postgres. - done
 
-5. Add REST API for Game Engine Service.
+5. As Game Engine I want to send the match result to Matchmaking.
+- to create game: use game engine's rest api (done by game engine service) write logic to create game when active - done and to be tested with pong api and to be integrated with pong API: update pong api so it can be run in docker so the services can be on the same network - done
+- to consume game result: expose a rest api for post requests - done and to be integrated with pong API - done
+
+6. Integrate Frontend with matchmaking - TODO
+- create minimal frontend
+- dockerize frontend
+- connect frontend with matchmaking
+- test
 
 ## Testing
 
-1. Start all services using Docker:
+1. **Start Services**:
 	```bash
 	cd matchmaking/docker
 	docker compose up --build
 	```
 
-2. Open `test_websocket.html` in your browser to test the matchmaking interface.
+2. **Monitor Databases**:
 
-3. Monitor the databases:
+	- **PostgreSQL**:
+		```bash
+		# Connect to PostgreSQL container
+		docker exec -it docker-postgres-1 psql -U deniz matchmaking_db
 
-	Check PostgreSQL:
+		# List all tables
+		\dt
+
+		# View matches
+		SELECT * FROM "waitingRoom_match";
+
+		# Exit PostgreSQL
+		\q
+		```
+
+	- **Redis**:
+		```bash
+		# Connect to Redis container
+		docker exec -it docker-redis-1 redis-cli
+
+		# List all keys
+		KEYS *
+
+		# Monitor real-time updates
+		MONITOR
+
+		# Exit Redis
+		exit
+		```
+
+3. **WebSocket API**:
+	- Open `test_websocket.html` in your browser.
+	- Create or join games.
+
+4. **REST API**:
+	- Use the following `curl` command to post match results:
 	```bash
-	# Connect to PostgreSQL container
-	docker exec -it docker-postgres-1 psql -U deniz matchmaking_db
-
-	# List all tables
-	\dt
-
-	# View matches
-	SELECT * FROM "waitingRoom_match";
-
-	# Exit PostgreSQL
-	\q
+	curl -X POST http://localhost:8000/api/match/1/result/ \
+	-H "Content-Type: application/json" \
+	-d '{
+		"winner_id": 1,
+		"player1_score": 5,
+		"player2_score": 3,
+		"start_time": "2025-01-17T13:00:00Z",
+		"end_time": "2025-01-17T13:15:00Z"
+	}'
 	```
+	- `match_id` is inferred from the URL.
 
-	Check Redis:
-	```bash
-	# Connect to Redis container
-	docker exec -it docker-redis-1 redis-cli
-
-	# List all keys
-	KEYS *
-
-	# Monitor real-time updates
-	MONITOR
-
-	# View specific match data
-	GET game_state_1  # Replace 1 with actual match ID
-
-	# Exit Redis
-	exit
-	```
-
-4. Check logs:
+5. **Check Logs**:
 	```bash
 	# View all container logs
 	docker compose logs -f
@@ -133,9 +157,24 @@ Second version: support also tournmanets - to do
 	docker compose logs -f redis
 	```
 
-The `WaitingRoomConsumer` uses:
-- PostgreSQL for persistent storage of matches via `Match` model
-- Redis for real-time WebSocket communication via `CHANNEL_LAYERS`
+6. **Clean Up Matches**:
+	- Uncomment the following line in `matchmaking/waitingRoom/consumers.py` to delete all matches for testing purposes:
+	```python
+	# Delete all matches for testing purposes
+	# await self.delete_all_matches()
+	```
+
+7. **Clean Up Docker**:
+	```bash
+	# Stop and remove containers, networks, volumes
+	docker compose down -v
+
+	# Remove all unused containers, networks, images
+	docker system prune -a
+
+	# Remove all volumes
+	docker volume prune
+	```
 
 ## Notes
 
@@ -178,6 +217,10 @@ For the matchmaking service's requirements (especially with future tournament su
 
 ## Sources
 
-https://docs.djangoproject.com/en/5.1/intro/tutorial01/
+Vincent, W. S. (2022). *Django for APIs: Build web APIs with Python and Django*.
 
-https://www.postgresql.org/docs/release/
+Read the Docs. (n.d.). *Channels documentation*. Retrieved from https://channels.readthedocs.io/en/latest/
+
+Django Software Foundation. (n.d.). *Writing your first Django app, part 1*. Retrieved from https://docs.djangoproject.com/en/5.1/intro/tutorial01/
+
+PostgreSQL Global Development Group. (n.d.). *PostgreSQL release notes*. Retrieved from https://www.postgresql.org/docs/release/

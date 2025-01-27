@@ -1,0 +1,22 @@
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8005:3000"
+    volumes:
+      - ../src:/app/src
+      - ../public:/app/public
+      - ../package.json:/app/package.json
+      - ../pnpm-lock.yaml:/app/pnpm-lock.yaml
+    environment:
+      - NODE_ENV=development
+    tty: true  # Add TTY to keep container running
+    stdin_open: true  # Keep STDIN open
+    command: sh -c "pnpm install && pnpm run dev"  # Explicitly set command
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

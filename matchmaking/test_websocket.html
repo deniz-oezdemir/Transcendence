@@ -45,10 +45,13 @@
 		<button onclick="joinMatch(1)">Join as Player 1</button>
 		<button onclick="joinMatch(2)">Join as Player 2</button>
 		<button onclick="joinMatch(3)">Join as Player 3</button>
+		<button onclick="deleteAllMatches()" style="background-color: #ff4444; color: white;">
+			Delete All Matches
+		</button>
 	</div>
 	<div id="messages"></div>
 	<script>
-		const socket = new WebSocket('ws://localhost:8000/ws/waiting-room/');
+		const socket = new WebSocket('ws://localhost:8001/ws/waiting-room/');
 
 		function createMatch(playerId) {
 			socket.send(JSON.stringify({
@@ -83,6 +86,12 @@
 			});
 		}
 
+		function deleteAllMatches() {
+			socket.send(JSON.stringify({
+				'type': 'delete_all_matches'
+			}));
+		}
+
 		socket.onopen = function (e) {
 			console.log('WebSocket connection established');
 			addMessage('System', 'Connected to server');
@@ -100,6 +109,9 @@
 				addMessage('Success', `Player ${data.player_2_id} joined match ${data.match_id}`);
 				addMessage('Status', `Current matches: ${JSON.stringify(data.all_matches, null, 2)}`);
 				updateMatchList(data.all_matches);
+			} else if (data.type === "matches_deleted") {
+				addMessage('Success', 'All matches deleted');
+				updateMatchList([]);
 			}
 		};
 

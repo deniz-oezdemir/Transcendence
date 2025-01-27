@@ -42,16 +42,16 @@ class GameStateSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        validated_data.setdefault("ball_x_position", 400)
-        validated_data.setdefault("ball_y_position", 200)
-        validated_data.setdefault("ball_x_direction", 10)
-        validated_data.setdefault("ball_y_direction", 10)
-        validated_data.setdefault("player_1_position", 50)  # Default middle position
-        validated_data.setdefault("player_2_position", 50)  # Default middle position
+        validated_data.setdefault("ball_x_position", 290)
+        validated_data.setdefault("ball_y_position", 190)
+        validated_data.setdefault("ball_x_direction", 3)
+        validated_data.setdefault("ball_y_direction", 3)
+        validated_data.setdefault("player_1_position", 160)  # Default middle position
+        validated_data.setdefault("player_2_position", 160)  # Default middle position
         validated_data.setdefault("player_1_score", 0)  # Default score
         validated_data.setdefault("player_2_score", 0)  # Default score
-        validated_data.setdefault("game_height", 1200)  # Fixed default size
-        validated_data.setdefault("game_width", 1600)  # Fixed default size
-        validated_data.setdefault("paddle_height", 100)  # Fixed default size
+        validated_data.setdefault("game_height", 400)  # Fixed default size
+        validated_data.setdefault("game_width", 600)  # Fixed default size
+        validated_data.setdefault("paddle_height", 80)  # Fixed default size
         validated_data.setdefault("paddle_width", 20)  # Fixed default size
         return super().create(validated_data)
