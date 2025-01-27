@@ -5,24 +5,18 @@ HIDE        = /dev/null 2>&1
 all: clean up
 
 up:
-	@docker-compose -p $(NAME) -f $(COMPOSE) up -d --build || (echo " $(BUILD_INTERRUPTED)" && exit 1)
+	@docker compose -p $(NAME) -f $(COMPOSE) up -d --build || (echo " $(BUILD_INTERRUPTED)" && exit 1)
 	@echo " $(CONTAINERS_STARTED)"
 
-gamengine:
-	@docker exec -it $(NAME)-pong-api-1 bash
-
-frontend:
-	@docker exec -it $(NAME)-pong-frontend-1 bash
-
 down:
-	@docker-compose -p $(NAME) down
+	@docker compose -p $(NAME) down
 	@echo " $(CONTAINERS_STOPPED)"
 
 show:
 	@docker image ls -a && echo "\n" && docker ps && echo "\n"
 
 clean:
-	@docker-compose -f $(COMPOSE) down -v
+	@docker compose -f $(COMPOSE) down -v
 	@docker system prune -f > $(HIDE) 2>&1 || true
 	@echo " $(CLEANED)"
 
@@ -50,6 +44,16 @@ status:
 	@echo "\n--- VOLUMES ---\n"; docker volume ls
 	@echo "\n--- NETWORKS ---\n"; docker network ls
 	@echo ""
+
+logs:
+	@echo "\n--- PONG API SERVICE LOGS ---\n"
+	@docker compose logs $(NAME)-pong-api
+	@echo "\n--- MATCHMAKING SERVICE LOGS ---\n"
+	@docker compose logs $(NAME)-matchmaking-1
+	@echo "\n--- AI OPPONENT SERVICE LOGS ---\n"
+	@docker compose logs $(NAME)-ai-opponent-1
+	@echo "\n--- AI MESSAGES SERVICE LOGS ---\n"
+	@docker compose logs $(NAME)-ai-messages-1
 
 re: fclean all
 

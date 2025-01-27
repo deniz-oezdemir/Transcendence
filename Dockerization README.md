@@ -108,5 +108,5 @@ make clean   # Clean up Docker resources
 | Game history | tbd  |
 | UAM          | tbd  |
 | AI messages  | tbd  |
-| AI player    | 8003  |
+| AI player    | 8004  |
 

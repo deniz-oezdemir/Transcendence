@@ -3,24 +3,23 @@ import websockets
 import json
 import logging
 from threading import Thread
-from pynput.keyboard import Controller
 
 logger = logging.getLogger(__name__)
 
 
 class WebSocketClient:
     def __init__(self, uri, ai_player):
-        self.uri = uri
+        self.uri = uri.replace("8000", "8002")  # Replace port 8000 with 8002
         self.ai_player = ai_player
-        self.keyboard = Controller()  # Initialize the keyboard controller
 
     async def connect(self):
         async with websockets.connect(self.uri) as websocket:
-            await self.listen(websocket)
+            self.websocket = websocket
+            await self.listen()
 
-    async def listen(self, websocket):
+    async def listen(self):
         try:
-            async for message in websocket:
+            async for message in self.websocket:
                 data = json.loads(message)
                 logger.info(f"Received message: {data}")
                 self.handle_game_update(data)
@@ -83,19 +82,20 @@ class WebSocketClient:
     def move_towards_ball(self, ai_player_position, predicted_y):
         # Move towards the predicted Y position of the ball
         if ai_player_position < predicted_y:
-            self.simulate_key_press("down")
+            self.send_move_command(1)  # Move down
         elif ai_player_position > predicted_y:
-            self.simulate_key_press("up")
+            self.send_move_command(-1)  # Move up
 
-    def simulate_key_press(self, key):
-        # Simulate key press using pynput
-        if key == "up":
-            self.keyboard.press("w")
-            self.keyboard.release("w")
-        elif key == "down":
-            self.keyboard.press("s")
-            self.keyboard.release("s")
-        logger.info(f"Simulating key press: {key}")
+    def send_move_command(self, direction):
+        move_command = {
+            "action": "move",
+            "player_id": self.ai_player.ai_player_id,
+            "direction": direction,
+        }
+        asyncio.run_coroutine_threadsafe(
+            self.websocket.send(json.dumps(move_command)), asyncio.get_event_loop()
+        )
+        logger.info(f"Sent move command: {move_command}")
 
     def run(self):
         loop = asyncio.new_event_loop()
