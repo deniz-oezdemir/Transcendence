@@ -8,27 +8,45 @@ export default function WaitingRoom() {
 
   createEffect(() => {
     const ws = new WebSocket('ws://localhost:8001/ws/waiting-room/');
-
+  
     ws.onopen = () => {
       console.log('Connected to matchmaking service');
       setSocket(ws);
     };
-
+  
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('Received:', data);
-
-      if (data.type === 'match_created' || data.type === 'match_updated') {
-        if (Array.isArray(data.all_matches)) {
-          setMatches(data.all_matches);
-          // Log to verify matches are being set
-          console.log('Updated matches:', matches());
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Received:', data);
+  
+        if (data.type === 'match_created' || data.type === 'match_updated') {
+          if (Array.isArray(data.all_matches)) {
+            setMatches(data.all_matches);
+            console.log('Updated matches:', matches());
+          } else {
+            console.error('Invalid matches format:', data.all_matches);
+          }
         }
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err);
       }
     };
-
-    return () => ws?.close();
+  
+    ws.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+    };
+  
+    ws.onclose = (event) => {
+      console.warn('WebSocket closed:', event);
+      setSocket(null);
+    };
+  
+    return () => {
+      ws?.close();
+      setSocket(null);
+    };
   });
+  
 
   const createMatch = () => {
     if (!socket()) return;
@@ -44,6 +62,7 @@ export default function WaitingRoom() {
       createComponent('button', {
         className: styles.createButton,
         content: 'Create Match',
+        content: JSON.stringify(matches(), null, 2),
         events: { click: createMatch }
       }),
       createComponent('div', {
