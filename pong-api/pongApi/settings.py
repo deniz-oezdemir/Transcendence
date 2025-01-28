@@ -46,12 +46,12 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",  # Changed from INFO to DEBUG
+            "level": "INFO",  # Changed from INFO to INFO
             "class": "logging.StreamHandler",
             "formatter": "simple",
         },
         "file": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.FileHandler",
             "filename": os.path.join(BASE_DIR, "debug.log"),
             "formatter": "simple",
@@ -60,17 +60,17 @@ LOGGING = {
     "loggers": {
         "": {  # Root logger
             "handlers": ["console", "file"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         },
         "django": {
             "handlers": ["console", "file"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         },
         "pongApi": {
             "handlers": ["console", "file"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         },
     },
