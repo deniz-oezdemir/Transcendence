@@ -27,6 +27,7 @@ cd Transcendence/user-access-management
 2. Create & activate a Virtual Environment
 ```sh
 python -m venv .venv
+virtualenv -p python3 .venv # if no sudo permissions
 source .venv/bin/activate  # On Linux/Mac
 venv\Scripts\activate     # On Windows
 ```

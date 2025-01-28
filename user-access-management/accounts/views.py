@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers.register_serializer import RegisterSerializer
-from .serializers.friend_request_serializer import FriendRequestSerializer
+from .serializers.friend_request_serializer import FriendRequestSerializer, FriendRequestDeleteSerializer
 
 class RegisterView(APIView):
     def post(self, request):
@@ -31,14 +31,23 @@ class ProfileView(APIView):
         pass
 
 class FriendRequestView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request):
-        serializer = FriendRequestSerializer(data=request.data)
+        if not request.user.is_authenticated:
+            return Response({"message": "You must be logged in to send a friend request."}, status=status.HTTP_401_UNAUTHORIZED)
+        serializer = FriendRequestSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Friend added."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    # def put(self, request):
-    #     pass
+    
+    def delete(self, request):
+        if not request.user.is_authenticated:
+            return Response({"message": "You must be logged in to remove a friend."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    # def delete(self, request):
-    #     pass
+        serializer = FriendRequestDeleteSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.delete()
+            return Response({"message": "Friend removed."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

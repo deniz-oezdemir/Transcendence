@@ -1,40 +1,61 @@
 from rest_framework import serializers
 from accounts.models import CustomUser
 
-class FriendRequestSerializer(serializers.ModelSerializer):
-    # permission_classes = [permissions.IsAuthenticated]
+def validate_friend_username(current_user, friend_username, is_delete_operation=False):
     
-    from_user = serializers.PrimaryKeyRelatedField(
-        queryset=CustomUser.objects.all(),
-        required=True,
-        error_messages={"does_not_exist": "User does not exist."}
-    )
-    friend_id = serializers.PrimaryKeyRelatedField(
-        required=True
-        queryset=CustomUser.objects.all(),
-        required=True,
-        error_messages={"does_not_exist": "User does not exist."}
-    )
-
-    class Meta:
-        model = CustomUser
-        fields = ['from_user_id', 'friend_id']
-
-    def validate_friend_id(self, data):
-        # current_user = self.context['request'].user
-        friend_id = data['friend_id']
-        if data['from_user_id'] == friend_id: #takes the current user id from the request body 'from_user_id' field
-        # if friend_id == current_user.id: #works if there's an authentication system in place
-            raise serializers.ValidationError("You cannot send a friend request to yourself.")
-        if not CustomUser.objects.filter(id=friend_id).exists():
-            raise serializers.ValidationError("The specified user does not exist.")
-        return data
+    if current_user.username == friend_username:
+        raise serializers.ValidationError("You cannot remove yourself as a friend." if is_delete_operation else "You cannot send a friend request to yourself.")
+    if not CustomUser.objects.filter(username=friend_username).exists():
+        raise serializers.ValidationError("The specified user does not exist.")
+    if not is_delete_operation and current_user.friends.filter(username=friend_username).exists():
+        raise serializers.ValidationError("You are already friends with this user.")
+    if is_delete_operation and not current_user.friends.filter(username=friend_username).exists():
+        raise serializers.ValidationError("You are not friends with this user.")
     
-    def create(self, validated_data):
-        current_user = CustomUser.objects.get(id=self.context['request'].user)
-        friend_id = validated_data['friend_id']
-        friend_object = CustomUser.objects.get(id=friend_id)
+    return friend_username #returns the same input validated data, not objects!
 
-        current_user.friends.add(friend_object) 
+class FriendRequestSerializer(serializers.Serializer):
+    
+    friend_username = serializers.CharField(
+        min_length=1,
+        max_length=150,
+        required=True,
+        error_messages={"blank": "Friend username cannot be empty."}
+    )
+
+    def validate_friend_username(self, friend_username):
+        current_user = self.context['request'].user #instance of CustomUser
         
-        return current_user
+        return validate_friend_username(current_user, friend_username, is_delete_operation=False)
+    
+    def create(self):
+        current_user_instance = self.context['request'].user
+        friend_username = self.validated_data['friend_username']
+        friend_object = CustomUser.objects.get(username=friend_username)
+
+        current_user_instance.friends.add(friend_object) 
+        
+        return current_user_instance
+    
+
+class FriendRequestDeleteSerializer(serializers.Serializer):
+    friend_username = serializers.CharField(
+        min_length=1,
+        max_length=150,
+        required=True,
+        error_messages={"blank": "Friend username cannot be empty."}
+    )
+
+    def validate_friend_username(self, friend_username):
+        current_user = self.context['request'].user
+
+        return validate_friend_username(current_user, friend_username, is_delete_operation=True)
+
+    def delete(self):
+        current_user_instance = self.context['request'].user
+        friend_username = self.validated_data['friend_username']
+        friend = CustomUser.objects.get(username=friend_username)
+
+        current_user_instance.friends.remove(friend)
+
+        # return current_user_instance

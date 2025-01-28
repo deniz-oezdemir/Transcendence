@@ -7,7 +7,7 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', ProfileView.as_view(), name= 'profile'), #for seeing, editing user data and deleting accout & use query params for specification?
-    path('add-friend', FriendRequestView.as_view(), name='add-friend'),
+    path('friend-request', FriendRequestView.as_view(), name='friend-request'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     
