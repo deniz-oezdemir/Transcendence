@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers.register_serializer import RegisterSerializer
 from .serializers.friend_request_serializer import FriendRequestSerializer, FriendRequestDeleteSerializer
+from .serializers.login_serializer import LoginSerializer
 
 class RegisterView(APIView):
     def post(self, request):
@@ -14,7 +15,11 @@ class RegisterView(APIView):
     
 class LoginView(APIView):
     def post(self, request):
-        pass
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({"message": "User logged in successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
     def post(self, request):

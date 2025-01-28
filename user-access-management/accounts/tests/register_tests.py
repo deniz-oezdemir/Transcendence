@@ -5,6 +5,7 @@ from accounts.models import CustomUser
 from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
+#### obsolete, to be switched to pytest!
 
 class TestRegisterSerializer(TestCase):
 
