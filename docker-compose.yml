@@ -1,6 +1,18 @@
 #TODO: make services wait for each other with starting by using 'depends on:'
 
 services:
+  # Frontend
+  frontend:
+    extents:
+      file: ./frontend/docker-compose.yml
+      service: frontend
+    networks:
+      - transcendence
+    depends_on:
+      - ai-opponent
+      - pong-api
+      - matchmaking
+      - ai-messages
 
   # AI Opponent
   ai-opponent:
