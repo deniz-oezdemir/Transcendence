@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import StatsPage from './pages/StatsPage/StatsPage';
 import PongGamePage from './pages/PongGamePage/PongGamePage';
+import OnlinePongGamePage from './pages/OnlinePongGamePage/OnlinePongGamePage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
 
 import '@popperjs/core';
@@ -74,6 +75,7 @@ const routes = [
     component: AdminSettingsPage,
     layoutComponent: AdminLayout,
   },
+  { path: '/online-pong-game', component: OnlinePongGamePage },
 ];
 
 // Initialize Theme Manager
