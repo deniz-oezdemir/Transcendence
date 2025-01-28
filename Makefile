@@ -16,26 +16,30 @@ show:
 	@docker image ls -a && echo "\n" && docker ps && echo "\n"
 
 clean:
-	@docker compose -f $(COMPOSE) down -v
-	@docker system prune -f > $(HIDE) 2>&1 || true
+	@docker compose -f $(COMPOSE) down --volumes --remove-orphans
+	# @docker compose -f $(COMPOSE) down -v
+	# @docker system prune -f > $(HIDE) 2>&1 || true
 	@echo " $(CLEANED)"
 
-fclean: clean
-	@docker stop $$(docker ps -qa) > $(HIDE) 2>&1 || true
-	@docker rm $$(docker ps -qa) > $(HIDE) 2>&1 || true
-	@docker rmi -f $$(docker images -qa) > $(HIDE) 2>&1 || true
-	@docker volume rm $$(docker volume ls -q) > $(HIDE) 2>&1 || true
-	@docker network rm $$(docker network ls -q) > $(HIDE) 2>&1 || true
+# fclean: clean
+fclean:
+	@docker compose -f $(COMPOSE) down --rmi all --volumes --remove-orphans
+	@docker system prune --all --force --volumes
+	# @docker stop $$(docker ps -qa) > $(HIDE) 2>&1 || true
+	# @docker rm $$(docker ps -qa) > $(HIDE) 2>&1 || true
+	# @docker rmi -f $$(docker images -qa) > $(HIDE) 2>&1 || true
+	# @docker volume rm $$(docker volume ls -q) > $(HIDE) 2>&1 || true
+	# @docker network rm $$(docker network ls -q) > $(HIDE) 2>&1 || true
 	@echo " $(FULLY_CLEANED)"
 
-remove: down fclean
-	@echo "\nPreparing to start with a clean state..."
-	@docker stop $$(docker ps -qa) > $(HIDE) 2>&1 || true
-	@docker rm $$(docker ps -qa) > $(HIDE) 2>&1 || true
-	@docker rmi -f $$(docker images -qa) > $(HIDE) 2>&1 || true
-	@docker volume rm $$(docker volume ls -q) > $(HIDE) 2>&1 || true
-	@docker network rm $$(docker network ls -q) > $(HIDE) 2>&1 || true
-	@echo " $(REMOVED)"
+# remove: down fclean
+	# @docker stop $$(docker ps -qa) > $(HIDE) 2>&1 || true
+	# 	@echo "\nPreparing to start with a clean state..."
+	# @docker rm $$(docker ps -qa) > $(HIDE) 2>&1 || true
+	# @docker rmi -f $$(docker images -qa) > $(HIDE) 2>&1 || true
+	# @docker volume rm $$(docker volume ls -q) > $(HIDE) 2>&1 || true
+	# @docker network rm $$(docker network ls -q) > $(HIDE) 2>&1 || true
+	# @echo " $(REMOVED)"
 
 status:
 	@clear
@@ -46,6 +50,8 @@ status:
 	@echo ""
 
 logs:
+	@echo "\n--- FRONTEND SERVICE LOGS ---\n"
+	@docker compose logs $(NAME)-frontend
 	@echo "\n--- PONG API SERVICE LOGS ---\n"
 	@docker compose logs $(NAME)-pong-api
 	@echo "\n--- MATCHMAKING SERVICE LOGS ---\n"
