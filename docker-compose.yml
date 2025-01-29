@@ -3,7 +3,7 @@
 services:
   # Frontend
   frontend:
-    extents:
+    extends:
       file: ./frontend/docker-compose.yml
       service: frontend
     networks:
@@ -58,7 +58,7 @@ services:
     networks:
       - matchmaking_internal
 
-  # AI messages service
+  AI messages service
   ai-messages:
     extends:
       file: ./ai_messages/docker/docker-compose.yml
