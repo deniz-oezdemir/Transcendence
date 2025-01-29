@@ -12,17 +12,17 @@ class PongGameEngine:
         self.paddle_height = game_state.paddle_height
         self.paddle_width = game_state.paddle_width
         self.paddle_offset = game_state.paddle_offset
-        self.ball_diameter = game_state.ball_diameter
+        self.ball_radius = game_state.ball_diameter / 2
         self.player_move_step = game_state.move_step
         logger.info(
-            "PongGameEngine initialized with game state: %s, game_height: %d, game_width: %d, paddle_height: %d, paddle_width: %d, paddle_offset: %d, ball_diameter: %d, player_move_step: %d",
+            "PongGameEngine initialized with game state: %s, game_height: %d, game_width: %d, paddle_height: %d, paddle_width: %d, paddle_offset: %d, ball_radius: %d, player_move_step: %d",
             game_state,
             self.game_height,
             self.game_width,
             self.paddle_height,
             self.paddle_width,
             self.paddle_offset,
-            self.ball_diameter,
+            self.ball_radius,
             self.player_move_step,
         )
 
@@ -95,14 +95,14 @@ class PongGameEngine:
         Checks for collisions between the ball and the top or bottom walls.
         Reverses the ball's direction if a collision is detected.
         """
-        if self.game_state.ball_y_position <= 0:
+        if self.game_state.ball_y_position - self.ball_radius <= 0:
             self.game_state.ball_y_direction *= -1
             self.game_state.ball_y_position += self.game_state.ball_y_direction
             logger.debug(
                 "Ball collided with top wall and bounced back. New direction: %d",
                 self.game_state.ball_y_direction,
             )
-        elif self.game_state.ball_y_position >= self.game_height:
+        elif self.game_state.ball_y_position + self.ball_radius >= self.game_height:
             self.game_state.ball_y_direction *= -1
             self.game_state.ball_y_position += self.game_state.ball_y_direction
             logger.debug(
@@ -117,9 +117,9 @@ class PongGameEngine:
         Reverses the ball's direction if a collision is detected.
         """
         if (
-            self.game_state.ball_x_position - self.ball_diameter
+            self.game_state.ball_x_position - self.ball_radius
             <= self.paddle_width + self.paddle_offset
-            or self.game_state.ball_x_position + self.ball_diameter
+            or self.game_state.ball_x_position + self.ball_radius
             >= self.game_width - self.paddle_width - self.paddle_offset
         ):
             logger.info(
@@ -129,15 +129,15 @@ class PongGameEngine:
             )
             if self._handle_paddle_collision(self.game_state.player_1_id):
                 self.game_state.ball_x_direction *= -1
-                self.game_state.ball_x_position += self.game_state.ball_x_direction
+                # self.game_state.ball_x_position += self.game_state.ball_x_direction
                 logger.info(
                     "New ball position after colliding with player_1 y: %d ; x: %d",
                     self.game_state.ball_y_position,
                     self.game_state.ball_x_position,
                 )
-            if self._handle_paddle_collision(self.game_state.player_2_id):
+            elif self._handle_paddle_collision(self.game_state.player_2_id):
                 self.game_state.ball_x_direction *= -1
-                self.game_state.ball_x_position += self.game_state.ball_x_direction
+                # self.game_state.ball_x_position += self.game_state.ball_x_direction
                 logger.info(
                     "New ball position after colliding with player_2 y: %d ; x: %d",
                     self.game_state.ball_y_position,
@@ -176,21 +176,22 @@ class PongGameEngine:
         paddle_middle = (paddle_top + paddle_bottom) / 2
         ball_y = self.game_state.ball_y_position
         if ball_y < paddle_top or ball_y > paddle_bottom:
+            logger.info("Bally Y position outside of paddle")
             return False
 
         # find new ball's Y direction in a range of 0.5 to -0.5
-        hit_distance_to_center = ball_y - paddle_middle
-        normalized_hit_distance = hit_distance_to_center / (self.paddle_height / 2)
-        normalized_hit_distance = max(-3, min(3, normalized_hit_distance))
-        self.ball_y_direction = normalized_hit_distance
-
-        if hit_distance_to_center > (paddle_bottom - paddle_middle):
-            logger.info(
-                "ERROR: hit distance is larger than distance from \
-            paddle center to paddle bottom. Setting hit_distance_to_center \
-            to paddle_bottom - paddle_middle. Needs review"
-            )
-            hit_distance_to_center = paddle_bottom - paddle_middle
+        # hit_distance_to_center = ball_y - paddle_middle
+        # normalized_hit_distance = hit_distance_to_center / (self.paddle_height / 2)
+        # normalized_hit_distance = max(-3, min(3, normalized_hit_distance))
+        # self.ball_y_direction = normalized_hit_distance
+        #
+        # if hit_distance_to_center > (paddle_bottom - paddle_middle):
+        #     logger.info(
+        #         "ERROR: hit distance is larger than distance from \
+        #     paddle center to paddle bottom. Setting hit_distance_to_center \
+        #     to paddle_bottom - paddle_middle. Needs review"
+        #     )
+        #     hit_distance_to_center = paddle_bottom - paddle_middle
 
         return True
 
@@ -199,15 +200,11 @@ class PongGameEngine:
         Checks if a player has scored a point. Updates the score and handles
         the scoring event.
         """
-        if self.game_state.ball_x_position <= 0:
-            self._handle_score_point(
-                self.game_state.player_2_id, self.game_state.player_2_name
-            )
+        if self.game_state.ball_x_position - self.ball_radius <= 0:
+            self._handle_score_point(self.game_state.player_2_id)
             logger.info("Player 2 scored a point")
-        elif self.game_state.ball_x_position >= self.game_width:
-            self._handle_score_point(
-                self.game_state.player_1_id, self.game_state.player_1_name
-            )
+        elif self.game_state.ball_x_position + self.ball_radius >= self.game_width:
+            self._handle_score_point(self.game_state.player_1_id)
             logger.info("Player 2 scored a point")
 
     def _handle_score_point(self, player_id):
