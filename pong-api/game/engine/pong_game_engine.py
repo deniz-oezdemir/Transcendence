@@ -1,7 +1,7 @@
-from ..models import GameState
 import logging
+from ..models import GameState
 
-logger = logging.getLogger("pongApi")
+logger = logging.getLogger(__name__)
 
 
 class PongGameEngine:
@@ -11,11 +11,27 @@ class PongGameEngine:
         self.game_width = game_state.game_width
         self.paddle_height = game_state.paddle_height
         self.paddle_width = game_state.paddle_width
-        self.player_move_step = 10
-        logger.debug("PongGameEngine initialized with game state: %s", game_state)
+        self.paddle_offset = game_state.paddle_offset
+        self.ball_diameter = game_state.ball_diameter
+        self.player_move_step = game_state.move_step
+        logger.info(
+            "PongGameEngine initialized with game state: %s, game_height: %d, game_width: %d, paddle_height: %d, paddle_width: %d, paddle_offset: %d, ball_diameter: %d, player_move_step: %d",
+            game_state,
+            self.game_height,
+            self.game_width,
+            self.paddle_height,
+            self.paddle_width,
+            self.paddle_offset,
+            self.ball_diameter,
+            self.player_move_step,
+        )
 
     def update_game_state(self):
-        logger.debug("Updating game state")
+        """
+        Updates the game state, including ball position, collision detection,
+        and scoring. Saves the updated game state.
+        """
+        logger.info("GameEngine: Updating game state")
         if not self.game_state.is_game_running or self.game_state.is_game_ended:
             logger.info("Game is not running or has ended")
             return
@@ -30,63 +46,12 @@ class PongGameEngine:
         )
 
         # Check for collisions with the top and bottom walls
-        if self.game_state.ball_y_position <= 0:
-            self.game_state.ball_y_direction *= -1
-            self.game_state.ball_y_position += self.game_state.ball_y_direction
-            logger.debug(
-                f"Ball collided with top wall and bounced back. New direction: {self.game_state.ball_y_direction}"
-            )
-        elif self.game_state.ball_y_position >= self.game_height:
-            self.game_state.ball_y_direction *= -1
-            self.game_state.ball_y_position += self.game_state.ball_y_direction
-            logger.debug(
-                f"Ball collided with bottom wall and bounced back. New direction y: {self.game_state.ball_y_direction}; x: {self.game_state.ball_x_direction}"
-            )
+        self._check_wall_collisions()
+        self._check_paddle_collision()
+        self._check_scoring()
 
-        # Log the ball's position and direction after handling collisions
-        logger.debug(
-            f"Ball position y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}, Ball direction y: {self.game_state.ball_y_direction}; x: {self.game_state.ball_x_direction}"
-        )
-
-        # Check for collisions with the paddles
-        if (
-            self.game_state.ball_x_position <= self.paddle_width
-            or self.game_state.ball_x_position >= self.game_width - self.paddle_width
-        ):
-            logger.info(
-                f"Ball collided with paddles position y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}"
-            )
-            if self._check_paddle_collision(
-                self.game_state.player_1_id, self.game_state.player_1_name
-            ):
-                self.game_state.ball_x_direction *= -1
-                self.game_state.ball_x_position += self.game_state.ball_x_direction
-                logger.info(
-                    f"New ball position after colliding with player_1 y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}"
-                )
-            if self._check_paddle_collision(
-                self.game_state.player_2_id, self.game_state.player_2_name
-            ):
-                self.game_state.ball_x_direction *= -1
-                self.game_state.ball_x_position += self.game_state.ball_x_direction
-                logger.info(
-                    f"New ball position after colliding with player_2 y: {self.game_state.ball_y_position} ; x: {self.game_state.ball_x_position}"
-                )
-
-        # Check for scoring
-        if self.game_state.ball_x_position <= 0:
-            self._score_point(
-                self.game_state.player_2_id, self.game_state.player_2_name
-            )
-        elif self.game_state.ball_x_position >= self.game_width:
-            self._score_point(
-                self.game_state.player_1_id, self.game_state.player_1_name
-            )
-            logger.info("Player 1 scored a point")
-
-        # Save the updated game state
         self.game_state.save()
-        logger.debug("Game state saved")
+        logger.debug("GameEngine: Game state saved")
 
     def move_player(self, player_id, direction):
         logger.debug("Moving player: player_id=%s, direction=%s", player_id, direction)
@@ -125,58 +90,80 @@ class PongGameEngine:
             player_position,
         )
 
-    def _check_paddle_collision(self, player_id, player_name):
-        logger.debug(
-            "Checking paddle collision for player_id=%s, player_name=%s, \
-            player_1_id=%s, player_2_id=%s, player_1_position=%s, \
-            player_2_position=%s",
-            player_id,
-            player_name,
-            self.game_state.player_1_id,
-            self.game_state.player_2_id,
-            self.game_state.player_1_position,
-            self.game_state.player_2_position,
-        )
+    def _check_wall_collisions(self):
+        """
+        Checks for collisions between the ball and the top or bottom walls.
+        Reverses the ball's direction if a collision is detected.
+        """
+        if self.game_state.ball_y_position <= 0:
+            self.game_state.ball_y_direction *= -1
+            self.game_state.ball_y_position += self.game_state.ball_y_direction
+            logger.debug(
+                "Ball collided with top wall and bounced back. New direction: %d",
+                self.game_state.ball_y_direction,
+            )
+        elif self.game_state.ball_y_position >= self.game_height:
+            self.game_state.ball_y_direction *= -1
+            self.game_state.ball_y_position += self.game_state.ball_y_direction
+            logger.debug(
+                "Ball collided with bottom wall and bounced back. New direction y: %d; x: %d",
+                self.game_state.ball_y_direction,
+                self.game_state.ball_x_direction,
+            )
 
-        # Check if player ID exists and find paddle top position
-        if player_id == self.game_state.player_1_id:
-            paddle_top = self.game_state.player_1_position
-        elif player_id == self.game_state.player_2_id:
-            paddle_top = self.game_state.player_2_position
-        else:
-            logger.warning("Invalid player_id for paddle collision: %s", player_id)
-            return False
+    def _check_paddle_collision(self):
+        """
+        Checks for collisions between the ball and the paddles.
+        Reverses the ball's direction if a collision is detected.
+        """
+        if (
+            self.game_state.ball_x_position - self.ball_diameter
+            <= self.paddle_width + self.paddle_offset
+            or self.game_state.ball_x_position + self.ball_diameter
+            >= self.game_width - self.paddle_width - self.paddle_offset
+        ):
+            logger.info(
+                "Ball possibly collided with paddles. Position y: %d ; x: %d",
+                self.game_state.ball_y_position,
+                self.game_state.ball_x_position,
+            )
+            if self._handle_paddle_collision(self.game_state.player_1_id):
+                self.game_state.ball_x_direction *= -1
+                self.game_state.ball_x_position += self.game_state.ball_x_direction
+                logger.info(
+                    "New ball position after colliding with player_1 y: %d ; x: %d",
+                    self.game_state.ball_y_position,
+                    self.game_state.ball_x_position,
+                )
+            if self._handle_paddle_collision(self.game_state.player_2_id):
+                self.game_state.ball_x_direction *= -1
+                self.game_state.ball_x_position += self.game_state.ball_x_direction
+                logger.info(
+                    "New ball position after colliding with player_2 y: %d ; x: %d",
+                    self.game_state.ball_y_position,
+                    self.game_state.ball_x_position,
+                )
 
-        paddle_bottom = paddle_top + self.paddle_height
-        ball_y = self.game_state.ball_y_position
+    def _handle_paddle_collision(self, player_id):
+        """
+        Handles the collision between the ball and a paddle.
+        Updates the ball's direction based on the collision point.
 
-        logger.debug(
-            "Paddle collision details: paddle_top=%s, paddle_bottom=%s, ball_y=%s",
-            paddle_top,
-            paddle_bottom,
-            ball_y,
-        )
-
-        collision = paddle_top <= ball_y <= paddle_bottom
+        Args:
+            player_id (int): The ID of the player whose paddle collided with the ball.
+        """
         logger.info(
-            "Paddle collision result for player_id=%s: %s", player_id, collision
-        )
-        return collision
-
-    def _handle_paddle_collision(self, player_id, player_name):
-        logger.debug(
-            "Handling paddle collision for player_id=%s, player_name=%s, \
+            "Handling paddle collision for player_id=%s, \
             player_1_id=%s, player_2_id=%s, player_1_position=%s, \
             player_2_position=%s",
             player_id,
-            player_name,
             self.game_state.player_1_id,
             self.game_state.player_2_id,
             self.game_state.player_1_position,
             self.game_state.player_2_position,
         )
 
-        # Check if player ID exists and find paddle top position
+        # Match ID and find corresponding paddle
         if player_id == self.game_state.player_1_id:
             paddle_top = self.game_state.player_1_position
         elif player_id == self.game_state.player_2_id:
@@ -188,12 +175,13 @@ class PongGameEngine:
         paddle_bottom = paddle_top + self.paddle_height
         paddle_middle = (paddle_top + paddle_bottom) / 2
         ball_y = self.game_state.ball_y_position
-        self.ball_x_direction *= -1  # reverse ball's X direction
+        if ball_y < paddle_top or ball_y > paddle_bottom:
+            return False
 
         # find new ball's Y direction in a range of 0.5 to -0.5
         hit_distance_to_center = ball_y - paddle_middle
         normalized_hit_distance = hit_distance_to_center / (self.paddle_height / 2)
-        normalized_hit_distance = max(-1, min(1, normalized_hit_distance))
+        normalized_hit_distance = max(-3, min(3, normalized_hit_distance))
         self.ball_y_direction = normalized_hit_distance
 
         if hit_distance_to_center > (paddle_bottom - paddle_middle):
@@ -204,19 +192,42 @@ class PongGameEngine:
             )
             hit_distance_to_center = paddle_bottom - paddle_middle
 
-    def _score_point(self, player_id, player_name):
-        # Increment the player's score
+        return True
 
-        logger.info(f"_score_point() for player id: {player_id}")
+    def _check_scoring(self):
+        """
+        Checks if a player has scored a point. Updates the score and handles
+        the scoring event.
+        """
+        if self.game_state.ball_x_position <= 0:
+            self._handle_score_point(
+                self.game_state.player_2_id, self.game_state.player_2_name
+            )
+            logger.info("Player 2 scored a point")
+        elif self.game_state.ball_x_position >= self.game_width:
+            self._handle_score_point(
+                self.game_state.player_1_id, self.game_state.player_1_name
+            )
+            logger.info("Player 2 scored a point")
+
+    def _handle_score_point(self, player_id):
+        """
+        Handles the event when a player scores a point.
+        Updates the player's score, resets the ball position and direction,
+        and checks if the game has ended based on the maximum score.
+
+        Args:
+            player_id (int): The ID of the player who scored.
+        """
+        logger.info(f"_handle_score_point() for player id: {player_id}")
         if player_id == self.game_state.player_1_id:
             self.game_state.player_1_score += 1
         elif player_id == self.game_state.player_2_id:
             self.game_state.player_2_score += 1
 
         logger.info(
-            "Player scored: player_id=%s, player_name=%s, player_1_score=%s, player_2_score=%s",
+            "Player scored: player_id=%s, player_1_score=%s, player_2_score=%s",
             player_id,
-            player_name,
             self.game_state.player_1_score,
             self.game_state.player_2_score,
         )
@@ -236,7 +247,3 @@ class PongGameEngine:
             self.game_state.is_game_ended = True
             self.game_state.is_game_running = False
             logger.info("Game ended: player 2 won")
-
-        # Save the updated game state
-        self.game_state.save()
-        logger.debug("Game state saved after scoring")

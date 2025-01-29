@@ -107,47 +107,47 @@ export default function OnlinePongGamePage({ navigate }) {
       const gameData = await response.json();
 
       // Calculate Responsive Dimensions
-      const responsiveDimensions = calculateResponsiveDimensions({
-        game: {
-          width: gameData.game_width,
-          height: gameData.game_height,
-        },
-        paddle: {
-          width: gameData.paddle_width,
-          height: gameData.paddle_height,
-          offset: gameData.paddle_width,
-        },
-        ball: {
-          width: 20,
-          height: 20,
-        },
-        scaleFactor: 1,
-      });
+      // const responsiveDimensions = calculateResponsiveDimensions({
+      //   game: {
+      //     width: gameData.game_width,
+      //     height: gameData.game_height,
+      //   },
+      //   paddle: {
+      //     width: gameData.paddle_width,
+      //     height: gameData.paddle_height,
+      //     offset: gameData.paddle_width,
+      //   },
+      //   ball: {
+      //     width: 20,
+      //     height: 20,
+      //   },
+      //   scaleFactor: 1,
+      // });
 
       // Update Game State
       setGameId(gameData.id);
-      setGameDimensions(responsiveDimensions);
-
-      setGamePositions({
-        ball: {
-          x: Math.floor(
-            gameData.ball_x_position * responsiveDimensions.scaleFactor
-          ),
-          y: Math.floor(
-            gameData.ball_y_position * responsiveDimensions.scaleFactor
-          ),
-        },
-        ballDirection: {
-          x: gameData.ball_x_direction,
-          y: gameData.ball_y_direction,
-        },
-        player1Position: Math.floor(
-          gameData.player_1_position * responsiveDimensions.scaleFactor
-        ),
-        player2Position: Math.floor(
-          gameData.player_2_position * responsiveDimensions.scaleFactor
-        ),
-      });
+      // setGameDimensions(responsiveDimensions);
+      //
+      // setGamePositions({
+      //   ball: {
+      //     x: Math.floor(
+      //       gameData.ball_x_position * responsiveDimensions.scaleFactor
+      //     ),
+      //     y: Math.floor(
+      //       gameData.ball_y_position * responsiveDimensions.scaleFactor
+      //     ),
+      //   },
+      //   ballDirection: {
+      //     x: gameData.ball_x_direction,
+      //     y: gameData.ball_y_direction,
+      //   },
+      //   player1Position: Math.floor(
+      //     gameData.player_1_position * responsiveDimensions.scaleFactor
+      //   ),
+      //   player2Position: Math.floor(
+      //     gameData.player_2_position * responsiveDimensions.scaleFactor
+      //   ),
+      // });
 
       setGameScore({
         player1: { score: 0 },

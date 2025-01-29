@@ -142,6 +142,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     def update_game_state(self):
         game_state = self.get_game_state()
+        logger.info(f"consumers update_game_state init with state: {game_state}")
 
         if game_state.is_game_running:
             try:
@@ -191,7 +192,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                         )
         except Exception as e:
             logger.error(
-            f"Error sending game result to matchmaking: {str(e)}", exc_info=True
+                f"Error sending game result to matchmaking: {str(e)}", exc_info=True
             )
 
     def get_game_state(self):

@@ -16,7 +16,9 @@ class GameState(models.Model):
     game_height = models.IntegerField(default=400)
     game_width = models.IntegerField(default=600)
     paddle_height = models.IntegerField(default=80)
-    paddle_width = models.IntegerField(default=20)
+    paddle_width = models.IntegerField(default=10)
+    paddle_offset = models.IntegerField(default=20)
+    move_step = models.IntegerField(default=10)
 
     # Players
     player_1_id = models.IntegerField(null=True, blank=True)
@@ -29,6 +31,7 @@ class GameState(models.Model):
     player_2_position = models.IntegerField(default=160)
 
     # Ball state
+    ball_diameter = models.IntegerField(default=20)
     ball_x_position = models.IntegerField(default=290)
     ball_y_position = models.IntegerField(default=190)
     ball_x_direction = models.IntegerField(default=3)
@@ -56,10 +59,13 @@ class GameState(models.Model):
                 "ball_y_position": self.ball_y_position,
                 "ball_x_direction": self.ball_x_direction,
                 "ball_y_direction": self.ball_y_direction,
+                "ball_diameter": self.ball_diameter,
                 "game_height": self.game_height,
                 "game_width": self.game_width,
                 "paddle_height": self.paddle_height,
                 "paddle_width": self.paddle_width,
+                "paddle_offset": self.paddle_offset,
+                "move_step": self.move_step,
             }
             cache.set(cache_key, json.dumps(game_state_data), timeout=None)
             logger.info(f"Saved game state to cache with key {cache_key}")
@@ -99,5 +105,8 @@ class GameState(models.Model):
             f"  x: {self.ball_x_direction}\n"
             f"  y: {self.ball_y_direction}\n"
             f"Player 1 at position: {self.player_1_name} (ID: {self.player_1_id}, Position: {self.player_1_position}, Score: {self.player_1_score})\n"
-            f"Player 2 at position: {self.player_2_name} (ID: {self.player_2_id}, Position: {self.player_2_position}, Score: {self.player_2_score})"
+            f"Player 2 at position: {self.player_2_name} (ID: {self.player_2_id}, Position: {self.player_2_position}, Score: {self.player_2_score})\n"
+            f"Game status:\n"
+            f"  is_game_running: {self.is_game_running}\n"
+            f"  is_game_ended: {self.is_game_ended}"
         )

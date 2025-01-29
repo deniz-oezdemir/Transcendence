@@ -46,7 +46,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "INFO",  # Changed from INFO to INFO
+            "level": "INFO",
             "class": "logging.StreamHandler",
             "formatter": "simple",
         },
