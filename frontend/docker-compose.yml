@@ -2,20 +2,20 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: ${DOCKER_FILE}
+      dockerfile: ${DOCKER_FILE:-dockerfiles/Dockerfile.dev}
     container_name: frontend
     volumes:
       - .:/app
       - /app/node_modules
     environment:
-      - NODE_ENV=${NODE_ENV}
+      - NODE_ENV=${NODE_ENV:-development}
     ports:
       - '8000:8000'
       - '4430:4430'
-    stdin_open: ${STDIN_ENABLED}
-    tty: ${TTY_ENABLED}
-    # networks:
-    #   - transcendence
-# networks:
-#   transcendence:
-#     external: true
+    stdin_open: ${STDIN_ENABLED:-true}
+    tty: ${TTY_ENABLED:-true}
+    networks:
+      - transcendence
+networks:
+  transcendence:
+    external: true
