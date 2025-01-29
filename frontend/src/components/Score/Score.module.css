@@ -2,8 +2,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--bs-body-bg);
-  border: 2px solid var(--bs-body-color);
+  background-color: var(--bs-tertiary-bg);
+  border: 2px solid var(--bs-tertiary-color);
   border-radius: 10px;
   padding: 0.6rem 1.8rem;
   margin: 1.5rem 0;
