@@ -15,13 +15,13 @@ export default function GameControls() {
           <span class="${styles.key}" style="background-color: var(--bs-primary);">S</span> Down | Left Player
         </li>
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-warning);">␣</span> Start/Stop Ball
+          <span class="${styles.key}" style="background-color: var(--bs-body-bg);">␣</span> Start/Stop Ball
         </li>
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-danger);">↑</span> Up | Right Player
+          <span class="${styles.key}" style="background-color: var(--bs-secondary);">↑</span> Up | Right Player
         </li>
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-danger);">↓</span> Down | Right Player
+          <span class="${styles.key}" style="background-color: var(--bs-secondary);">↓</span> Down | Right Player
         </li>
       </ul>
     `,
