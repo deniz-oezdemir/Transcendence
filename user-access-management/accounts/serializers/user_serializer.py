@@ -6,6 +6,7 @@ from accounts.validators import UserValidators
 class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
         required=True,
+        min_length=6,
         max_length=20,
         error_messages={"max_length": "Username cannot exceed 20 characters."}
     )
@@ -27,8 +28,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'avatar_url', 'status', 'friends']
-        read_only_fields = ['status']
+        fields = ['id', 'username', 'password', 'avatar_url', 'status', 'friends']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'avatar_url': {'required': False, 'allow_null': True}
+        }
+        read_only_fields = ['id']
 
     def validate_username(self, value):
         return UserValidators.validate_username(value)

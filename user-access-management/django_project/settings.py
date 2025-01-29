@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "accounts",
     "rest_framework",
     'drf_spectacular',
+    'rest_framework.authtoken',
 ]
 
 REST_FRAMEWORK = {

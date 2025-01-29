@@ -1,28 +1,39 @@
 from rest_framework import serializers
-from accounts.models import CustomUser
 from django.contrib.auth import authenticate
-from accounts.validators import UserValidators
-from accounts.serializers.user_serializer import UserSerializer
+from rest_framework.authtoken.models import Token
 
 class LoginSerializer(serializers.Serializer):
-    class Meta(UserSerializer.Meta):
-        fields = ['username', 'password']
+    username = serializers.CharField(
+        required=True,
+        error_messages={"blank": "Username cannot be empty."}
+    )
+    password = serializers.CharField(
+        write_only=True, #to not include it in the JSON output
+        required=True,
+        error_messages={"blank": "Password cannot be empty."}
+    )
 
     def validate(self, data):
-        # Apply individual field validations first
-        username = self.validate_username(data.get('username'))
-        password = self.validate_password(data.get('password'))
+        username = data.get('username')
+        password = data.get('password')
 
-        user = authenticate(username=username, password=password)
+        user = authenticate(username=username, password=password) #returns user object
         if not user:
             raise serializers.ValidationError('Invalid username or password.')
         if not user.is_active:
             raise serializers.ValidationError('This account has been deactivated.')
-        
+
+        data['user'] = user
+        return data
+
+    def create(self, validated_data):    
+        user = validated_data['user']
+        token, _ = Token.objects.get_or_create(user=user)
         user.status = 'online'
-        user.save()
+        user.save(update_fields=['status'])
         
         return {
-            'token': user.auth_token.key,
-            'user': UserSerializer(user).data
+            'token': token.key,
+            'user': user.username,
+            'id': user.id
         }
