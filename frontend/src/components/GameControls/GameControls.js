@@ -15,7 +15,7 @@ export default function GameControls() {
           <span class="${styles.key}" style="background-color: var(--bs-primary);">S</span> Down | Left Player
         </li>
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-body-bg);">␣</span> Start/Stop Ball
+          <span class="${styles.key}" style="background-color: var(--bs-orange);">␣</span> Start/Stop Ball
         </li>
         <li class="${styles.keyGroup}">
           <span class="${styles.key}" style="background-color: var(--bs-secondary);">↑</span> Up | Right Player
