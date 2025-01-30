@@ -34,8 +34,9 @@ class GameState(models.Model):
     ball_diameter = models.IntegerField(default=20)
     ball_x_position = models.IntegerField(default=290)
     ball_y_position = models.IntegerField(default=190)
-    ball_x_direction = models.IntegerField(default=3)
-    ball_y_direction = models.IntegerField(default=3)
+    ball_x_direction = models.FloatField(default=3)
+    ball_y_direction = models.FloatField(default=3)
+    ball_speed = models.FloatField(default=6)
 
     objects = GameStateManager()
 
@@ -57,6 +58,7 @@ class GameState(models.Model):
                 "player_2_position": self.player_2_position,
                 "ball_x_position": self.ball_x_position,
                 "ball_y_position": self.ball_y_position,
+                "ball_speed": self.ball_speed,
                 "ball_x_direction": self.ball_x_direction,
                 "ball_y_direction": self.ball_y_direction,
                 "ball_diameter": self.ball_diameter,
@@ -68,16 +70,16 @@ class GameState(models.Model):
                 "move_step": self.move_step,
             }
             cache.set(cache_key, json.dumps(game_state_data), timeout=None)
-            logger.info(f"Saved game state to cache with key {cache_key}")
+            logger.debug(f"Saved game state to cache with key {cache_key}")
         else:
             super().save(*args, **kwargs)
-            logger.info(f"Saved game state to database with id {self.id}")
+            logger.debug(f"Saved game state to database with id {self.id}")
 
     def delete(self, *args, **kwargs):
         if settings.USE_REDIS:
             cache_key = f"game_state_{self.id}"
             cache.delete(cache_key)
-            logger.info(f"Deleted game state from cache with key {cache_key}")
+            logger.debug(f"Deleted game state from cache with key {cache_key}")
         super().delete(*args, **kwargs)
 
     @classmethod
@@ -104,6 +106,8 @@ class GameState(models.Model):
             f"With direction:\n"
             f"  x: {self.ball_x_direction}\n"
             f"  y: {self.ball_y_direction}\n"
+            f"And speed:\n"
+            f"  y: {self.ball_speed}\n"
             f"Player 1 at position: {self.player_1_name} (ID: {self.player_1_id}, Position: {self.player_1_position}, Score: {self.player_1_score})\n"
             f"Player 2 at position: {self.player_2_name} (ID: {self.player_2_id}, Position: {self.player_2_position}, Score: {self.player_2_score})\n"
             f"Game status:\n"
