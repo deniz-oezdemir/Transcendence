@@ -10,8 +10,10 @@ import alias from '@rollup/plugin-alias';
 import path from 'path';
 import dev from 'rollup-plugin-dev';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
+import replace from '@rollup/plugin-replace';
 
 const isDev = process.env.ROLLUP_WATCH;
+const isProduction = process.env.NODE_ENV === 'production';
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 export default {
@@ -22,6 +24,12 @@ export default {
     sourcemap: true,
   },
   plugins: [
+    replace({
+      'process.env.NODE_ENV': JSON.stringify(
+        isProduction ? 'production' : 'development'
+      ),
+      preventAssignment: true,
+    }),
     alias({
       entries: [
         {
@@ -57,7 +65,7 @@ export default {
       include: /node_modules/,
       requireReturnsDefault: 'auto',
     }),
-    resolve(),
+    // resolve(),
     postcss({
       plugins: [postcssImport()],
       modules: false,

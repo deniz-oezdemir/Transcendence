@@ -14,7 +14,7 @@ export default function Paddle({ gameDimensions, gamePositions, side }) {
   const paddleComponent = createComponent('div', {
     className: styles.paddle || 'paddle',
     attributes: {
-      style: `width: ${paddleDimensions.width}px; height: ${paddleDimensions.height}px; top: ${playerPosition}px; ${side}: ${paddleDimensions.offset}; ${side === 'left' ? 'background-color: ' + 'var(--bs-primary)' : 'background-color: ' + 'var(--bs-danger)'}`,
+      style: `width: ${paddleDimensions.width}px; height: ${paddleDimensions.height}px; top: ${playerPosition}px; ${side}: ${paddleDimensions.offset}; ${side === 'left' ? 'background-color: ' + 'var(--bs-primary)' : 'background-color: ' + 'var(--bs-secondary)'}`,
     },
   });
 
