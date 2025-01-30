@@ -37,6 +37,8 @@
     "rollup-plugin-postcss": "^4.0.2"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.3"
   }

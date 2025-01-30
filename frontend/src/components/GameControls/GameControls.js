@@ -6,22 +6,22 @@ export default function GameControls() {
   return createComponent('div', {
     className: styles.controls || 'controls',
     content: `
-      <h4 class="${styles.title}">🎮 Game Controls</h4>
+      <h4 class="${styles.title}"><i class="fa-solid fa-keyboard"></i> Game Controls</h4>
       <ul class="${styles.keysContainer}">
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-primary);"><i style="font-size: 2rem;" class="ti ti-circle-letter-w-filled"></i></span> Up | Left Player
+          <span class="${styles.key}" style="background-color: var(--bs-primary);"><i class="fa-solid fa-w"></i></span> Up | Left Player
         </li>
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-primary);"><i style="font-size: 2rem;" class="ti ti-circle-letter-s-filled"></i></span> Down | Left Player
+          <span class="${styles.key}" style="background-color: var(--bs-primary);"><i class="fa-solid fa-s"></i></span> Down | Left Player
         </li>
         <li class="${styles.keyGroup}">
           <span class="${styles.key}" style="background-color: var(--bs-orange);">␣</span> Start/Stop Ball
         </li>
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-secondary);"><i class="ti ti-arrow-big-up-filled"></i></span> Up | Right Player
+          <span class="${styles.key}" style="background-color: var(--bs-secondary);"><i class="fa-solid fa-circle-up"></i></span> Up | Right Player
         </li>
         <li class="${styles.keyGroup}">
-          <span class="${styles.key}" style="background-color: var(--bs-secondary);"><i class="ti ti-arrow-big-down-filled"></i></span> Down | Right Player
+          <span class="${styles.key}" style="background-color: var(--bs-secondary);"><i class="fa-solid fa-circle-down"></i></span> Down | Right Player
         </li>
       </ul>
     `,
