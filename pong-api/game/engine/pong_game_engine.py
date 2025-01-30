@@ -14,6 +14,10 @@ class PongGameEngine:
         self.paddle_height = game_state.paddle_height
         self.paddle_width = game_state.paddle_width
         self.paddle_offset = game_state.paddle_offset
+        self.paddle_1_x_position = self.paddle_width + self.paddle_offset
+        self.paddle_2_x_position = self.game_width - (
+            self.paddle_width + self.paddle_offset
+        )
         self.ball_radius = game_state.ball_diameter / 2
         self.ball_speed = game_state.ball_speed
         self.player_move_step = game_state.move_step
@@ -137,12 +141,12 @@ class PongGameEngine:
         if (
             self.paddle_offset
             <= self.game_state.ball_x_position - self.ball_radius
-            <= self.paddle_offset + self.paddle_width
+            <= self.paddle_1_x_position
         ):
             # ball might hit paddle player_1
             player_id_to_check = self.game_state.player_1_id
         elif (
-            self.game_state.game_width - (self.paddle_width + self.paddle_offset)
+            self.paddle_2_x_position
             <= self.game_state.ball_x_position + self.ball_radius
             <= self.game_state.game_width - self.paddle_offset
         ):
@@ -152,14 +156,14 @@ class PongGameEngine:
             # No possibility of hit
             return
 
-        logger.debug(
+        logger.info(
             "Ball possibly collided with paddles. Position y: %d ; x: %d",
             self.game_state.ball_y_position,
             self.game_state.ball_x_position,
         )
 
         if self._handle_paddle_collision(player_id_to_check):
-            logger.debug(
+            logger.info(
                 "New ball position after colliding with player_%d y: %d ; x: %d, direction: y: %f, x: %f",
                 player_id_to_check,
                 self.game_state.ball_y_position,
@@ -187,7 +191,8 @@ class PongGameEngine:
             self.game_state.player_2_position,
         )
 
-        # Match ID and find corresponding paddle
+        # Match ID and find corresponding paddle. If ball behind paddle
+        # set ball_x_position to paddle_x position
         if player_id == self.game_state.player_1_id:
             paddle_top = self.game_state.player_1_position
         elif player_id == self.game_state.player_2_id:
@@ -202,6 +207,17 @@ class PongGameEngine:
         if ball_y < paddle_top or ball_y > paddle_bottom:
             logger.debug("Bally Y position outside of paddle")
             return False
+
+        # For cases where ball is "inside" paddle
+        self.handle_ball_paddle_collision(
+            player_id,
+            self.paddle_1_x_position
+            if player_id == self.game_state.player_1_id
+            else self.paddle_2_x_position,
+            self.game_state.ball_x_position,
+            self.ball_radius,
+            self.game_state.ball_x_direction,
+        )
 
         hit_distance_to_center = ball_y - paddle_middle
         max_y_speed = (
@@ -229,7 +245,6 @@ class PongGameEngine:
 
         # ball_x_direction will be what remains of ball_speed after subtracting
         # ball_y_direction
-        print(f"new y direction {normalized_hit_distance}")
         self.game_state.ball_y_direction = normalized_hit_distance * -1
         new_x_direction = self.ball_speed - math.fabs(normalized_hit_distance)
         self.game_state.ball_x_direction *= -1
@@ -240,9 +255,40 @@ class PongGameEngine:
         )
         # Inmediatly move ball to avoid some issues
         self.game_state.ball_y_position += self.game_state.ball_y_direction
+        print(
+            f"gonna add {self.game_state.ball_x_direction} to x position {self.game_state.ball_x_position}"
+        )
         self.game_state.ball_x_position += self.game_state.ball_x_direction
+        print(f"result: {self.game_state.ball_x_position}")
 
         return True
+
+    def handle_ball_paddle_collision(
+        self,
+        player_id,
+        paddle_x_position,
+        ball_x_position,
+        ball_radius,
+        ball_x_direction,
+    ):
+        if player_id == self.game_state.player_1_id:
+            if ball_x_position + ball_radius < paddle_x_position:
+                self.game_state.ball_x_position = (
+                    paddle_x_position + ball_radius + ball_x_direction
+                )
+                logger.info(
+                    "Ball 'inside' paddle_1, position set to: %f",
+                    self.game_state.ball_x_position,
+                )
+        elif player_id == self.game_state.player_2_id:
+            if ball_x_position + ball_radius > paddle_x_position:
+                self.game_state.ball_x_position = (
+                    paddle_x_position - ball_radius - ball_x_direction
+                )
+                logger.info(
+                    "Ball 'inside' paddle_2, position set to: %f",
+                    self.game_state.ball_x_position,
+                )
 
     def _check_scoring(self):
         """
