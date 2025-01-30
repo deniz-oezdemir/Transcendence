@@ -117,7 +117,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                         {"type": "game_state_update", "state": game_state_data}
                     )
                 )
-                await asyncio.sleep(1 / 60)
+                await asyncio.sleep(1 / 30)
         except asyncio.CancelledError:
             logger.debug("Periodic task cancelled")
 

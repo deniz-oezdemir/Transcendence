@@ -36,7 +36,7 @@ class GameState(models.Model):
     ball_y_position = models.FloatField(default=190)
     ball_x_direction = models.FloatField(default=3)
     ball_y_direction = models.FloatField(default=3)
-    ball_speed = models.FloatField(default=3)
+    ball_speed = models.FloatField(default=12)
 
     objects = GameStateManager()
 
