@@ -107,6 +107,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Default authentication backend
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -135,3 +138,5 @@ AUTH_USER_MODEL = "accounts.CustomUser" #points to my custom user model
 # Uploaded avatars
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # The 'media' folder in your project root
 MEDIA_URL = '/media/'  # The URL prefix for accessing media files
+
+# APPEND_SLASH=False

@@ -28,9 +28,9 @@ class FriendRequestSerializer(serializers.Serializer):
         
         return validate_friend_username(current_user, friend_username, is_delete_operation=False)
     
-    def create(self):
+    def create(self, validated_data):
         current_user_instance = self.context['request'].user
-        friend_username = self.validated_data['friend_username']
+        friend_username = validated_data['friend_username']
         friend_object = CustomUser.objects.get(username=friend_username)
 
         current_user_instance.friends.add(friend_object) 

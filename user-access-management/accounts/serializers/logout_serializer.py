@@ -1,8 +1,8 @@
-# from rest_framework import serializers
-# from django.contrib.auth import authenticate
-# from rest_framework.authtoken.models import Token
+from rest_framework import serializers
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
 
-#this logic would serve for manual token implementation, with a one-to-one field in the user model for the token
+# # this logic would serve for manual token implementation, with a one-to-one field in the user model for the token
 # class LogoutSerializer(serializers.Serializer):
 #     token = serializers.CharField(
 #         required=True,
