@@ -116,33 +116,42 @@ class PongGameEngine:
         Checks for collisions between the ball and the paddles.
         Reverses the ball's direction if a collision is detected.
         """
+        player_id_to_check = None
+
         if (
-            self.game_state.ball_x_position - self.ball_radius
-            <= self.paddle_width + self.paddle_offset
-            or self.game_state.ball_x_position + self.ball_radius
-            >= self.game_width - self.paddle_width - self.paddle_offset
+            self.paddle_offset
+            <= self.game_state.ball_x_position - self.ball_radius
+            <= self.paddle_offset + self.paddle_width
         ):
+            # ball might hit paddle player_1
+            player_id_to_check = self.game_state.player_1_id
+            pass
+        elif (
+            self.game_state.game_width - (self.paddle_width + self.paddle_offset)
+            <= self.game_state.ball_x_position + self.ball_radius
+            <= self.game_state.game_width - self.paddle_offset
+        ):
+            # ball might hit paddle player_2
+            player_id_to_check = self.game_state.player_2_id
+            pass
+        else:
+            # No possibility of hit
+            return
+
+        logger.info(
+            "Ball possibly collided with paddles. Position y: %d ; x: %d",
+            self.game_state.ball_y_position,
+            self.game_state.ball_x_position,
+        )
+
+        if self._handle_paddle_collision(player_id_to_check):
+            self.game_state.ball_x_direction *= -1
             logger.info(
-                "Ball possibly collided with paddles. Position y: %d ; x: %d",
+                "New ball position after colliding with player_%d y: %d ; x: %d",
+                player_id_to_check,
                 self.game_state.ball_y_position,
                 self.game_state.ball_x_position,
             )
-            if self._handle_paddle_collision(self.game_state.player_1_id):
-                self.game_state.ball_x_direction *= -1
-                # self.game_state.ball_x_position += self.game_state.ball_x_direction
-                logger.info(
-                    "New ball position after colliding with player_1 y: %d ; x: %d",
-                    self.game_state.ball_y_position,
-                    self.game_state.ball_x_position,
-                )
-            elif self._handle_paddle_collision(self.game_state.player_2_id):
-                self.game_state.ball_x_direction *= -1
-                # self.game_state.ball_x_position += self.game_state.ball_x_direction
-                logger.info(
-                    "New ball position after colliding with player_2 y: %d ; x: %d",
-                    self.game_state.ball_y_position,
-                    self.game_state.ball_x_position,
-                )
 
     def _handle_paddle_collision(self, player_id):
         """
