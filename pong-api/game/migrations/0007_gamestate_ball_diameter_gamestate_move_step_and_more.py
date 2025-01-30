@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='gamestate',
-            name='ball_diameter',
+            name='ball_radius',
             field=models.IntegerField(default=20),
         ),
         migrations.AddField(

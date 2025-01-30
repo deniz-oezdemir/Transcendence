@@ -25,7 +25,7 @@ class GameStateSerializer(serializers.ModelSerializer):
             "ball_x_direction",
             "ball_y_direction",
             "ball_speed",
-            "ball_diameter",
+            "ball_radius",
             "game_height",
             "game_width",
             "paddle_height",
@@ -56,7 +56,7 @@ class GameStateSerializer(serializers.ModelSerializer):
             "ball_speed", GameState._meta.get_field("ball_speed").default
         )
         validated_data.setdefault(
-            "ball_diameter", GameState._meta.get_field("ball_diameter").default
+            "ball_radius", GameState._meta.get_field("ball_radius").default
         )
         validated_data.setdefault(
             "ball_x_direction", GameState._meta.get_field("ball_x_direction").default

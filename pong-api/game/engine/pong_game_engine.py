@@ -18,7 +18,7 @@ class PongGameEngine:
         self.paddle_2_x_position = self.game_width - (
             self.paddle_width + self.paddle_offset
         )
-        self.ball_radius = game_state.ball_diameter / 2
+        self.ball_radius = game_state.ball_radius
         self.ball_speed = game_state.ball_speed
         self.player_move_step = game_state.move_step
         logger.debug(

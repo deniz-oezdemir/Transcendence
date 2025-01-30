@@ -31,7 +31,7 @@ class GameState(models.Model):
     player_2_position = models.FloatField(default=160)
 
     # Ball state
-    ball_diameter = models.IntegerField(default=20)
+    ball_radius = models.IntegerField(default=10)
     ball_x_position = models.FloatField(default=290)
     ball_y_position = models.FloatField(default=190)
     ball_x_direction = models.FloatField(default=3)
@@ -61,7 +61,7 @@ class GameState(models.Model):
                 "ball_speed": self.ball_speed,
                 "ball_x_direction": self.ball_x_direction,
                 "ball_y_direction": self.ball_y_direction,
-                "ball_diameter": self.ball_diameter,
+                "ball_radius": self.ball_radius,
                 "game_height": self.game_height,
                 "game_width": self.game_width,
                 "paddle_height": self.paddle_height,
