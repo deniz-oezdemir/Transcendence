@@ -224,16 +224,9 @@ class PongGameEngine:
             self.ball_speed * 0.6
         )  # Max percentage of ball_speed that can be "used" in the Y direction
         normalized_hit_distance = (
-            hit_distance_to_center
-            / (self.paddle_height / 2)
-            * (
-                max_y_speed
-            )  # This will determine Y direction and thus should never equal speed, as that would leave X direction at zero
-        )
-        normalized_hit_distance = max(
-            max_y_speed,
-            min(max_y_speed, normalized_hit_distance),
-        )
+            hit_distance_to_center / (self.paddle_height / 2)
+        ) * max_y_speed
+        normalized_hit_distance = min(max_y_speed, normalized_hit_distance)
 
         if hit_distance_to_center > (paddle_bottom - paddle_middle):
             logger.debug(
@@ -245,7 +238,8 @@ class PongGameEngine:
 
         # ball_x_direction will be what remains of ball_speed after subtracting
         # ball_y_direction
-        self.game_state.ball_y_direction = normalized_hit_distance * -1
+        self.game_state.ball_y_direction = normalized_hit_distance
+        print(f"new y directoin {self.game_state.ball_y_direction}")
         new_x_direction = self.ball_speed - math.fabs(normalized_hit_distance)
         self.game_state.ball_x_direction *= -1
         self.game_state.ball_x_direction = (
@@ -255,11 +249,7 @@ class PongGameEngine:
         )
         # Inmediatly move ball to avoid some issues
         self.game_state.ball_y_position += self.game_state.ball_y_direction
-        print(
-            f"gonna add {self.game_state.ball_x_direction} to x position {self.game_state.ball_x_position}"
-        )
         self.game_state.ball_x_position += self.game_state.ball_x_direction
-        print(f"result: {self.game_state.ball_x_position}")
 
         return True
 
