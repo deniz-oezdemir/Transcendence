@@ -21,10 +21,10 @@ export default function WaitingRoom() {
   
         if (data.type === 'match_created' || data.type === 'match_updated') {
           if (Array.isArray(data.all_matches)) {
-            setMatches(JSON.stringify(data.all_matches, null, 2));
+            setMatches(data.all_matches);
             console.log('Updated matches:', matches());
           } else {
-            console.error('Invalid matches format:', JSON.stringify(data.all_matches, null, 2));
+            console.error('Invalid matches format:', data.all_matches);
           }
         }
       } catch (err) {
@@ -61,13 +61,20 @@ export default function WaitingRoom() {
   createEffect(() => {
     const m = matches();
     console.log('gamelist', gameList, m);
-    m && m.forEach((match) => {
-      const element = createComponent("li", {
-        content: `status: ${match.status}`,
-      })
-      gameList.element.replaceChild(element.element);
-    })
-  })
+    
+    if (Array.isArray(m)) {
+      gameList.element.innerHTML = '';
+
+      m.forEach((match) => {
+        const element = createComponent("div", {
+          content: `Match ID: ${match.match_id}, Player1: ${match.player_1_id}, Player2: ${match.player_2_id}, Status: ${match.status}`,
+        });
+        gameList.element.appendChild(element.element);
+      });
+    } else {
+      console.error('Matches is not an array:', m);
+    }
+  });
 
 
 
@@ -84,9 +91,9 @@ export default function WaitingRoom() {
         children: [
           createComponent('pre', {
             style: 'color: white;',  // Make sure text is visible
-            content: matches,
-            children: [ gameList]  // Format JSON with indentation
-          })
+            content: matches() ? JSON.stringify(matches(), null, 2) : '',
+          }),
+          gameList
         ]
       })
     ]
