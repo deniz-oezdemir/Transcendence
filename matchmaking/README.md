@@ -17,15 +17,9 @@ Info: match and game are used synonymously.
 
 
 ## Goals
-First version: support only matches - work in progress
+First version: support only matches - done
 
-Second version: support also tournmanets - TODO
-
-01/31/2025 TODO
-- write complete data tables
-- write complete matchmaking logic (without postgres data deletion)
-- spin up game history and copy all data over after match is created
-
+Second version: support also tournmanets - work in progress
 
 ## Subject Requirements
 
@@ -87,94 +81,52 @@ Second version: support also tournmanets - TODO
 - to create game: use game engine's rest api (done by game engine service) write logic to create game when active - done and to be tested with pong api and to be integrated with pong API: update pong api so it can be run in docker so the services can be on the same network - done
 - to consume game result: expose a rest api for post requests - done and to be integrated with pong API
 
+6. Introduce tournaments
+- write new data tables for matches and tournaments - done
+- write complete matchmaking logic (without postgres data deletion) - done
+- connect to frontend and game engine
+- spin up game history service and copy all data over after a match or a tournament is finished
+- add more data collection to matchmaking and game history services depending on what frontend wants to display in stats
+
 ## Testing
 
-1. **Start Services**:
-	```bash
-	cd matchmaking/docker
-	docker compose up --build
-	```
+### Manual Testing with WebSocket Interface
+A test interface is provided at [test_websocket.html](matchmaking/test_websocket.html) that allows testing the WebSocket functionality:
 
-2. **Monitor Databases**:
+1. Run the matchmaking service
+2. Open test_websocket.html in a browser
+3. Use the interface to:
+   - Create matches and tournaments
+   - Join existing games
+   - Test different player IDs
+   - Delete all games
 
-	- **PostgreSQL**:
-		```bash
-		# Connect to PostgreSQL container
-		docker exec -it docker-postgres-1 psql -U deniz matchmaking_db
+### Testing Regular Matches
+1. Create a match as Player 1
+2. Join the match as Player 2
+3. Verify both players are connected
+4. Verify match status changes to "active"
 
-		# List all tables
-		\dt
+### Testing Tournaments
+1. Create a tournament (4 or 8 players)
+2. Join with multiple players until tournament is full
+3. Verify tournament starts automatically when full
+4. Verify match creation for tournament rounds:
+   - 4 player tournament: 2 semi-finals -> 1 final
+   - 8 player tournament: 4 quarter-finals -> 2 semi-finals -> 1 final
 
-		# View matches
-		SELECT * FROM "waitingRoom_match";
+### API Testing
+Key API endpoints to test:
 
-		# Exit PostgreSQL
-		\q
-		```
-
-	- **Redis**:
-		```bash
-		# Connect to Redis container
-		docker exec -it docker-redis-1 redis-cli
-
-		# List all keys
-		KEYS *
-
-		# Monitor real-time updates
-		MONITOR
-
-		# Exit Redis
-		exit
-		```
-
-3. **WebSocket API**:
-	- Open `test_websocket.html` in your browser.
-	- Create or join games.
-
-4. **REST API**:
-	- Use the following `curl` command to post match results:
-	```bash
-	curl -X POST http://localhost:8000/api/match/1/result/ \
+1. Modify ids to post match results:
+```bash
+	curl -X POST \
 	-H "Content-Type: application/json" \
-	-d '{
-		"winner_id": 1,
-		"player1_score": 5,
-		"player2_score": 3,
-		"start_time": "2025-01-17T13:00:00Z",
-		"end_time": "2025-01-17T13:15:00Z"
-	}'
-	```
-	- `match_id` is inferred from the URL.
+	-d '{"winner_id": id}' \
+	http://localhost:8001/api/match/id/result/
+```
 
-5. **Check Logs**:
-	```bash
-	# View all container logs
-	docker compose logs -f
-
-	# View specific service logs
-	docker compose logs -f matchmaking
-	docker compose logs -f postgres
-	docker compose logs -f redis
-	```
-
-6. **Clean Up Matches**:
-	- Uncomment the following line in `matchmaking/waitingRoom/consumers.py` to delete all matches for testing purposes:
-	```python
-	# Delete all matches for testing purposes
-	# await self.delete_all_matches()
-	```
-
-7. **Clean Up Docker**:
-	```bash
-	# Stop and remove containers, networks, volumes
-	docker compose down -v
-
-	# Remove all unused containers, networks, images
-	docker system prune -a
-
-	# Remove all volumes
-	docker volume prune
-	```
+2. Refresh [test_websocket.html](matchmaking/test_websocket.html) to see results.
 
 ## Notes
 
