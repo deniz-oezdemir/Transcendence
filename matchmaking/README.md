@@ -21,6 +21,12 @@ First version: support only matches - work in progress
 
 Second version: support also tournmanets - TODO
 
+01/31/2025 TODO
+- write complete data tables
+- write complete matchmaking logic (without postgres data deletion)
+- spin up game history and copy all data over after match is created
+
+
 ## Subject Requirements
 
 - Players must be able to play against each other.
