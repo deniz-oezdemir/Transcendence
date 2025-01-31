@@ -6,7 +6,7 @@ from accounts.models import CustomUser
 class RegisterSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
         required=True,
-        min_length=6,
+        min_length=3,
         max_length=20,
         error_messages={"max_length": "Username cannot exceed 20 characters."}
     )
