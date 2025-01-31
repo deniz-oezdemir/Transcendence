@@ -14,7 +14,7 @@ export default function OnlinePongGamePage({ navigate }) {
   const [gameId, setGameId] = createSignal(-1);
   const [gameDimensions, setGameDimensions] = createSignal({
     game: { width: 600, height: 400 },
-    paddle: { width: 10, height: 80, offset: 20 },
+    paddle: { width: 15, height: 80, offset: 20 },
     ball: { width: 20, height: 20 },
     scaleFactor: 1,
   });
@@ -89,7 +89,7 @@ export default function OnlinePongGamePage({ navigate }) {
         },
         body: JSON.stringify({
           id: 1,
-          max_score: 30,
+          max_score: 3,
           player_1_id: 1,
           player_1_name: 'PlayerOne',
           player_2_id: 2,
