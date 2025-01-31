@@ -24,5 +24,8 @@ COPY . .
 # Expose port for Django/Daphne
 EXPOSE 8000
 
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
 # Use entrypoint script
 ENTRYPOINT ["/entrypoint.sh"]
