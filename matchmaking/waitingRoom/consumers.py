@@ -248,19 +248,21 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def is_player_in_game(self, player_id):
-        # Check if player is in a match
+        # Check if player is in a match (either pending or active)
         in_match = (
-            Match.objects.filter(status=Match.PENDING)
+            Match.objects.filter(status__in=[Match.PENDING, Match.ACTIVE])
             .filter(player_1_id=player_id)
             .exists()
-            or Match.objects.filter(status=Match.PENDING)
+            or Match.objects.filter(status__in=[Match.PENDING, Match.ACTIVE])
             .filter(player_2_id=player_id)
             .exists()
         )
 
-        # Check if player is in a tournament
+        # Check if player is in a tournament (either pending or active)
         in_tournament = (
-            Tournament.objects.filter(status=Tournament.PENDING)
+            Tournament.objects.filter(
+                status__in=[Tournament.PENDING, Tournament.ACTIVE]
+            )
             .filter(players__contains=[player_id])
             .exists()
         )
