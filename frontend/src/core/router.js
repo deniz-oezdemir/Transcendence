@@ -86,7 +86,7 @@ export class Router {
           params,
           query: queryParams,
           path,
-          navigate: this.navigate,
+          navigate: this.navigate.bind(this),
           location: this.location,
         };
 

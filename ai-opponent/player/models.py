@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 class AIPlayer(models.Model):
     ai_player_id = models.IntegerField()
     target_game_id = models.IntegerField()
+    position = models.IntegerField(default=160)
 
     objects = AIPlayerManager()
 

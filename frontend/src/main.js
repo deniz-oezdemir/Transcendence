@@ -8,11 +8,22 @@ import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import StatsPage from './pages/StatsPage/StatsPage';
 import PongGamePage from './pages/PongGamePage/PongGamePage';
+import OnlinePongGamePage from './pages/OnlinePongGamePage/OnlinePongGamePage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
+
+import { library, dom } from '@fortawesome/fontawesome-svg-core';
+import {
+  faCircleUp,
+  faCircleDown,
+  faW,
+  faS,
+  faKeyboard,
+} from '@fortawesome/free-solid-svg-icons';
 
 import '@popperjs/core';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import '@fortawesome/fontawesome-svg-core/styles.css';
 
 import '@styles/global.css';
 import SignupPage from './pages/SignupPage.js/SignupPage';
@@ -35,6 +46,12 @@ const isAuthenticated = async (path, context) => {
   }
   return true;
 }
+
+// --- Icons from Font Awesome
+// Add icons to library
+library.add(faCircleUp, faCircleDown, faW, faS, faKeyboard);
+// Replace i tags with SVG automatically
+dom.watch();
 
 // --- EXAMPLES ----
 // Example: Middlewares are functions that run before a navigation, when you
@@ -103,6 +120,7 @@ const routes = [
     component: AdminSettingsPage,
     layoutComponent: AdminLayout,
   },
+  { path: '/online-pong-game', component: OnlinePongGamePage },
 ];
 
 // Initialize Theme Manager

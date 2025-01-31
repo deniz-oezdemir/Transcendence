@@ -25,7 +25,7 @@ export default function HomePage() {
       Link({
         href: '/pong-game',
         content: 'Go to Pong Game Page',
-        className: `${styles.button} mx-2`, // Apply the button class
+        className: 'mx-2 btn btn-secondary',
         attributes: { type: 'button', role: 'button' },
       }),
       //CounterExample(),

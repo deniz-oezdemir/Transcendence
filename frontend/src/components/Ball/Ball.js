@@ -2,20 +2,26 @@ import { createComponent } from '@component';
 import { createEffect } from '@reactivity';
 import styles from './Ball.module.css';
 
-export default function Ball({ position }) {
+export default function Ball({ gameDimensions, gamePositions }) {
+  const { ball: ballPosition } = gamePositions();
+  const { ball: ballDimensions } = gameDimensions();
+
   const ballComponent = createComponent('div', {
     className: styles.ball || 'ball',
     attributes: {
-      style: `top: ${position().top}px; left: ${position().left}px;`,
+      style: `width: ${ballDimensions.width}px; height: ${ballDimensions.height}px; top: ${ballPosition.y - ballDimensions.height * 0.5}px; left: ${ballPosition.x - ballDimensions.width * 0.5}px;`,
     },
   });
 
   // Reactive updates for the ball's position
   createEffect(() => {
-    const { top, left } = position();
-    console.log('top', top, 'left', left);
-    ballComponent.element.style.top = `${top}px`;
-    ballComponent.element.style.left = `${left}px`;
+    const { ball: ballPosition } = gamePositions();
+    const { ball: ballDimensions } = gameDimensions();
+
+    ballComponent.element.style.top = `${ballPosition.y - ballDimensions.height * 0.5}px`;
+    ballComponent.element.style.left = `${ballPosition.x - ballDimensions.width * 0.5}px`;
+    ballComponent.element.style.width = `${ballDimensions.width}px`;
+    ballComponent.element.style.height = `${ballDimensions.height}px`;
   });
 
   return ballComponent;
