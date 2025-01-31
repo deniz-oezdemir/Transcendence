@@ -191,7 +191,7 @@
 				case 'initial_games':
 					addMessage('Info', `Matches: ${JSON.stringify(data.games.matches)}`, false);
 					addMessage('Info', `Tournaments: ${JSON.stringify(data.games.tournaments)}`, false);
-					updateGameList(data.available_games);
+					updateGameList(data.games);
 					break;
 
 				case 'match_created':
