@@ -20,8 +20,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         self.game_start_time = timezone.now()  # Store start time
 
         await self.channel_layer.group_add(self.game_group_name, self.channel_name)
+        self.game_state = await database_sync_to_async(self.get_game_state)()
         await self.accept()
-        logger.debug(f"WebSocket connected: {self.channel_name}")
+        logger.debug(
+            f"WebSocket connected: {self.channel_name}, game_state: {self.game_state}"
+        )
         self.periodic_task = asyncio.create_task(self.send_periodic_updates())
 
     async def disconnect(self, close_code):
@@ -60,14 +63,13 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def move_player(self, player_id, direction):
-        game_state = self.get_game_state()
-        if game_state.is_game_running:
+        self.game_state = self.get_game_state()
+        if self.game_state.is_game_running:
             try:
-                game_state = self.get_game_state()
-                engine = PongGameEngine(game_state)
+                engine = PongGameEngine(self.game_state)
                 engine.move_player(player_id, direction)
                 logger.debug(f"Player {player_id} moved to direction {direction}")
-                self.save_game_state(game_state)
+                self.save_game_state(self.game_state)
             except Exception as e:
                 logger.error(f"Unexpected error occurred while moving player: {e}")
         else:
@@ -76,10 +78,10 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     async def send_periodic_updates(self):
         try:
-            game_state = None
             while True:
-                game_state = await database_sync_to_async(self.get_game_state)()
-                if game_state.is_game_ended:
+                if not self.game_state.is_game_running:
+                    continue
+                if self.game_state.is_game_ended:
                     logger.debug(
                         f"Disconnect because is_game_running is: {game_state.is_game_running}, is_game_ended is: {game_state.is_game_ended}"
                     )
@@ -117,34 +119,33 @@ class GameConsumer(AsyncWebsocketConsumer):
                         {"type": "game_state_update", "state": game_state_data}
                     )
                 )
-                await asyncio.sleep(1 / 30)
+                await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
             logger.debug("Periodic task cancelled")
 
         # Check if game ended and send results
-        if game_state and game_state.is_game_ended:
+        if self.game_state and self.game_state.is_game_ended:
             winner_id = (
-                game_state.player_1_id
-                if game_state.player_1_score > game_state.player_2_score
-                else game_state.player_2_id
+                self.game_state.player_1_id
+                if self.game_state.player_1_score > self.game_state.player_2_score
+                else self.game_state.player_2_id
             )
             logger.debug(
-                f"Game ended. Winner: {winner_id}, Score: {game_state.player_1_score}-{game_state.player_2_score}"
+                f"Game ended. Winner: {winner_id}, Score: {self.game_state.player_1_score}-{self.game_state.player_2_score}"
             )
             asyncio.create_task(
                 self.send_game_result_to_matchmaking(
                     winner_id=winner_id,
-                    player1_score=game_state.player_1_score,
-                    player2_score=game_state.player_2_score,
+                    player1_score=self.game_state.player_1_score,
+                    player2_score=self.game_state.player_2_score,
                 )
             )
             logger.debug("Created task to send game results to matchmaking service")
 
     def update_game_state(self):
-        game_state = self.get_game_state()
-        logger.debug(f"consumers update_game_state init with state: {game_state}")
+        logger.debug(f"consumers update_game_state init with state: {self.game_state}")
 
-        if game_state.is_game_running:
+        if self.game_state.is_game_running:
             try:
                 game_state = self.get_game_state()
                 engine = PongGameEngine(game_state)
