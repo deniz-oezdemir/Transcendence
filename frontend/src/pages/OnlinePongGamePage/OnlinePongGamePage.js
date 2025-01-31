@@ -89,7 +89,7 @@ export default function OnlinePongGamePage({ navigate }) {
         },
         body: JSON.stringify({
           id: 1,
-          max_score: 3,
+          max_score: 30,
           player_1_id: 1,
           player_1_name: 'PlayerOne',
           player_2_id: 2,

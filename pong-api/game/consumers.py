@@ -79,7 +79,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             game_state = None
             while True:
                 game_state = await database_sync_to_async(self.get_game_state)()
-                if not game_state.is_game_running or game_state.is_game_ended:
+                if game_state.is_game_ended:
                     logger.debug(
                         f"Disconnect because is_game_running is: {game_state.is_game_running}, is_game_ended is: {game_state.is_game_ended}"
                     )

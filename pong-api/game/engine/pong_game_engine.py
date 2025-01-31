@@ -156,14 +156,14 @@ class PongGameEngine:
             # No possibility of hit
             return
 
-        logger.info(
+        logger.debug(
             "Ball possibly collided with paddles. Position y: %d ; x: %d",
             self.game_state.ball_y_position,
             self.game_state.ball_x_position,
         )
 
         if self._handle_paddle_collision(player_id_to_check):
-            logger.info(
+            logger.debug(
                 "New ball position after colliding with player_%d y: %d ; x: %d, direction: y: %f, x: %f",
                 player_id_to_check,
                 self.game_state.ball_y_position,
@@ -276,7 +276,7 @@ class PongGameEngine:
                 self.game_state.ball_x_position = (
                     paddle_x_position + ball_radius + ball_x_direction
                 )
-                logger.info(
+                logger.debug(
                     "Ball 'inside' paddle_1, position set to: %f",
                     self.game_state.ball_x_position,
                 )
@@ -285,7 +285,7 @@ class PongGameEngine:
                 self.game_state.ball_x_position = (
                     paddle_x_position - ball_radius - ball_x_direction
                 )
-                logger.info(
+                logger.debug(
                     "Ball 'inside' paddle_2, position set to: %f",
                     self.game_state.ball_x_position,
                 )
