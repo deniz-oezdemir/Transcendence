@@ -26,6 +26,26 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 
 import '@styles/global.css';
+import SignupPage from './pages/SignupPage.js/SignupPage';
+
+// Authentication Middleware
+const isAuthenticated = async (path, context) => {
+  const isAuthenticated = checkAuth();
+  console.log("path:", path);
+  console.log('isAuthenticated:', isAuthenticated);
+  if (!isAuthenticated && (
+      path.startsWith('/profile')
+      || path.startsWith('/admin')
+      || path.startsWith('/user/username')
+      || path.startsWith('/pong-game')
+      || path.startsWith('/stats')
+    )) {
+    console.log('Unauthorized access. Redirecting to login page...');
+    router.navigate('/login');
+    return false;
+  }
+  return true;
+}
 
 // --- Icons from Font Awesome
 // Add icons to library
@@ -37,11 +57,19 @@ dom.watch();
 // Example: Middlewares are functions that run before a navigation, when you
 // add this to the the router config.
 const middlewares = [
+  isAuthenticated,
   async (path, context) => {
     console.log(`Navigating to: ${path}`);
     return true;
   },
 ];
+
+// Check if the user is authenticated
+function checkAuth() {
+  //const token = localStorage.getItem('authToken');
+  //return !!token;
+  return true;
+}
 
 // Nested Layout for Admin Section: With nested layout you can define a layout
 // for a specific section of your app, in this case the admin section.
@@ -81,6 +109,7 @@ const root = document.getElementById('app');
 // Routes
 const routes = [
   { path: '/', component: HomePage },
+  { path: '/signup', component: SignupPage },
   { path: '/login', component: LoginPage },
   { path: '/user/:username', component: ProfilePage },
   { path: '/stats', component: StatsPage },

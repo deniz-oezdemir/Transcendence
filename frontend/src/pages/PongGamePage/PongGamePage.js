@@ -1,6 +1,7 @@
 import { createSignal, createEffect } from '@reactivity';
 import { createComponent, onCleanup, createCleanupContext } from '@component';
 
+import WaitingRoom from '@/components/WaitingRoom/WaitingRoom';
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
 import GameControls from '@/components/GameControls/GameControls';
