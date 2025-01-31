@@ -177,87 +177,65 @@
 		}
 
 		function addGameDataMessage(type, data) {
-			addMessage('Info', 'Current Games:', false);
-			addMessage('Info', `Matches: ${JSON.stringify(data.matches)}`, false);
-			addMessage('Info', `Tournaments: ${JSON.stringify(data.tournaments)}`, false);
+			addMessage('Info', `Matches: ${JSON.stringify(data.available_games?.matches)}`, false);
+			addMessage('Info', `Tournaments: ${JSON.stringify(data.available_games?.tournaments)}`, false);
+		}
+		socket.onmessage = function (e) {
+			const data = JSON.parse(e.data);
+
+			switch (data.type) {
+				case 'error':
+					addMessage('Error', data.message, true);
+					break;
+
+				case 'initial_games':
+					addMessage('Info', `Matches: ${JSON.stringify(data.games.matches)}`, false);
+					addMessage('Info', `Tournaments: ${JSON.stringify(data.games.tournaments)}`, false);
+					updateGameList(data.available_games);
+					break;
+
+				case 'match_created':
+					addMessage('Success', `Match ${data.id} created by Player ${data.creator_id}`);
+					addGameDataMessage('Info', data);
+					updateGameList(data.available_games);
+					break;
+
+				case 'tournament_created':
+					addMessage('Success', `Tournament ${data.id} created by Player ${data.creator_id}`);
+					addGameDataMessage('Info', data);
+					updateGameList(data.available_games);
+					break;
+
+				case 'player_joined':
+					addMessage('Success', `Player ${data.player_id} joined ${data.game_type} ${data.game_id}`);
+					addGameDataMessage('Info', data);
+					updateGameList(data.available_games);
+					break;
+
+				case 'tournament_started':
+					addMessage('Info', `Tournament ${data.tournament_id} started! Matches created: ${JSON.stringify(data.matches)}`);
+					addGameDataMessage('Info', data);
+					updateGameList(data.available_games);
+					break;
+
+				case 'games_deleted':
+					addMessage('Success', 'All matches and tournaments have been deleted');
+					addGameDataMessage('Info', data);
+					updateGameList(data.available_games);
+					break;
+			}
+		};
+
+		function requestInitialGameData() {
+			socket.send(JSON.stringify({
+				'type': 'get_games'
+			}));
 		}
 
-		socket.onmessage = function (e) {
-			const data = JSON.parse(e.data);
-
-			switch (data.type) {
-				case 'error':
-					addMessage('Error', data.message, true);
-					break;
-
-				case 'match_created':
-					addMessage('Success', `Match ${data.id} created by Player ${data.creator_id}`);
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
-
-				case 'tournament_created':
-					addMessage('Success', `Tournament ${data.id} created by Player ${data.creator_id}`);
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
-
-				case 'player_joined':
-					addMessage('Success', `Player ${data.player_id} joined ${data.game_type} ${data.game_id}`);
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
-
-				case 'tournament_started':
-					addMessage('Info', `Tournament ${data.tournament_id} started! Matches created: ${JSON.stringify(data.matches)}`);
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
-
-				case 'games_deleted':
-					addMessage('Success', 'All matches and tournaments have been deleted');
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
-			}
+		socket.onopen = () => {
+			addMessage('System', 'Connected to server');
+			requestInitialGameData();
 		};
-
-		socket.onmessage = function (e) {
-			const data = JSON.parse(e.data);
-
-			switch (data.type) {
-				case 'error':
-					addMessage('Error', data.message, true);
-					break;
-
-				case 'match_created':
-					addMessage('Success', `Match ${data.id} created by Player ${data.creator_id}`);
-					updateGameList(data.available_games);
-					break;
-
-				case 'tournament_created':
-					addMessage('Success', `Tournament ${data.id} created by Player ${data.creator_id}`);
-					updateGameList(data.available_games);
-					break;
-
-				case 'player_joined':
-					addMessage('Success', `Player ${data.player_id} joined ${data.game_type} ${data.game_id}`);
-					updateGameList(data.available_games);
-					break;
-
-				case 'tournament_started':
-					addMessage('Info', `Tournament ${data.tournament_id} started! Matches created: ${JSON.stringify(data.matches)}`);
-					updateGameList(data.available_games);
-					break;
-
-				case 'games_deleted':
-					addMessage('Success', 'All matches and tournaments have been deleted');
-					updateGameList(data.available_games);
-					break;
-			}
-		};
-
-		socket.onopen = () => addMessage('System', 'Connected to server');
 		socket.onerror = (e) => addMessage('Error', 'WebSocket error occurred', true);
 		socket.onclose = () => addMessage('System', 'Connection closed');
 

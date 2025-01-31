@@ -8,8 +8,6 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.channel_layer.group_add("waiting_room", self.channel_name)
         await self.accept()
-        available_games = await self.get_available_games()
-        await self.send(json.dumps(available_games))
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard("waiting_room", self.channel_name)
@@ -22,7 +20,12 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             return
         data = json.loads(text_data)
 
-        if data["type"] == "delete_all_games":
+        if data["type"] == "get_games":
+            games = await self.get_available_games()
+            await self.send(json.dumps({"type": "initial_games", "games": games}))
+            return
+
+        elif data["type"] == "delete_all_games":
             await self.delete_all_games()
             available_games = await self.get_available_games()
             await self.channel_layer.group_send(
@@ -264,9 +267,14 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_available_games(self):
-        matches = list(Match.objects.filter(player_2_id__isnull=True).values())
+        matches = list(
+            Match.objects.filter(status__in=[Match.PENDING, Match.ACTIVE]).values()
+        )
+
         tournaments = list(
-            Tournament.objects.filter(status=Tournament.PENDING).values()
+            Tournament.objects.filter(
+                status__in=[Tournament.PENDING, Tournament.ACTIVE]
+            ).values()
         )
         return {"matches": matches, "tournaments": tournaments}
 
