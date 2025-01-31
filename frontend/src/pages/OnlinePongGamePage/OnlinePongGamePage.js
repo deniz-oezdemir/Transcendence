@@ -91,9 +91,9 @@ export default function OnlinePongGamePage({ navigate }) {
           id: 1,
           max_score: 3,
           player_1_id: 1,
-          player_1_name: 'PlayerOne',
+          player_1_name: 'Player One',
           player_2_id: 2,
-          player_2_name: 'PlayerTwo',
+          player_2_name: 'Player Two',
         }),
       });
 
@@ -353,7 +353,17 @@ export default function OnlinePongGamePage({ navigate }) {
         })
       );
     } else if (e.key === ' ') {
-      toogleGame();
+      const ws = websocket();
+      if (ws === null) {
+        toogleGame();
+      } else {
+        console.log('toggle via websocket');
+        ws.send(
+          JSON.stringify({
+            action: 'toggle',
+          })
+        );
+      }
     } else if (e.key === 'Escape') {
       endGame(gameId());
       navigate('/');

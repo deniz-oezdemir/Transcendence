@@ -43,6 +43,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             direction = text_data_json["direction"]
             await self.move_player(player_id, direction)
 
+        if action == "toggle":
+            await self.toggle_game()
+
         await self.channel_layer.group_send(
             self.game_group_name, {"type": "game_update", "message": text_data_json}
         )
@@ -63,33 +66,39 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def move_player(self, player_id, direction):
-        self.game_state = self.get_game_state()
         if self.game_state.is_game_running:
             try:
                 engine = PongGameEngine(self.game_state)
-                engine.move_player(player_id, direction)
+                self.game_state = engine.move_player(player_id, direction)
                 logger.debug(f"Player {player_id} moved to direction {direction}")
-                self.save_game_state(self.game_state)
+
+                if self.game_state.is_game_ended:
+                    self.save_game_state(self.game_state)
+                    logger.debug("game saved")
             except Exception as e:
                 logger.error(f"Unexpected error occurred while moving player: {e}")
         else:
             logger.debug("Move player exception, game not running")
-            raise RuntimeError("move_player: Game not running")
+
+    @database_sync_to_async
+    def toggle_game(self):
+        self.game_state.is_game_running = not self.game_state.is_game_running
+        self.save_game_state(self.game_state)
+        logger.debug("toggle: game saved")
 
     async def send_periodic_updates(self):
         try:
             while True:
-                if not self.game_state.is_game_running:
-                    continue
                 if self.game_state.is_game_ended:
                     logger.debug(
-                        f"Disconnect because is_game_running is: {game_state.is_game_running}, is_game_ended is: {game_state.is_game_ended}"
+                        f"Disconnect because is_game_running is: {self.game_state.is_game_running}, is_game_ended is: {self.game_state.is_game_ended}"
                     )
                     await self.close()
                     break
 
                 await database_sync_to_async(self.update_game_state)()
-                game_state = await database_sync_to_async(self.get_game_state)()
+                # game_state = await database_sync_to_async(self.get_game_state)()
+                game_state = self.game_state
                 game_state_data = {
                     "id": game_state.id,
                     "max_score": game_state.max_score,
@@ -105,12 +114,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                     "player_2_position": game_state.player_2_position,
                     "ball_x_position": game_state.ball_x_position,
                     "ball_y_position": game_state.ball_y_position,
+                    "ball_speed": game_state.ball_speed,
                     "ball_x_direction": game_state.ball_x_direction,
                     "ball_y_direction": game_state.ball_y_direction,
+                    "ball_radius": game_state.ball_radius,
                     "game_height": game_state.game_height,
                     "game_width": game_state.game_width,
                     "paddle_height": game_state.paddle_height,
                     "paddle_width": game_state.paddle_width,
+                    "paddle_offset": game_state.paddle_offset,
                 }
                 logger.debug(f"Game state: {game_state_data}")
 
@@ -119,7 +131,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                         {"type": "game_state_update", "state": game_state_data}
                     )
                 )
-                await asyncio.sleep(1 / 15)
+                await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
             logger.debug("Periodic task cancelled")
 
@@ -147,12 +159,13 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         if self.game_state.is_game_running:
             try:
-                game_state = self.get_game_state()
-                engine = PongGameEngine(game_state)
-                engine.update_game_state()
+                engine = PongGameEngine(self.game_state)
+                self.game_state = engine.update_game_state()
                 logger.debug("game updated on engine")
-                self.save_game_state(game_state)
-                logger.debug("game saved")
+
+                if self.game_state.is_game_ended:
+                    self.save_game_state(self.game_state)
+                    logger.debug("game saved")
 
             except GameState.DoesNotExist:
                 return {"error": "Game not found"}
@@ -214,18 +227,21 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "player_2_id": game_state.player_2_id,
                 "player_1_name": game_state.player_1_name,
                 "player_2_name": game_state.player_2_name,
-                "player_1_position": game_state.player_1_position,
-                "player_2_position": game_state.player_2_position,
                 "player_1_score": game_state.player_1_score,
                 "player_2_score": game_state.player_2_score,
+                "player_1_position": game_state.player_1_position,
+                "player_2_position": game_state.player_2_position,
                 "ball_x_position": game_state.ball_x_position,
                 "ball_y_position": game_state.ball_y_position,
+                "ball_speed": game_state.ball_speed,
                 "ball_x_direction": game_state.ball_x_direction,
                 "ball_y_direction": game_state.ball_y_direction,
+                "ball_radius": game_state.ball_radius,
                 "game_height": game_state.game_height,
                 "game_width": game_state.game_width,
                 "paddle_height": game_state.paddle_height,
                 "paddle_width": game_state.paddle_width,
+                "paddle_offset": game_state.paddle_offset,
             }
             cache.set(cache_key, json.dumps(game_state_data), timeout=None)
             logger.debug("game saved in Redis")
