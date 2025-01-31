@@ -79,8 +79,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             game_state = None
             while True:
                 game_state = await database_sync_to_async(self.get_game_state)()
-                if not game_state.is_game_running or game_state.is_game_ended:
-                    logger.info(
+                if game_state.is_game_ended:
+                    logger.debug(
                         f"Disconnect because is_game_running is: {game_state.is_game_running}, is_game_ended is: {game_state.is_game_ended}"
                     )
                     await self.close()
@@ -117,9 +117,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                         {"type": "game_state_update", "state": game_state_data}
                     )
                 )
-                await asyncio.sleep(1 / 60)
+                await asyncio.sleep(1 / 30)
         except asyncio.CancelledError:
-            logger.info("Periodic task cancelled")
+            logger.debug("Periodic task cancelled")
 
         # Check if game ended and send results
         if game_state and game_state.is_game_ended:
@@ -128,7 +128,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 if game_state.player_1_score > game_state.player_2_score
                 else game_state.player_2_id
             )
-            logger.info(
+            logger.debug(
                 f"Game ended. Winner: {winner_id}, Score: {game_state.player_1_score}-{game_state.player_2_score}"
             )
             asyncio.create_task(
@@ -142,6 +142,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     def update_game_state(self):
         game_state = self.get_game_state()
+        logger.debug(f"consumers update_game_state init with state: {game_state}")
 
         if game_state.is_game_running:
             try:
@@ -162,7 +163,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         self, winner_id, player1_score, player2_score
     ):
         """Sends game result to matchmaking service when game ends"""
-        logger.info(f"Preparing to send game result for game {self.game_id}")
+        logger.debug(f"Preparing to send game result for game {self.game_id}")
         matchmaking_url = f"http://matchmaking:8000/api/match/{self.game_id}/result/"
         logger.debug(f"Matchmaking URL: {matchmaking_url}")
 
@@ -182,7 +183,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                     response_text = await response.text()
                     logger.debug(f"Matchmaking response: {response_text}")
                     if response.status == 200:
-                        logger.info(
+                        logger.debug(
                             f"Game {self.game_id} result successfully sent to matchmaking. Response: {response_text}"
                         )
                     else:
@@ -191,7 +192,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                         )
         except Exception as e:
             logger.error(
-            f"Error sending game result to matchmaking: {str(e)}", exc_info=True
+                f"Error sending game result to matchmaking: {str(e)}", exc_info=True
             )
 
     def get_game_state(self):
