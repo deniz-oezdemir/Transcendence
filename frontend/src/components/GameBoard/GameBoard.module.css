@@ -1,0 +1,10 @@
+.gameContainer {
+  position: relative;
+  /* width: 600px; */
+  /* height: 400px; */
+  margin: 0 auto;
+  background-color: var(--bs-light);
+  overflow: hidden;
+  border: 2px solid var(--bs-dark);
+  border-radius: 10px;
+}

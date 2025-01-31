@@ -1,12 +1,67 @@
-version: '3'
 services:
-  backend:
-    build:
-      context: ./pong-api
-    ports:
-      - "8000:8000"
+
+  # Frontend service
   frontend:
-    build:
-      context: ./pong-frontend
-    ports:
-      - "8080:8080"
+    extends:
+      file: ./frontend/docker/docker-compose.yml
+      service: frontend
+    networks:
+      - transcendence
+    depends_on:
+      - pong-api
+      - matchmaking
+      - ai-messages
+
+  # Pong-api service
+  pong-api:
+    extends:
+      file: ./pong-api/docker/docker-compose.yml
+      service: pong-api
+    networks:
+      - transcendence
+    depends_on:
+      - matchmaking
+
+  # Matchmaking service
+  matchmaking:
+    extends:
+      file: ./matchmaking/docker/docker-compose.yml
+      service: matchmaking
+    depends_on:
+      - matchmaking-postgres
+      - matchmaking-redis
+    networks:
+      - transcendence
+      - matchmaking_internal
+
+  matchmaking-postgres:
+    extends:
+      file: ./matchmaking/docker/docker-compose.yml
+      service: matchmaking-postgres
+    networks:
+      - matchmaking_internal
+
+  matchmaking-redis:
+    extends:
+      file: ./matchmaking/docker/docker-compose.yml
+      service: matchmaking-redis
+    networks:
+      - matchmaking_internal
+
+  # AI messages service
+  ai-messages:
+    extends:
+      file: ./ai_messages/docker/docker-compose.yml
+      service: ai-messages
+    networks:
+      - transcendence
+
+networks:
+  transcendence:
+    driver: bridge
+  matchmaking_internal:
+    driver: bridge
+
+volumes:
+  matchmaking_postgres_data:
+    driver: local

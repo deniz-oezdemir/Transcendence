@@ -1,0 +1,11 @@
+services:
+  ai-messages:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8003:8000"
+    volumes:
+      - ../:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=ai_messages.settings

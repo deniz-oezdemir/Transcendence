@@ -22,8 +22,16 @@ class GameStateSerializer(serializers.ModelSerializer):
             "player_2_position",
             "ball_x_position",
             "ball_y_position",
-            "ball_x_velocity",
-            "ball_y_velocity",
+            "ball_x_direction",
+            "ball_y_direction",
+            "ball_speed",
+            "ball_radius",
+            "game_height",
+            "game_width",
+            "paddle_height",
+            "paddle_width",
+            "paddle_offset",
+            "move_step",
         )
 
     def validate(self, data):
@@ -38,12 +46,52 @@ class GameStateSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        validated_data.setdefault("ball_x_position", 400)
-        validated_data.setdefault("ball_y_position", 200)
-        validated_data.setdefault("ball_x_velocity", 10)
-        validated_data.setdefault("ball_y_velocity", 10)
-        validated_data.setdefault("player_1_position", 50)  # Default middle position
-        validated_data.setdefault("player_2_position", 50)  # Default middle position
-        validated_data.setdefault("player_1_score", 0)  # Default score
-        validated_data.setdefault("player_2_score", 0)  # Default score
+        validated_data.setdefault(
+            "ball_x_position", GameState._meta.get_field("ball_x_position").default
+        )
+        validated_data.setdefault(
+            "ball_y_position", GameState._meta.get_field("ball_y_position").default
+        )
+        validated_data.setdefault(
+            "ball_speed", GameState._meta.get_field("ball_speed").default
+        )
+        validated_data.setdefault(
+            "ball_radius", GameState._meta.get_field("ball_radius").default
+        )
+        validated_data.setdefault(
+            "ball_x_direction", GameState._meta.get_field("ball_x_direction").default
+        )
+        validated_data.setdefault(
+            "ball_y_direction", GameState._meta.get_field("ball_y_direction").default
+        )
+        validated_data.setdefault(
+            "player_1_position", GameState._meta.get_field("player_1_position").default
+        )
+        validated_data.setdefault(
+            "player_2_position", GameState._meta.get_field("player_2_position").default
+        )
+        validated_data.setdefault(
+            "player_1_score", GameState._meta.get_field("player_1_score").default
+        )
+        validated_data.setdefault(
+            "player_2_score", GameState._meta.get_field("player_2_score").default
+        )
+        validated_data.setdefault(
+            "game_height", GameState._meta.get_field("game_height").default
+        )
+        validated_data.setdefault(
+            "game_width", GameState._meta.get_field("game_width").default
+        )
+        validated_data.setdefault(
+            "paddle_height", GameState._meta.get_field("paddle_height").default
+        )
+        validated_data.setdefault(
+            "paddle_width", GameState._meta.get_field("paddle_width").default
+        )
+        validated_data.setdefault(
+            "paddle_offset", GameState._meta.get_field("paddle_offset").default
+        )
+        validated_data.setdefault(
+            "move_step", GameState._meta.get_field("move_step").default
+        )
         return super().create(validated_data)

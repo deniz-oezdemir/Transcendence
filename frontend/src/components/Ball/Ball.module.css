@@ -1,0 +1,5 @@
+.ball {
+  background-color: var(--bs-body-color);
+  border-radius: 50%;
+  position: absolute;
+}

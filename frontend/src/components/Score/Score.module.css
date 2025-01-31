@@ -1,0 +1,37 @@
+.scoreContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bs-tertiary-bg);
+  border: 2px solid var(--bs-tertiary-color);
+  border-radius: var(--bs-border-radius);
+  padding: 0.6rem 1.8rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scoreLeft {
+  color: var(--bs-primary);
+}
+
+.scoreRight {
+  color: var(--bs-secondary);
+}
+
+.label {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: inherit;
+}

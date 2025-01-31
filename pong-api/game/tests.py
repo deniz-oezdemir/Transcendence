@@ -1,99 +1,55 @@
-from channels.testing import WebsocketCommunicator
-from channels.layers import get_channel_layer
-from channels.db import database_sync_to_async
-from django.test import TransactionTestCase
-from game.models import GameState, GamePlayer, Player
-from game.routing import application
-from asgiref.sync import async_to_sync
-import logging
-import asyncio
-
-logger = logging.getLogger(__name__)
+from rest_framework.test import APITestCase
+from rest_framework import status
+from game.models import GameState
 
 
-class GameConsumerTest(TransactionTestCase):
+class GameAPITest(APITestCase):
+    game_id = 22
+
     def setUp(self):
-        # Call the asynchronous setup method
-        async_to_sync(self.asyncSetUp)()
+        # Create a game that will be used in all tests
+        self.create_url = "/game/create_game/"
+        self.game_data = {
+            "id": self.game_id,
+            "max_score": 3,
+            "player_1_id": 1,
+            "player_1_name": "Player 1",
+            "player_2_id": 2,
+            "player_2_name": "Player 2",
+        }
+        self.client.post(self.create_url, self.game_data, format="json")
 
-    async def asyncSetUp(self):
-        self.game_state = await database_sync_to_async(GameState.objects.create)(
-            ball_x_position=0, ball_y_position=0
-        )
-        self.player1 = await database_sync_to_async(Player.objects.create)(
-            username="player1", player_name="Player 1", player_id=1
-        )
-        self.player2 = await database_sync_to_async(Player.objects.create)(
-            username="player2", player_name="Player 2", player_id=2
-        )
-        self.game_player1 = await database_sync_to_async(GamePlayer.objects.create)(
-            player=self.player1, player_position=0, player_score=0
-        )
-        self.game_player2 = await database_sync_to_async(GamePlayer.objects.create)(
-            player=self.player2, player_position=0, player_score=0
-        )
-        await database_sync_to_async(self.game_state.players.add)(self.game_player1)
-        await database_sync_to_async(self.game_state.players.add)(self.game_player2)
+    def test_create_game(self):
+        # Attempt to create a game with the same ID should fail
+        response = self.client.post(self.create_url, self.game_data, format="json")
+        if response.status_code != status.HTTP_201_CREATED:
+            print("Response data:", response.data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(GameState.objects.count(), 1)
 
-    async def test_player_move(self):
-        communicator = WebsocketCommunicator(
-            application, f"/ws/game/{self.game_state.id}/"
-        )
-        connected, subprotocol = await communicator.connect()
-        self.assertTrue(connected)
+    def test_toggle_game(self):
+        # Toggle the game
+        toggle_url = f"/game/toggle_game/{self.game_id}/"
+        response = self.client.put(toggle_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        game_state = GameState.objects.get(id=1)
+        self.assertTrue(game_state.is_game_running)
 
-        # Send a move action
-        await communicator.send_json_to(
-            {"action": "move", "player_id": self.player1.id, "direction": 1}
-        )
+    def test_get_game_state(self):
+        # Get the game state
+        get_url = f"/game/get_game_state/{self.game_id}/"
+        response = self.client.get(get_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], 1)
 
-        # Increase the timeout to give more time for the response
-        try:
-            response = await communicator.receive_json_from(timeout=10)
-            self.assertEqual(response["action"], "move")
-            self.assertEqual(response["player_id"], self.player1.id)
-            self.assertEqual(response["direction"], 1)
-        except asyncio.TimeoutError:
-            logger.error("TimeoutError: Did not receive response in time")
-            self.fail("TimeoutError: Did not receive response in time")
+    def test_delete_game(self):
+        # Delete the game
+        delete_url = f"/game/delete_game/{self.game_id}/"
+        response = self.client.delete(delete_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(GameState.objects.count(), 0)
 
-        await communicator.disconnect()
+        # Attempt to delete the same game again should fail
+        response = self.client.delete(delete_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    async def test_game_state_updates(self):
-        communicator1 = WebsocketCommunicator(
-            application, f"/ws/game/{self.game_state.id}/"
-        )
-        communicator2 = WebsocketCommunicator(
-            application, f"/ws/game/{self.game_state.id}/"
-        )
-        connected1, subprotocol1 = await communicator1.connect()
-        connected2, subprotocol2 = await communicator2.connect()
-        self.assertTrue(connected1)
-        self.assertTrue(connected2)
-
-        # Simulate game state update
-        channel_layer = get_channel_layer()
-        await channel_layer.group_send(
-            f"game_{self.game_state.id}",
-            {
-                "type": "game_state_update",
-                "state": {"ball_x_position": 100, "ball_y_position": 100},
-            },
-        )
-
-        # Increase the timeout to give more time for the response
-        try:
-            response1 = await communicator1.receive_json_from(timeout=10)
-            response2 = await communicator2.receive_json_from(timeout=10)
-
-            self.assertEqual(response1["state"]["ball_x_position"], 100)
-            self.assertEqual(response1["state"]["ball_y_position"], 100)
-            self.assertEqual(response2["state"]["ball_x_position"], 100)
-            self.assertEqual(response2["state"]["ball_y_position"], 100)
-        except asyncio.TimeoutError:
-            logger.error("TimeoutError: Did not receive response in time")
-            self.fail("TimeoutError: Did not receive response in time")
-
-        # Close the connections
-        await communicator1.disconnect()
-        await communicator2.disconnect()
