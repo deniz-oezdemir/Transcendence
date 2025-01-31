@@ -239,7 +239,6 @@ class PongGameEngine:
         # ball_x_direction will be what remains of ball_speed after subtracting
         # ball_y_direction
         self.game_state.ball_y_direction = normalized_hit_distance
-        print(f"new y directoin {self.game_state.ball_y_direction}")
         new_x_direction = self.ball_speed - math.fabs(normalized_hit_distance)
         self.game_state.ball_x_direction *= -1
         self.game_state.ball_x_direction = (
