@@ -35,9 +35,9 @@ class Tournament(models.Model):
         (FINISHED, "Finished"),
     ]
 
-    tournament_id = models.BigAutoField(primary_key=True)  # Changed to AutoField
+    tournament_id = models.BigAutoField(primary_key=True)
     creator_id = models.BigIntegerField()
-    max_players = models.IntegerField(choices=[(4, "4 Players"), (6, "6 Players")])
+    max_players = models.IntegerField(choices=[(4, "4 Players"), (8, "8 Players")])
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
     players = models.JSONField(default=list)
     matches = models.JSONField(default=list)

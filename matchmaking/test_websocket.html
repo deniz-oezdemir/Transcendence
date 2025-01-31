@@ -62,7 +62,7 @@
 			<select id="gameType">
 				<option value="match">Regular Match (2 Players)</option>
 				<option value="tournament4">Tournament (4 Players)</option>
-				<option value="tournament6">Tournament (6 Players)</option>
+				<option value="tournament8">Tournament (8 Players)</option>
 			</select>
 			<div class="player-grid">
 				<button class="player-button" onclick="createGame(1)">Player 1</button>
@@ -119,7 +119,7 @@
 			};
 
 			if (gameType !== 'match') {
-				message.max_players = gameType === 'tournament4' ? 4 : 6;
+				message.max_players = gameType === 'tournament4' ? 4 : 8;
 			}
 
 			socket.send(JSON.stringify(message));

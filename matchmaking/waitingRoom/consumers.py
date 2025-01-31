@@ -223,9 +223,9 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 {"round": 2, "matches": ["final"]},
             ]
 
-        elif tournament.max_players == 6:
+        elif tournament.max_players == 8:
             quarters = []
-            for i in range(0, 6, 2):
+            for i in range(0, 8, 2):
                 match = Match.objects.create(
                     player_1_id=players[i],
                     player_2_id=players[i + 1],
@@ -237,7 +237,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
             matches = [
                 {"round": 1, "matches": quarters},
-                {"round": 2, "matches": ["semi"]},
+                {"round": 2, "matches": ["semi1", "semi2"]},  # Two semi-finals
                 {"round": 3, "matches": ["final"]},
             ]
 
