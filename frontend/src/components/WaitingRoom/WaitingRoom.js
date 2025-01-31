@@ -56,6 +56,20 @@ export default function WaitingRoom() {
     }));
   };
 
+  const gameList = createComponent("ul");
+
+  createEffect(() => {
+    const m = matches();
+    console.log('gamelist', gameList, m);
+    m && m.forEach((match) => {
+      const element = createComponent("li", {
+        content: `status: ${match.status}`,
+      })
+      gameList.element.replaceChild(element.element);
+    })
+  })
+
+
 
   return createComponent('div', {
     className: styles.waitingRoom,
@@ -70,7 +84,8 @@ export default function WaitingRoom() {
         children: [
           createComponent('pre', {
             style: 'color: white;',  // Make sure text is visible
-            content: matches,  // Format JSON with indentation
+            content: matches,
+            children: [ gameList]  // Format JSON with indentation
           })
         ]
       })
