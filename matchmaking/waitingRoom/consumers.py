@@ -54,6 +54,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 },
             )
 
+        # Join match
         elif data["type"] == "join_match":
             if await self.is_player_in_game(data["player_id"]):
                 await self.send_error("Player already in a game")

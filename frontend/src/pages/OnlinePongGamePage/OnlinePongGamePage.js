@@ -14,7 +14,7 @@ export default function OnlinePongGamePage({ navigate }) {
   const [gameId, setGameId] = createSignal(-1);
   const [gameDimensions, setGameDimensions] = createSignal({
     game: { width: 600, height: 400 },
-    paddle: { width: 10, height: 80, offset: 20 },
+    paddle: { width: 15, height: 80, offset: 20 },
     ball: { width: 20, height: 20 },
     scaleFactor: 1,
   });
@@ -91,9 +91,9 @@ export default function OnlinePongGamePage({ navigate }) {
           id: 1,
           max_score: 3,
           player_1_id: 1,
-          player_1_name: 'PlayerOne',
+          player_1_name: 'Player One',
           player_2_id: 2,
-          player_2_name: 'PlayerTwo',
+          player_2_name: 'Player Two',
         }),
       });
 
@@ -107,47 +107,47 @@ export default function OnlinePongGamePage({ navigate }) {
       const gameData = await response.json();
 
       // Calculate Responsive Dimensions
-      const responsiveDimensions = calculateResponsiveDimensions({
-        game: {
-          width: gameData.game_width,
-          height: gameData.game_height,
-        },
-        paddle: {
-          width: gameData.paddle_width,
-          height: gameData.paddle_height,
-          offset: gameData.paddle_width,
-        },
-        ball: {
-          width: 20,
-          height: 20,
-        },
-        scaleFactor: 1,
-      });
+      // const responsiveDimensions = calculateResponsiveDimensions({
+      //   game: {
+      //     width: gameData.game_width,
+      //     height: gameData.game_height,
+      //   },
+      //   paddle: {
+      //     width: gameData.paddle_width,
+      //     height: gameData.paddle_height,
+      //     offset: gameData.paddle_width,
+      //   },
+      //   ball: {
+      //     width: 20,
+      //     height: 20,
+      //   },
+      //   scaleFactor: 1,
+      // });
 
       // Update Game State
       setGameId(gameData.id);
-      setGameDimensions(responsiveDimensions);
-
-      setGamePositions({
-        ball: {
-          x: Math.floor(
-            gameData.ball_x_position * responsiveDimensions.scaleFactor
-          ),
-          y: Math.floor(
-            gameData.ball_y_position * responsiveDimensions.scaleFactor
-          ),
-        },
-        ballDirection: {
-          x: gameData.ball_x_direction,
-          y: gameData.ball_y_direction,
-        },
-        player1Position: Math.floor(
-          gameData.player_1_position * responsiveDimensions.scaleFactor
-        ),
-        player2Position: Math.floor(
-          gameData.player_2_position * responsiveDimensions.scaleFactor
-        ),
-      });
+      // setGameDimensions(responsiveDimensions);
+      //
+      // setGamePositions({
+      //   ball: {
+      //     x: Math.floor(
+      //       gameData.ball_x_position * responsiveDimensions.scaleFactor
+      //     ),
+      //     y: Math.floor(
+      //       gameData.ball_y_position * responsiveDimensions.scaleFactor
+      //     ),
+      //   },
+      //   ballDirection: {
+      //     x: gameData.ball_x_direction,
+      //     y: gameData.ball_y_direction,
+      //   },
+      //   player1Position: Math.floor(
+      //     gameData.player_1_position * responsiveDimensions.scaleFactor
+      //   ),
+      //   player2Position: Math.floor(
+      //     gameData.player_2_position * responsiveDimensions.scaleFactor
+      //   ),
+      // });
 
       setGameScore({
         player1: { score: 0 },
@@ -353,7 +353,17 @@ export default function OnlinePongGamePage({ navigate }) {
         })
       );
     } else if (e.key === ' ') {
-      toogleGame();
+      const ws = websocket();
+      if (ws === null) {
+        toogleGame();
+      } else {
+        console.log('toggle via websocket');
+        ws.send(
+          JSON.stringify({
+            action: 'toggle',
+          })
+        );
+      }
     } else if (e.key === 'Escape') {
       endGame(gameId());
       navigate('/');

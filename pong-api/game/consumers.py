@@ -20,8 +20,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         self.game_start_time = timezone.now()  # Store start time
 
         await self.channel_layer.group_add(self.game_group_name, self.channel_name)
+        self.game_state = await database_sync_to_async(self.get_game_state)()
         await self.accept()
-        logger.debug(f"WebSocket connected: {self.channel_name}")
+        logger.debug(
+            f"WebSocket connected: {self.channel_name}, game_state: {self.game_state}"
+        )
         self.periodic_task = asyncio.create_task(self.send_periodic_updates())
 
     async def disconnect(self, close_code):
@@ -39,6 +42,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             player_id = text_data_json["player_id"]
             direction = text_data_json["direction"]
             await self.move_player(player_id, direction)
+
+        if action == "toggle":
+            await self.toggle_game()
 
         await self.channel_layer.group_send(
             self.game_group_name, {"type": "game_update", "message": text_data_json}
@@ -60,34 +66,39 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def move_player(self, player_id, direction):
-        game_state = self.get_game_state()
-        if game_state.is_game_running:
+        if self.game_state.is_game_running:
             try:
-                game_state = self.get_game_state()
-                engine = PongGameEngine(game_state)
-                engine.move_player(player_id, direction)
+                engine = PongGameEngine(self.game_state)
+                self.game_state = engine.move_player(player_id, direction)
                 logger.debug(f"Player {player_id} moved to direction {direction}")
-                self.save_game_state(game_state)
+
+                if self.game_state.is_game_ended:
+                    self.save_game_state(self.game_state)
+                    logger.debug("game saved")
             except Exception as e:
                 logger.error(f"Unexpected error occurred while moving player: {e}")
         else:
             logger.debug("Move player exception, game not running")
-            raise RuntimeError("move_player: Game not running")
+
+    @database_sync_to_async
+    def toggle_game(self):
+        self.game_state.is_game_running = not self.game_state.is_game_running
+        self.save_game_state(self.game_state)
+        logger.debug("toggle: game saved")
 
     async def send_periodic_updates(self):
         try:
-            game_state = None
             while True:
-                game_state = await database_sync_to_async(self.get_game_state)()
-                if not game_state.is_game_running or game_state.is_game_ended:
-                    logger.info(
-                        f"Disconnect because is_game_running is: {game_state.is_game_running}, is_game_ended is: {game_state.is_game_ended}"
+                if self.game_state.is_game_ended:
+                    logger.debug(
+                        f"Disconnect because is_game_running is: {self.game_state.is_game_running}, is_game_ended is: {self.game_state.is_game_ended}"
                     )
                     await self.close()
                     break
 
                 await database_sync_to_async(self.update_game_state)()
-                game_state = await database_sync_to_async(self.get_game_state)()
+                # game_state = await database_sync_to_async(self.get_game_state)()
+                game_state = self.game_state
                 game_state_data = {
                     "id": game_state.id,
                     "max_score": game_state.max_score,
@@ -103,12 +114,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                     "player_2_position": game_state.player_2_position,
                     "ball_x_position": game_state.ball_x_position,
                     "ball_y_position": game_state.ball_y_position,
+                    "ball_speed": game_state.ball_speed,
                     "ball_x_direction": game_state.ball_x_direction,
                     "ball_y_direction": game_state.ball_y_direction,
+                    "ball_radius": game_state.ball_radius,
                     "game_height": game_state.game_height,
                     "game_width": game_state.game_width,
                     "paddle_height": game_state.paddle_height,
                     "paddle_width": game_state.paddle_width,
+                    "paddle_offset": game_state.paddle_offset,
                 }
                 logger.debug(f"Game state: {game_state_data}")
 
@@ -117,40 +131,41 @@ class GameConsumer(AsyncWebsocketConsumer):
                         {"type": "game_state_update", "state": game_state_data}
                     )
                 )
-                await asyncio.sleep(1 / 60)
+                await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
-            logger.info("Periodic task cancelled")
+            logger.debug("Periodic task cancelled")
 
         # Check if game ended and send results
-        if game_state and game_state.is_game_ended:
+        if self.game_state and self.game_state.is_game_ended:
             winner_id = (
-                game_state.player_1_id
-                if game_state.player_1_score > game_state.player_2_score
-                else game_state.player_2_id
+                self.game_state.player_1_id
+                if self.game_state.player_1_score > self.game_state.player_2_score
+                else self.game_state.player_2_id
             )
-            logger.info(
-                f"Game ended. Winner: {winner_id}, Score: {game_state.player_1_score}-{game_state.player_2_score}"
+            logger.debug(
+                f"Game ended. Winner: {winner_id}, Score: {self.game_state.player_1_score}-{self.game_state.player_2_score}"
             )
             asyncio.create_task(
                 self.send_game_result_to_matchmaking(
                     winner_id=winner_id,
-                    player1_score=game_state.player_1_score,
-                    player2_score=game_state.player_2_score,
+                    player1_score=self.game_state.player_1_score,
+                    player2_score=self.game_state.player_2_score,
                 )
             )
             logger.debug("Created task to send game results to matchmaking service")
 
     def update_game_state(self):
-        game_state = self.get_game_state()
+        logger.debug(f"consumers update_game_state init with state: {self.game_state}")
 
-        if game_state.is_game_running:
+        if self.game_state.is_game_running:
             try:
-                game_state = self.get_game_state()
-                engine = PongGameEngine(game_state)
-                engine.update_game_state()
+                engine = PongGameEngine(self.game_state)
+                self.game_state = engine.update_game_state()
                 logger.debug("game updated on engine")
-                self.save_game_state(game_state)
-                logger.debug("game saved")
+
+                if self.game_state.is_game_ended:
+                    self.save_game_state(self.game_state)
+                    logger.debug("game saved")
 
             except GameState.DoesNotExist:
                 return {"error": "Game not found"}
@@ -162,7 +177,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         self, winner_id, player1_score, player2_score
     ):
         """Sends game result to matchmaking service when game ends"""
-        logger.info(f"Preparing to send game result for game {self.game_id}")
+        logger.debug(f"Preparing to send game result for game {self.game_id}")
         matchmaking_url = f"http://matchmaking:8000/api/match/{self.game_id}/result/"
         logger.debug(f"Matchmaking URL: {matchmaking_url}")
 
@@ -182,7 +197,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                     response_text = await response.text()
                     logger.debug(f"Matchmaking response: {response_text}")
                     if response.status == 200:
-                        logger.info(
+                        logger.debug(
                             f"Game {self.game_id} result successfully sent to matchmaking. Response: {response_text}"
                         )
                     else:
@@ -191,7 +206,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                         )
         except Exception as e:
             logger.error(
-            f"Error sending game result to matchmaking: {str(e)}", exc_info=True
+                f"Error sending game result to matchmaking: {str(e)}", exc_info=True
             )
 
     def get_game_state(self):
@@ -212,18 +227,21 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "player_2_id": game_state.player_2_id,
                 "player_1_name": game_state.player_1_name,
                 "player_2_name": game_state.player_2_name,
-                "player_1_position": game_state.player_1_position,
-                "player_2_position": game_state.player_2_position,
                 "player_1_score": game_state.player_1_score,
                 "player_2_score": game_state.player_2_score,
+                "player_1_position": game_state.player_1_position,
+                "player_2_position": game_state.player_2_position,
                 "ball_x_position": game_state.ball_x_position,
                 "ball_y_position": game_state.ball_y_position,
+                "ball_speed": game_state.ball_speed,
                 "ball_x_direction": game_state.ball_x_direction,
                 "ball_y_direction": game_state.ball_y_direction,
+                "ball_radius": game_state.ball_radius,
                 "game_height": game_state.game_height,
                 "game_width": game_state.game_width,
                 "paddle_height": game_state.paddle_height,
                 "paddle_width": game_state.paddle_width,
+                "paddle_offset": game_state.paddle_offset,
             }
             cache.set(cache_key, json.dumps(game_state_data), timeout=None)
             logger.debug("game saved in Redis")

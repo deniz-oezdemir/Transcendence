@@ -1,6 +1,7 @@
 import { createSignal, createEffect } from '@reactivity';
 import { createComponent, onCleanup, createCleanupContext } from '@component';
 
+import WaitingRoom from '@/components/WaitingRoom/WaitingRoom';
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
 import GameControls from '@/components/GameControls/GameControls';
@@ -238,11 +239,13 @@ export default function PongGamePage() {
   return createComponent('div', {
     className: `container position-relative`,
     children: [
+      WaitingRoom(),
       Score({ gameScore }),
       GameBoard({
         gameDimensions,
         gamePositions,
       }),
+    
       GameControls(),
     ],
     cleanup,

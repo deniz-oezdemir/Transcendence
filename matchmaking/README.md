@@ -79,7 +79,13 @@ Second version: support also tournmanets - work in progress
 
 5. As Game Engine I want to send the match result to Matchmaking.
 - to create game: use game engine's rest api (done by game engine service) write logic to create game when active - done and to be tested with pong api and to be integrated with pong API: update pong api so it can be run in docker so the services can be on the same network - done
-- to consume game result: expose a rest api for post requests - done and to be integrated with pong API
+- to consume game result: expose a rest api for post requests - done and to be integrated with pong API - done
+
+6. Integrate Frontend with matchmaking - TODO
+- create minimal frontend
+- dockerize frontend
+- connect frontend with matchmaking
+- test
 
 6. Introduce tournaments
 - write new data tables for matches and tournaments - done
