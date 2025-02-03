@@ -110,6 +110,6 @@ make clean   # Clean up Docker resources
 | Matchmaking  | 8001 |
 | Game engine  | 8002 |
 | Game history | tbd  |
-| UAM          | tbd  |
+| UAM          | 8006 |
 | AI messages  | 8003 |
 | AI player    | 8004 |

@@ -13,6 +13,7 @@ class RegisterView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     def post(self, request):
+        print(f"Received request")
         serializer = RegisterSerializer(data=request.data) #binds the data to the serializer
         if serializer.is_valid():
             serializer.save()

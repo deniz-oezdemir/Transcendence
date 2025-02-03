@@ -1,4 +1,14 @@
 services:
+  #UAM service
+  accounts:
+    container_name: accounts
+    extends:
+      file: ./user-access-management/docker/docker-compose.yml
+      service: accounts
+    networks:
+      - transcendence
+    restart: on-failure
+
   # Frontend
   frontend:
     extends:
@@ -7,6 +17,7 @@ services:
     networks:
       - transcendence
     depends_on:
+      - accounts
       - pong-api
       - matchmaking
       - ai-messages

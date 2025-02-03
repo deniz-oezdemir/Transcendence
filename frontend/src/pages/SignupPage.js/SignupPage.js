@@ -62,13 +62,12 @@ export default function SignupPage() {
       // const baseUrl = window.location.hostname === 'localhost' 
       //   ? 'http://localhost:8000' 
       //   : '/user';  // Use proxy or service name in container
-      const registerUrl = window.location.hostname === 'localhost' 
-      ? 'http://host.docker.internal:8000/register'
-      : '/register';
+      // const registerUrl = window.location.hostname === 'localhost' 
+      // ? 'http://host.docker.internal:8000/register'
+      // : '/register';
 
       // const response = await fetch(`${baseUrl}/register`, {
-      // const response = await fetch(`http://172.17.0.1:8000/register`, {
-      const response = await fetch(registerUrl, {
+      const response = await fetch(`http://localhost:8006/user/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,17 +79,18 @@ export default function SignupPage() {
           password: password()
         })
       });
-
+      
+      console.log('DEBUG: username: ', username());
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Registration failed');
       }
-
+      
       // Handle successful registration
       window.router.navigate('/login');
     } catch (error) {
-      setSubmitError(error.message);
       console.error('Registration error:', error);
+      setSubmitError(error.message);
     }
   }
 
@@ -188,8 +188,12 @@ export default function SignupPage() {
             type: 'submit',
             className: styles.submitButton,
             content: 'Signup',
-            attributes: {
-              disabled: () => !isUsernameValid()
+            // attributes: {
+            //   disabled: () => !isUsernameValid()},
+            events: {
+              click: (event) => {
+                handleRegistration(event);
+              }
             }
           }),
         ],

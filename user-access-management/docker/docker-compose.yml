@@ -7,9 +7,9 @@ services:
       - "8006:8000"
     volumes:
       - ..:/app
-    environment:
-      - DJANGO_SETTINGS_MODULE=pongApi.settings
-      - PYTHONPATH=/app
+    # environment:
+    #   - DJANGO_SETTINGS_MODULE=accounts.settings
+    #   - PYTHONPATH=/app
     networks:
       - transcendence
     healthcheck:

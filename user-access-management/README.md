@@ -108,11 +108,7 @@ Endpoint: POST /login/
 #### **Logout a User**
 Endpoint: POST /logout/
 - Headers:
-<<<<<<< HEAD
   - Authorization: Token USER_TOKEN_HERE
-=======
-  - Authorization: (session token)
->>>>>>> main
 
 - Body:
 ```json
@@ -121,23 +117,14 @@ Endpoint: POST /logout/
 
 #### **See Profile**
 Endpoint: GET /profile/
-<<<<<<< HEAD
 or using query params to get specific fields: GET /profile/?fields=username,avatar_url,status
 - Headers:
   - Authorization: Token USER_TOKEN_HERE
-=======
-- Headers:
-  - Authorization: (session token)
->>>>>>> main
 
 #### **Update Profile**
 Endpoint: PUT /profile/update/
 - Headers:
-<<<<<<< HEAD
   - Authorization: Token USER_TOKEN_HERE
-=======
-  - Authorization: (session token)
->>>>>>> main
 - Body:
 ```json
 {
@@ -155,11 +142,7 @@ Endpoint: PUT /profile/update/
 #### **Delete Account**
 Endpoint: DELETE /profile/delete/
 - Headers:
-<<<<<<< HEAD
   - Authorization: Token USER_TOKEN_HERE
-=======
-  - Authorization: (session token)
->>>>>>> main
 
 ## TO DO:
 - Implement remaining endpoints (login, logout etc with Authorization token)
