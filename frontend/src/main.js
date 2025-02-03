@@ -31,21 +31,22 @@ import SignupPage from './pages/SignupPage.js/SignupPage';
 // Authentication Middleware
 const isAuthenticated = async (path, context) => {
   const isAuthenticated = checkAuth();
-  console.log("path:", path);
+  console.log('path:', path);
   console.log('isAuthenticated:', isAuthenticated);
-  if (!isAuthenticated && (
-      path.startsWith('/profile')
-      || path.startsWith('/admin')
-      || path.startsWith('/user/username')
-      || path.startsWith('/pong-game')
-      || path.startsWith('/stats')
-    )) {
+  if (
+    !isAuthenticated &&
+    (path.startsWith('/profile') ||
+      path.startsWith('/admin') ||
+      path.startsWith('/user/username') ||
+      path.startsWith('/pong-game') ||
+      path.startsWith('/stats'))
+  ) {
     console.log('Unauthorized access. Redirecting to login page...');
     router.navigate('/login');
     return false;
   }
   return true;
-}
+};
 
 // --- Icons from Font Awesome
 // Add icons to library
