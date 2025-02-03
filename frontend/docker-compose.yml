@@ -9,13 +9,19 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${PORT:-80}
     ports:
-      - '8000:8000'
-      - '4430:4430'
+      - '8005:${PORT:-80}'
+      - '4430:443'
     stdin_open: ${STDIN_ENABLED:-true}
     tty: ${TTY_ENABLED:-true}
     networks:
       - transcendence
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', 'http://localhost:${PORT:-80}']
+      interval: 10s
+      timeout: 5s
+      retries: 3
 networks:
   transcendence:
     external: true

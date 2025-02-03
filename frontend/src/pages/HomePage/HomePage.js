@@ -7,24 +7,28 @@ export default function HomePage() {
   const cleanup = createCleanupContext();
 
   return createComponent('div', {
-    content: `
-      <h1>Home Page</h1>
-      <p>Welcome to the Home Page!</p>
-    `,
+    className: styles.container, // Apply the container class
     children: [
+      createComponent('h1', {
+        className: styles.title, // Apply the title class
+        content: 'Home Page',
+      }),
+      createComponent('p', {
+        content: 'Welcome to the Home Page!',
+      }),
       Link({
         href: '/stats',
         content: 'Go to Stats Page',
-        className: 'mx-2 btn btn-primary',
+        className: `${styles.button} mx-2`, // Apply the button class
         attributes: { type: 'button', role: 'button' },
       }),
       Link({
         href: '/pong-game',
         content: 'Go to Pong Game Page',
-        className: 'mx-2 btn btn-primary',
+        className: 'mx-2 btn btn-secondary',
         attributes: { type: 'button', role: 'button' },
       }),
-      CounterExample(),
+      //CounterExample(),
     ],
     cleanup,
   });

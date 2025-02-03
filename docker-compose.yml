@@ -1,5 +1,3 @@
-#TODO: make services wait for each other with starting by using 'depends on:'
-
 services:
   # Frontend
   frontend:
@@ -9,18 +7,10 @@ services:
     networks:
       - transcendence
     depends_on:
-      - ai-opponent
       - pong-api
       - matchmaking
       - ai-messages
-
-  # AI Opponent
-  ai-opponent:
-    extends:
-      file: ./ai-opponent/docker/docker-compose.yml
-      service: ai-opponent
-    networks:
-      - transcendence
+    restart: on-failure
 
   # Pong-api service
   pong-api:
@@ -31,6 +21,7 @@ services:
       - transcendence
     depends_on:
       - matchmaking
+    restart: on-failure
 
   # Matchmaking service
   matchmaking:
@@ -43,6 +34,7 @@ services:
     networks:
       - transcendence
       - matchmaking_internal
+    restart: on-failure
 
   matchmaking-postgres:
     extends:
@@ -50,6 +42,7 @@ services:
       service: matchmaking-postgres
     networks:
       - matchmaking_internal
+    restart: on-failure
 
   matchmaking-redis:
     extends:
@@ -57,14 +50,16 @@ services:
       service: matchmaking-redis
     networks:
       - matchmaking_internal
+    restart: on-failure
 
-  AI messages service
+  # AI messages service
   ai-messages:
     extends:
       file: ./ai_messages/docker/docker-compose.yml
       service: ai-messages
     networks:
       - transcendence
+    restart: on-failure
 
 networks:
   transcendence:

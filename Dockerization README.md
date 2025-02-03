@@ -68,19 +68,19 @@ your-service/
 
 ```yaml
 services:
- your-service:
-  extends:
-   file: ./your-service/docker/docker-compose.yml
-   service: your-service
-  networks:
-   - transcendence
+  your-service:
+    extends:
+      file: ./your-service/docker/docker-compose.yml
+      service: your-service
+    networks:
+      - transcendence
 
- your-service-db:  # If needed
-  extends:
-   file: ./your-service/docker/docker-compose.yml
-   service: your-service
-  networks:
-   - transcendence
+  your-service-db: # If needed
+    extends:
+      file: ./your-service/docker/docker-compose.yml
+      service: your-service
+    networks:
+      - transcendence
 ```
 
 ## Benefits
@@ -106,10 +106,10 @@ make clean   # Clean up Docker resources
 
 | Service      | Port |
 | ------------ | ---- |
-| Frontend     | 8000 |
+| Frontend     | 8005 |
 | Matchmaking  | 8001 |
 | Game engine  | 8002 |
 | Game history | tbd  |
 | UAM          | tbd  |
-| AI messages  | tbd  |
+| AI messages  | 8003 |
 | AI player    | 8004 |
