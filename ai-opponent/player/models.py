@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class AIPlayer(models.Model):
     ai_player_id = models.IntegerField()
     target_game_id = models.IntegerField()
-    position = models.IntegerField(default=160)
+    position = models.FloatField(default=160)
 
     objects = AIPlayerManager()
 
@@ -51,6 +51,7 @@ class AIPlayer(models.Model):
                     for k, v in ai_player_data.__dict__.items()
                     if not k.startswith("_")
                 }
+            ai_player_dict["id"] = player_id
             return cls(**ai_player_dict)
         return None
 

@@ -7,7 +7,7 @@ from .serializers import AIPlayerSerializer
 import logging
 from .consumers import WebSocketClient
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("AIOpponent")
 
 
 class CreateAIPlayer(generics.CreateAPIView):
@@ -26,18 +26,18 @@ class CreateAIPlayer(generics.CreateAPIView):
         ai_player = serializer.save()
 
         # Connect to the WebSocket server
-        try:
-            ws_client = WebSocketClient(
-                f"ws://localhost:8001/ws/game/{target_game_id}/", ai_player
-            )  # TODO: chech the uri
-            ws_client.start()
-            logger.info(
-                f"Successfully connected to WebSocket for game {target_game_id}"
-            )
-        except Exception as e:
-            logger.error(
-                f"Failed to connect to WebSocket for game {target_game_id}: {e}"
-            )
+        # try:
+        #     ws_client = WebSocketClient(
+        #         f"ws://localhost:8001/ws/game/{target_game_id}/", ai_player
+        #     )  # TODO: chech the uri
+        #     ws_client.start()
+        #     logger.info(
+        #         f"Successfully connected to WebSocket for game {target_game_id}"
+        #     )
+        # except Exception as e:
+        #     logger.error(
+        #         f"Failed to connect to WebSocket for game {target_game_id}: {e}"
+        #     )
 
         return ai_player
 
@@ -63,7 +63,7 @@ class DeleteAIPlayer(generics.DestroyAPIView):
                 ai_player = AIPlayer.objects.get(ai_player_id=player_id)
             ai_player.delete()
             logger.info(f"Successfully deleted AI Player with id {player_id}")
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response({"detail": "AI Player deleted."}, status=status.HTTP_200_OK)
         except AIPlayer.DoesNotExist:
             logger.warning(f"No AI player matches the given query for id {player_id}")
             return Response(
