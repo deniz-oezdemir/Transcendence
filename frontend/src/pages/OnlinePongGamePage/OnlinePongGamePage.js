@@ -82,7 +82,7 @@ export default function OnlinePongGamePage({ navigate }) {
    */
   async function initializeGame() {
     try {
-      const response = await fetch('http://localhost:8000/game/create_game/', {
+      const response = await fetch('http://localhost:8002/game/create_game/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

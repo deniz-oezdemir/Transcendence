@@ -6,10 +6,12 @@ from .serializers.friend_request_serializer import FriendRequestSerializer, Frie
 from .serializers.login_serializer import LoginSerializer
 # from .serializers.logout_serializer import LogoutSerializer
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers.get_profile_serializer import GetProfileSerializer
 
 class RegisterView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = RegisterSerializer(data=request.data) #binds the data to the serializer
         if serializer.is_valid():
@@ -19,6 +21,7 @@ class RegisterView(APIView):
     
 class LoginView(APIView):
     def post(self, request):
+        print(f"Received request method: {request.method}")
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             return Response(serializer.save(), status=status.HTTP_200_OK)

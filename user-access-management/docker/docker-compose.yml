@@ -1,0 +1,23 @@
+services:
+  accounts:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8006:8000"
+    volumes:
+      - ..:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=pongApi.settings
+      - PYTHONPATH=/app
+    networks:
+      - transcendence
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  transcendence:
+    external: true
