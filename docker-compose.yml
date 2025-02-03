@@ -23,6 +23,17 @@ services:
       - matchmaking
     restart: on-failure
 
+  # AI Opponent
+  ai-opponent:
+    extends:
+      file: ./ai-opponent/docker/docker-compose.yml
+      service: ai-opponent
+    networks:
+      - transcendence
+    depends_on:
+      - matchmaking
+    restart: on-failure
+
   # Matchmaking service
   matchmaking:
     extends:
