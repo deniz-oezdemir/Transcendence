@@ -58,6 +58,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             await self.send(json.dumps({"type": "initial_games", "games": games}))
             return
 
+        # TODO: delete at the end
         elif data["type"] == "delete_all_games":
             await self.delete_all_games()
             available_games = await self.get_available_games()

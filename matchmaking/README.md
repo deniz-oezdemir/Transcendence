@@ -3,18 +3,114 @@
 Info: match and game are used synonymously.
 
 ## Table of Contents
-
+- [REST Endpoint for Game Engine Service](#rest-endpoint-for-game-engine-service)
+- [WebSocket Endpoint for Front End Service](#websocket-endpoint-for-front-end-service)
 - [Goals](#goals)
 - [Subject Requirements](#subject-requirements)
 - [User Stories](#user-stories)
 - [Development Steps](#development-steps)
 - [Tables](#tables)
 - [TODO](#todo)
-- [Testing](#testing)
-- [Notes](#notes)
-	- [Django Admin](#django-admin)
+- [Is Redis not sufficient as a database? Why also use PostgreSQL?](#is-redis-not-sufficient-as-a-database-why-also-use-postgresql)
 - [Sources](#sources)
 
+
+## REST Endpoint for Game Engine Service
+
+**Create and Join Games/Tournaments**: Use [test_websocket.html](matchmaking/test_websocket.html) to create and join games or tournaments.
+
+**Post Match Results**: Modify the IDs and use the following curl command to post match results:
+	```bash
+	curl -X POST \
+	-H "Content-Type: application/json" \
+	-d '{"winner_id": id}' \
+	http://localhost:8001/api/match/id/result/
+	```
+
+**View Results**: Refresh [test_websocket.html](matchmaking/test_websocket.html) to see the updated results.
+
+**Check Match Data**: Access the Django admin interface at [http://localhost:8001/admin/waitingRoom/](http://localhost:8001/admin/waitingRoom/) with the username `admin` and password `admin` to view match data, including finished matches.
+
+## WebSocket Endpoint for Front End Service
+
+**Connect to:** `ws://localhost:8001/ws/waiting-room/`
+
+**Get Available Games**
+
+- **Send:** `{"type": "get_games"}`
+- **Receive:**
+	```json
+	{
+		"type": "initial_games",
+		"games": {
+			"matches": [],
+			"tournaments": []
+		}
+	}
+	```
+
+**Create Match**
+
+- **Send:** `{"type": "create_match", "player_id": int}`
+- **Receive:**
+	```json
+	{
+		"type": "match_created",
+		"id": int,
+		"creator_id": int,
+		"available_games": []
+	}
+	```
+
+**Join Match**
+
+- **Send:** `{"type": "join_match", "match_id": int, "player_id": int}`
+- **Receive:**
+	```json
+	{
+		"type": "player_joined",
+		"game_type": "match",
+		"game_id": int,
+		"player_id": int,
+		"available_games": []
+	}
+	```
+
+**Create Tournament**
+
+- **Send:** `{"type": "create_tournament", "player_id": int, "max_players": int}`
+- **Receive:**
+	```json
+	{
+		"type": "tournament_created",
+		"id": int,
+		"creator_id": int,
+		"available_games": []
+	}
+	```
+
+**Join Tournament**
+
+- **Send:** `{"type": "join_tournament", "tournament_id": int, "player_id": int}`
+- **Receive when not full:**
+	```json
+	{
+		"type": "player_joined",
+		"game_type": "tournament",
+		"game_id": int,
+		"player_id": int,
+		"available_games": []
+	}
+	```
+- **Receive when full:**
+	```json
+	{
+		"type": "tournament_started",
+		"tournament_id": int,
+		"matches": [],
+		"available_games": []
+	}
+	```
 
 ## Goals
 First version: support only matches - done
@@ -81,69 +177,18 @@ Second version: support also tournmanets - work in progress
 - to create game: use game engine's rest api (done by game engine service) write logic to create game when active - done and to be tested with pong api and to be integrated with pong API: update pong api so it can be run in docker so the services can be on the same network - done
 - to consume game result: expose a rest api for post requests - done and to be integrated with pong API - done
 
-6. Integrate Frontend with matchmaking - TODO
-- create minimal frontend
-- dockerize frontend
-- connect frontend with matchmaking
-- test
+6. Integrate Frontend with matchmaking
+- create minimal frontend - done
+- test - done
 
 6. Introduce tournaments
 - write new data tables for matches and tournaments - done
 - write complete matchmaking logic (without postgres data deletion) - done
-- connect to frontend and game engine
+- connect to frontend and game engine - done
 - spin up game history service and copy all data over after a match or a tournament is finished
 - add more data collection to matchmaking and game history services depending on what frontend wants to display in stats
 
-## Testing
-
-### Manual Testing with WebSocket Interface
-A test interface is provided at [test_websocket.html](matchmaking/test_websocket.html) that allows testing the WebSocket functionality:
-
-1. Run the matchmaking service
-2. Open test_websocket.html in a browser
-3. Use the interface to:
-   - Create matches and tournaments
-   - Join existing games
-   - Test different player IDs
-   - Delete all games
-
-### Testing Regular Matches
-1. Create a match as Player 1
-2. Join the match as Player 2
-3. Verify both players are connected
-4. Verify match status changes to "active"
-
-### Testing Tournaments
-1. Create a tournament (4 or 8 players)
-2. Join with multiple players until tournament is full
-3. Verify tournament starts automatically when full
-4. Verify match creation for tournament rounds:
-   - 4 player tournament: 2 semi-finals -> 1 final
-   - 8 player tournament: 4 quarter-finals -> 2 semi-finals -> 1 final
-
-### API Testing
-Key API endpoints to test:
-
-1. Modify ids to post match results:
-```bash
-	curl -X POST \
-	-H "Content-Type: application/json" \
-	-d '{"winner_id": id}' \
-	http://localhost:8001/api/match/id/result/
-```
-
-2. Refresh [test_websocket.html](matchmaking/test_websocket.html) to see results.
-
-3. Check match data (also finished matches) with django admin at http://localhost:8001/admin/waitingRoom/ with user admin and password admin.
-
-## Notes
-
-### Django Admin
-user:	deniz
-
-pw:		admin
-
-### Is Redis not sufficient as a database? Why also use PostgreSQL?
+## Is Redis not sufficient as a database? Why also use PostgreSQL?
 
 Both PostgreSQL and Redis serve different purposes in the matchmaking service:
 
