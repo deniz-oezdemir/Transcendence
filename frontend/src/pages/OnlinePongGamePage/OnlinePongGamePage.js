@@ -15,7 +15,7 @@ export default function OnlinePongGamePage({ navigate }) {
   const [gameDimensions, setGameDimensions] = createSignal({
     game: { width: 600, height: 400 },
     paddle: { width: 15, height: 80, offset: 20 },
-    ball: { width: 20, height: 20 },
+    ball: { radius: 10 },
     scaleFactor: 1,
   });
   const [gamePositions, setGamePositions] = createSignal({
@@ -64,13 +64,12 @@ export default function OnlinePongGamePage({ navigate }) {
         height: Math.floor(gameHeight),
       },
       paddle: {
-        width: Math.floor(originalDimensions.paddle.width * 0.5 * scaleFactor),
+        width: Math.floor(originalDimensions.paddle.width * scaleFactor),
         height: Math.floor(originalDimensions.paddle.height * scaleFactor),
         offset: Math.floor(originalDimensions.paddle.offset * scaleFactor),
       },
       ball: {
-        width: Math.floor(originalDimensions.ball.width * scaleFactor),
-        height: Math.floor(originalDimensions.ball.height * scaleFactor),
+        radius: Math.floor(originalDimensions.ball.radius * scaleFactor),
       },
       scaleFactor: scaleFactor,
     };
@@ -107,47 +106,46 @@ export default function OnlinePongGamePage({ navigate }) {
       const gameData = await response.json();
 
       // Calculate Responsive Dimensions
-      // const responsiveDimensions = calculateResponsiveDimensions({
-      //   game: {
-      //     width: gameData.game_width,
-      //     height: gameData.game_height,
-      //   },
-      //   paddle: {
-      //     width: gameData.paddle_width,
-      //     height: gameData.paddle_height,
-      //     offset: gameData.paddle_width,
-      //   },
-      //   ball: {
-      //     width: 20,
-      //     height: 20,
-      //   },
-      //   scaleFactor: 1,
-      // });
+      const responsiveDimensions = calculateResponsiveDimensions({
+        game: {
+          width: gameData.game_width,
+          height: gameData.game_height,
+        },
+        paddle: {
+          width: gameData.paddle_width,
+          height: gameData.paddle_height,
+          offset: gameData.paddle_width,
+        },
+        ball: {
+          radius: gameData.ball_radius,
+        },
+        scaleFactor: 1,
+      });
 
       // Update Game State
       setGameId(gameData.id);
-      // setGameDimensions(responsiveDimensions);
-      //
-      // setGamePositions({
-      //   ball: {
-      //     x: Math.floor(
-      //       gameData.ball_x_position * responsiveDimensions.scaleFactor
-      //     ),
-      //     y: Math.floor(
-      //       gameData.ball_y_position * responsiveDimensions.scaleFactor
-      //     ),
-      //   },
-      //   ballDirection: {
-      //     x: gameData.ball_x_direction,
-      //     y: gameData.ball_y_direction,
-      //   },
-      //   player1Position: Math.floor(
-      //     gameData.player_1_position * responsiveDimensions.scaleFactor
-      //   ),
-      //   player2Position: Math.floor(
-      //     gameData.player_2_position * responsiveDimensions.scaleFactor
-      //   ),
-      // });
+      setGameDimensions(responsiveDimensions);
+
+      setGamePositions({
+        ball: {
+          x: Math.floor(
+            gameData.ball_x_position * responsiveDimensions.scaleFactor
+          ),
+          y: Math.floor(
+            gameData.ball_y_position * responsiveDimensions.scaleFactor
+          ),
+        },
+        ballDirection: {
+          x: gameData.ball_x_direction,
+          y: gameData.ball_y_direction,
+        },
+        player1Position: Math.floor(
+          gameData.player_1_position * responsiveDimensions.scaleFactor
+        ),
+        player2Position: Math.floor(
+          gameData.player_2_position * responsiveDimensions.scaleFactor
+        ),
+      });
 
       setGameScore({
         player1: { score: 0 },
@@ -299,6 +297,9 @@ export default function OnlinePongGamePage({ navigate }) {
     setIsLoading(false);
   });
 
+  let lastSentTime = 0;
+  const sendRate = 33; // 30fps
+
   /**
    * Handles keyboard input for player movement and game controls
    * w/s: Player 1 movement
@@ -307,64 +308,49 @@ export default function OnlinePongGamePage({ navigate }) {
    * Escape: End game
    */
   const handleKeyDown = (e) => {
-    e.preventDefault();
-    if (e.key === 'ArrowUp') {
+    let now = performance.now();
+    if (now - lastSentTime < sendRate) return;
+    lastSentTime = now;
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
       const ws = websocket();
       if (ws === null) return;
-      console.log('player2 up');
       ws.send(
         JSON.stringify({
           action: 'move',
           player_id: gameScore().players.player2.id,
-          direction: -1,
+          direction: e.key === 'ArrowUp' ? -1 : 1,
         })
       );
-    } else if (e.key === 'ArrowDown') {
+    }
+    if (e.key === 'w' || e.key === 's') {
+      e.preventDefault();
       const ws = websocket();
       if (ws === null) return;
-      console.log('player 2 down');
-      ws.send(
-        JSON.stringify({
-          action: 'move',
-          player_id: gameScore().players.player2.id,
-          direction: 1,
-        })
-      );
-    } else if (e.key === 'w') {
-      const ws = websocket();
-      if (ws === null) return;
-      console.log('player 1 up');
       ws.send(
         JSON.stringify({
           action: 'move',
           player_id: gameScore().players.player1.id,
-          direction: -1,
+          direction: e.key === 'w' ? -1 : 1,
         })
       );
-    } else if (e.key === 's') {
-      const ws = websocket();
-      if (ws === null) return;
-      console.log('player 1 down');
-      ws.send(
-        JSON.stringify({
-          action: 'move',
-          player_id: gameScore().players.player1.id,
-          direction: 1,
-        })
-      );
-    } else if (e.key === ' ') {
+    }
+    if (e.key === ' ') {
+      e.preventDefault();
       const ws = websocket();
       if (ws === null) {
         toogleGame();
       } else {
-        console.log('toggle via websocket');
         ws.send(
           JSON.stringify({
             action: 'toggle',
           })
         );
       }
-    } else if (e.key === 'Escape') {
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
       endGame(gameId());
       navigate('/');
     }
