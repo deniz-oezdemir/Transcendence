@@ -134,7 +134,7 @@ Key API endpoints to test:
 
 2. Refresh [test_websocket.html](matchmaking/test_websocket.html) to see results.
 
-3. Check match data (also finished matches) with django admin at http://localhost:8001/admin/waitingRoom/.
+3. Check match data (also finished matches) with django admin at http://localhost:8001/admin/waitingRoom/ with user admin and password admin.
 
 ## Notes
 

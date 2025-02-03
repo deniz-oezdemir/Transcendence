@@ -1,8 +1,18 @@
 import json
+import aiohttp
+import logging
+from django.conf import settings
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Match, Tournament
 
+# Configure logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 class WaitingRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -11,6 +21,29 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard("waiting_room", self.channel_name)
+
+    async def create_game_in_pong_api(self, match):
+        """Creates a game in the pong-api service"""
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(
+                    'http://pong-api:8000/game/create_game/',
+                    json={
+                        "id": match.match_id,
+                        "max_score": 1,  # Configure as needed
+                        "player_1_id": match.player_1_id,
+                        "player_1_name": f"Player {match.player_1_id}",
+                        "player_2_id": match.player_2_id,
+                        "player_2_name": f"Player {match.player_2_id}"
+                    }
+                ) as response:
+                    if response.status != 201:
+                        print(f"Failed to create game in pong-api: {await response.text()}")
+                        return False
+                    return True
+            except Exception as e:
+                print(f"Error creating game in pong-api: {e}")
+                return False
 
     async def receive(self, text_data):
         """
@@ -60,9 +93,15 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 await self.send_error("Player already in a game")
                 return
 
-            success = await self.join_match(data["match_id"], data["player_id"])
-            if not success:
+            match = await self.join_match(data["match_id"], data["player_id"])
+            if not match:
                 await self.send_error("Match not found or already full")
+                return
+
+            # Create game in pong-api after match is joined
+            success = await self.create_game_in_pong_api(match)
+            if not success:
+                await self.send_error("Failed to create game in pong-api")
                 return
 
             available_games = await self.get_available_games()
@@ -71,7 +110,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 {
                     "type": "player_joined",
                     "game_type": "match",
-                    "game_id": data["match_id"],
+                    "game_id": match.match_id,
                     "player_id": data["player_id"],
                     "available_games": available_games,
                 },
@@ -100,38 +139,42 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         elif data["type"] == "join_tournament":
             if await self.is_player_in_game(data["player_id"]):
                 await self.send_error("Player already in a game")
+                logger.debug(f"Player {data['player_id']} already in a game")
                 return
 
-            success = await self.join_tournament(
-                data["tournament_id"], data["player_id"]
-            )
+            success = await self.join_tournament(data["tournament_id"], data["player_id"])
             if not success:
                 await self.send_error("Tournament not found or already full")
+                logger.debug(f"Tournament {data['tournament_id']} not found or already full")
                 return
 
             available_games = await self.get_available_games()
             tournament = await self.get_tournament(data["tournament_id"])
 
             if len(tournament.players) == tournament.max_players:
-                matches = await self.create_tournament_matches(tournament)
+                matches, created_matches = await self.create_tournament_matches(tournament)
+                logger.debug(f"Tournament {tournament.tournament_id} is full. Matches created: {matches}")
+                # Create games in pong-api
+                await self.create_tournament_matches_in_pong_api(created_matches)
                 await self.channel_layer.group_send(
                     "waiting_room",
                     {
-                        "type": "tournament_started",
-                        "tournament_id": tournament.tournament_id,
-                        "matches": matches,
-                        "available_games": available_games,
+                    "type": "tournament_started",
+                    "tournament_id": tournament.tournament_id,
+                    "matches": matches,
+                    "available_games": available_games,
                     },
                 )
             else:
+                logger.debug(f"Player {data['player_id']} joined tournament {tournament.tournament_id}")
                 await self.channel_layer.group_send(
                     "waiting_room",
                     {
-                        "type": "player_joined",
-                        "game_type": "tournament",
-                        "game_id": tournament.tournament_id,
-                        "player_id": data["player_id"],
-                        "available_games": available_games,
+                    "type": "player_joined",
+                    "game_type": "tournament",
+                    "game_id": tournament.tournament_id,
+                    "player_id": data["player_id"],
+                    "available_games": available_games,
                     },
                 )
 
@@ -167,7 +210,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             match.player_2_id = player_id
             match.status = Match.ACTIVE
             match.save()
-            return True
+            return match
         except Match.DoesNotExist:
             return False
 
@@ -202,6 +245,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
     def create_tournament_matches(self, tournament):
         matches = []
         players = tournament.players
+        created_matches = []
 
         if tournament.max_players == 4:
             # Create 2 semi-final matches
@@ -219,6 +263,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 round=1,
                 status=Match.ACTIVE,
             )
+            created_matches.extend([semi1, semi2])
             matches = [
                 {"round": 1, "matches": [semi1.match_id, semi2.match_id]},
                 {"round": 2, "matches": ["final"]},
@@ -226,6 +271,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
         elif tournament.max_players == 8:
             quarters = []
+            created_quarter_matches = []  # Store Match objects
             for i in range(0, 8, 2):
                 match = Match.objects.create(
                     player_1_id=players[i],
@@ -235,6 +281,9 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     status=Match.ACTIVE,
                 )
                 quarters.append(match.match_id)
+                created_quarter_matches.append(match)  # Store the Match object
+
+            created_matches.extend(created_quarter_matches)  # Add all quarter matches to created_matches
 
             matches = [
                 {"round": 1, "matches": quarters},
@@ -245,7 +294,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         tournament.status = Tournament.ACTIVE
         tournament.matches = matches
         tournament.save()
-        return matches
+        return matches, created_matches
 
     @database_sync_to_async
     def is_player_in_game(self, player_id):
@@ -306,3 +355,17 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 ),
             },
         }
+
+    async def create_tournament_matches_in_pong_api(self, created_matches):
+        """Creates all tournament matches in pong-api"""
+        for match in created_matches:
+            try:
+                # Ensure we have a Match object, not just an ID
+                if isinstance(match, str):
+                    match = await database_sync_to_async(Match.objects.get)(match_id=match)
+
+                success = await self.create_game_in_pong_api(match)
+                if not success:
+                    logger.error(f"Failed to create game in pong-api for match {match.match_id}")
+            except Exception as e:
+                logger.error(f"Error creating game in pong-api: {str(e)}")
