@@ -52,42 +52,41 @@ This document serves as a step-by-step guide to set up the project locally, unde
 3. Open your browser and navigate to:
 
    ```
-   http://localhost:3000
+   http://localhost:8000
    ```
 
-### **Option 2: Using Docker**
+### **Option 2: Using Docker Compose**
 
-1. Build the Docker image:
+1. Ensure Docker is running on your system.
 
    ```bash
-   docker build -t image-name .
+   docker --version
    ```
 
-2. Run the Docker container always interactive mode because the server is in watch mode, that avoid automatic exits:
+2. Check if the .env file is present in the project root directory, if not create one with the content of the .env.example file. Uncomment the variables if it is a development environment or a production environment:
 
    ```bash
-   docker run -it -p 3000:3000 image-name
+   #--- Develonment ---
+   NODE_ENV=development
+   DOCKER_FILE=dockerfiles/Dockerfile.dev
+   STDIN_ENABLED=true
+   TTY_ENABLED=true
    ```
 
-3. You can run the Docker container also in detach mode to let the terminal free:
+3. Run the following command to start the Docker Compose services:
 
    ```bash
-   docker run -it -d -p 3000:3000 image-name
+   docker compose up -d --build
    ```
 
-4. You can run the Docker container with a name and use it to stop or start the same container, and re use the same container always:
+   or without detach mode
 
    ```bash
-   docker run -it -d -p 3000:3000 --name container-name image-name
-   docker stop container-name
-   docker start container-name
+      docker-compose up --build
    ```
 
-5. Open your browser and navigate to:
-
-   ```
-   http://localhost:3000
-   ```
+4. Open your browser and navigate to:
+   `http://localhost:8000`
 
 ---
 

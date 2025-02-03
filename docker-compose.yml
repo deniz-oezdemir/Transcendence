@@ -1,9 +1,8 @@
 services:
-
-  # Frontend service
+  # Frontend
   frontend:
     extends:
-      file: ./frontend/docker/docker-compose.yml
+      file: ./frontend/docker-compose.yml
       service: frontend
     networks:
       - transcendence
@@ -11,6 +10,7 @@ services:
       - pong-api
       - matchmaking
       - ai-messages
+    restart: on-failure
 
   # Pong-api service
   pong-api:
@@ -21,6 +21,7 @@ services:
       - transcendence
     depends_on:
       - matchmaking
+    restart: on-failure
 
   # Matchmaking service
   matchmaking:
@@ -33,6 +34,7 @@ services:
     networks:
       - transcendence
       - matchmaking_internal
+    restart: on-failure
 
   matchmaking-postgres:
     extends:
@@ -40,6 +42,7 @@ services:
       service: matchmaking-postgres
     networks:
       - matchmaking_internal
+    restart: on-failure
 
   matchmaking-redis:
     extends:
@@ -47,6 +50,7 @@ services:
       service: matchmaking-redis
     networks:
       - matchmaking_internal
+    restart: on-failure
 
   # AI messages service
   ai-messages:
@@ -55,6 +59,7 @@ services:
       service: ai-messages
     networks:
       - transcendence
+    restart: on-failure
 
 networks:
   transcendence:
