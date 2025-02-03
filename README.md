@@ -70,6 +70,7 @@ The frontend of the **Transcendence: Pong Game Web App** is a **single-page appl
 - [Reactivity System](frontend/docs/ReactivitySystem.md): Details on `createSignal`, `createEffect`, and more.
 - [Component System](frontend/docs/ComponentSystem.md): Usage of `createComponent` and helper methods.
 - [Router](frontend/docs/Router.md): Setting up and managing routes in the application.
+- [Project Structure](frontend/docs/ProjectStructure.md): Structure of the project and how to organize code.
 
 ## Sources
 

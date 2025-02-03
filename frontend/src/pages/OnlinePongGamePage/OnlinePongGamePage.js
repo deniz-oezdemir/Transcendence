@@ -14,7 +14,7 @@ export default function OnlinePongGamePage({ navigate }) {
   const [gameId, setGameId] = createSignal(-1);
   const [gameDimensions, setGameDimensions] = createSignal({
     game: { width: 600, height: 400 },
-    paddle: { width: 10, height: 80, offset: 20 },
+    paddle: { width: 15, height: 80, offset: 20 },
     ball: { width: 20, height: 20 },
     scaleFactor: 1,
   });
@@ -89,11 +89,11 @@ export default function OnlinePongGamePage({ navigate }) {
         },
         body: JSON.stringify({
           id: 1,
-          max_score: 30,
+          max_score: 3,
           player_1_id: 1,
-          player_1_name: 'PlayerOne',
+          player_1_name: 'Player One',
           player_2_id: 2,
-          player_2_name: 'PlayerTwo',
+          player_2_name: 'Player Two',
         }),
       });
 
@@ -178,7 +178,7 @@ export default function OnlinePongGamePage({ navigate }) {
   async function toogleGame() {
     try {
       const response = await fetch(
-        `http://localhost:8000/game/toggle_game/${gameId()}/`,
+        `http://localhost:8002/game/toggle_game/${gameId()}/`,
         {
           method: 'PUT',
         }
@@ -210,7 +210,7 @@ export default function OnlinePongGamePage({ navigate }) {
   async function endGame(id) {
     try {
       const response = await fetch(
-        'http://localhost:8000/game/delete_game/' + id + '/',
+        'http://localhost:8002/game/delete_game/' + id + '/',
         {
           method: 'DELETE',
         }
@@ -241,7 +241,7 @@ export default function OnlinePongGamePage({ navigate }) {
    * Handles game state updates and score changes
    */
   function connectWebSocket() {
-    const ws = new WebSocket(`ws://localhost:8000/ws/game/${gameId()}/`);
+    const ws = new WebSocket(`ws://localhost:8002/ws/game/${gameId()}/`);
     ws.onopen = () => {
       console.log('WebSocket connected.');
       setWebsocket(ws);
@@ -353,7 +353,17 @@ export default function OnlinePongGamePage({ navigate }) {
         })
       );
     } else if (e.key === ' ') {
-      toogleGame();
+      const ws = websocket();
+      if (ws === null) {
+        toogleGame();
+      } else {
+        console.log('toggle via websocket');
+        ws.send(
+          JSON.stringify({
+            action: 'toggle',
+          })
+        );
+      }
     } else if (e.key === 'Escape') {
       endGame(gameId());
       navigate('/');

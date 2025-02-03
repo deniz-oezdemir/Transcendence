@@ -239,11 +239,13 @@ export default function PongGamePage() {
   return createComponent('div', {
     className: `container position-relative`,
     children: [
+      WaitingRoom(),
       Score({ gameScore }),
       GameBoard({
         gameDimensions,
         gamePositions,
       }),
+    
       GameControls(),
     ],
     cleanup,

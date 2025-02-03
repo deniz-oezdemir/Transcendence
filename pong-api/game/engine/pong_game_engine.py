@@ -42,7 +42,7 @@ class PongGameEngine:
         logger.debug("GameEngine: Updating game state")
         if not self.game_state.is_game_running or self.game_state.is_game_ended:
             logger.debug("Game is not running or has ended")
-            return
+            return self.game_state
 
         # Update the positions of the ball
         self.game_state.ball_x_position += self.game_state.ball_x_direction
@@ -58,7 +58,7 @@ class PongGameEngine:
         self._check_paddle_collision()
         self._check_scoring()
 
-        self.game_state.save()
+        # self.game_state.save()
         logger.debug("GameEngine: Game state saved")
         logger.debug(
             "PongGameEngine saved with game state: game_height: %d, game_width: %d, paddle_height: %d, paddle_width: %d, paddle_offset: %d, ball_radius: %d, player_move_step: %d, ball_y_direction: %f, ball_x_direction: %f",
@@ -72,12 +72,13 @@ class PongGameEngine:
             self.game_state.ball_y_direction,
             self.game_state.ball_x_direction,
         )
+        return self.game_state
 
     def move_player(self, player_id, direction):
         logger.debug("Moving player: player_id=%s, direction=%s", player_id, direction)
         if not self.game_state.is_game_running or self.game_state.is_game_ended:
             logger.debug("Game is not running or has ended")
-            return
+            return self.game_state
 
         if player_id == self.game_state.player_1_id:
             player_position = self.game_state.player_1_position
@@ -85,7 +86,7 @@ class PongGameEngine:
             player_position = self.game_state.player_2_position
         else:
             logger.warning("Invalid player_id: %s", player_id)
-            return
+            return self.game_state
 
         if direction == 1:
             player_position += self.player_move_step
@@ -103,12 +104,13 @@ class PongGameEngine:
             self.game_state.player_2_position = player_position
 
         # Save the updated player state
-        self.game_state.save()
+        # self.game_state.save()
         logger.debug(
             "Player position updated and saved: player_id=%s, position=%s",
             player_id,
             player_position,
         )
+        return self.game_state
 
     def _check_wall_collisions(self):
         """
@@ -224,16 +226,9 @@ class PongGameEngine:
             self.ball_speed * 0.6
         )  # Max percentage of ball_speed that can be "used" in the Y direction
         normalized_hit_distance = (
-            hit_distance_to_center
-            / (self.paddle_height / 2)
-            * (
-                max_y_speed
-            )  # This will determine Y direction and thus should never equal speed, as that would leave X direction at zero
-        )
-        normalized_hit_distance = max(
-            max_y_speed,
-            min(max_y_speed, normalized_hit_distance),
-        )
+            hit_distance_to_center / (self.paddle_height / 2)
+        ) * max_y_speed
+        normalized_hit_distance = min(max_y_speed, normalized_hit_distance)
 
         if hit_distance_to_center > (paddle_bottom - paddle_middle):
             logger.debug(
@@ -245,7 +240,7 @@ class PongGameEngine:
 
         # ball_x_direction will be what remains of ball_speed after subtracting
         # ball_y_direction
-        self.game_state.ball_y_direction = normalized_hit_distance * -1
+        self.game_state.ball_y_direction = normalized_hit_distance
         new_x_direction = self.ball_speed - math.fabs(normalized_hit_distance)
         self.game_state.ball_x_direction *= -1
         self.game_state.ball_x_direction = (
@@ -255,11 +250,7 @@ class PongGameEngine:
         )
         # Inmediatly move ball to avoid some issues
         self.game_state.ball_y_position += self.game_state.ball_y_direction
-        print(
-            f"gonna add {self.game_state.ball_x_direction} to x position {self.game_state.ball_x_position}"
-        )
         self.game_state.ball_x_position += self.game_state.ball_x_direction
-        print(f"result: {self.game_state.ball_x_position}")
 
         return True
 
