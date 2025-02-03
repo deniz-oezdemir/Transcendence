@@ -28,8 +28,6 @@ export default function Paddle({ gameDimensions, gamePositions, side }) {
     }
 
     paddleComponent.element.style.top = `${playerPosition}px`;
-    paddleComponent.element.style.width = `${paddleDimensions.width}px`;
-    paddleComponent.element.style.height = `${paddleDimensions.height}px`;
     if (side === 'left') {
       paddleComponent.element.style.left = `${paddleDimensions.offset}px`;
     } else {
