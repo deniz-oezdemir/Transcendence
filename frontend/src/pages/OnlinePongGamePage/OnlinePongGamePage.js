@@ -81,10 +81,15 @@ export default function OnlinePongGamePage({ navigate }) {
    * Sets up initial game state and dimensions
    */
   async function initializeGame() {
+    // if (!checkAuth()) {
+    //   window.router.navigate('/login');
+    // }
+    // const token = localStorage.getItem('authToken');
     try {
       const response = await fetch('http://localhost:8002/game/create_game/', {
         method: 'POST',
         headers: {
+          // 'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

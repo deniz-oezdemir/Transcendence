@@ -18,15 +18,21 @@ class RegisterView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        first_field = list(serializer.errors.keys())[0]
+        error_message = serializer.errors[first_field][0]
+        return Response({"message": error_message}, status=status.HTTP_400_BAD_REQUEST)
     
 class LoginView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
     def post(self, request):
         print(f"Received request method: {request.method}")
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             return Response(serializer.save(), status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        first_field = list(serializer.errors.keys())[0]
+        error_message = serializer.errors[first_field][0]
+        return Response({"message": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -78,7 +84,9 @@ class FriendRequestView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Friend added."}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        first_field = list(serializer.errors.keys())[0]
+        error_message = serializer.errors[first_field][0]
+        return Response({"message": error_message}, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request):
         # if not request.user.is_authenticated:
@@ -88,4 +96,6 @@ class FriendRequestView(APIView):
         if serializer.is_valid():
             serializer.delete()
             return Response({"message": "Friend removed."}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        first_field = list(serializer.errors.keys())[0]
+        error_message = serializer.errors[first_field][0]
+        return Response({"message": error_message}, status=status.HTTP_400_BAD_REQUEST)

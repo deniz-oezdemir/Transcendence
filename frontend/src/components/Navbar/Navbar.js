@@ -1,10 +1,13 @@
 import { createComponent, Link } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import { setTheme, getPreferredTheme } from '@themeManager';
+import { checkAuth } from '../../auth.js';
 
 export default function Navbar({ location, navigate }) {
   const path = location();
 
+  // console.log('checkAuth:', checkAuth());
+  const [isAuthenticated, setIsAuthenticated] = createSignal(checkAuth());
   const [theme, setThemeState] = createSignal(getPreferredTheme());
 
   const toggleTheme = () => {
@@ -45,6 +48,18 @@ export default function Navbar({ location, navigate }) {
     themeButton.element.classList.toggle('btn-outline-light', th === 'dark');
     themeButton.element.classList.toggle('btn-outline-dark', th === 'light');
   });
+
+  // Handle the login/logout button
+  const handleAuthButtonClick = () => {
+    if (isAuthenticated()) {
+      // Handle logout logic here (e.g., clear token)
+      localStorage.removeItem('authToken');
+      setIsAuthenticated(false); // Update auth state
+      navigate('/'); // Redirect to home after logout
+    } else {
+      navigate('/login'); // Redirect to login page if not authenticated
+    }
+  };
 
   return createComponent('nav', {
     className: 'navbar navbar-expand-lg bg-body-tertiary',
@@ -141,12 +156,35 @@ export default function Navbar({ location, navigate }) {
                 className: 'd-flex align-items-center',
                 children: [
                   themeButton,
-                  Link({
-                    href: '/login',
+                  createComponent('button', {
                     className: 'btn btn-outline-success',
                     attributes: { type: 'button', role: 'button' },
-                    content: 'Login',
+                    content: isAuthenticated() ? 'Logout' : 'Login', // Conditional content
+                    events: {
+                      click: handleAuthButtonClick, // Handle click event
+                    },
                   }),
+                  // isAuthenticated()
+                  //   ? createComponent('button', {
+                  //       className: 'btn btn-outline-danger',
+                  //       attributes: { type: 'button', role: 'button' },
+                  //       content: 'Logout',
+                  //       events: {
+                  //         click: () => {
+                  //           // logout logic goes here (e.g., clear token, update state)
+                  //           // handleLogout();
+                  //           localStorage.removeItem('authToken');
+                  //           setIsAuthenticated(false);
+                  //           navigate('/'); // Redirect after logout if needed
+                  //         },
+                  //       },
+                  //     })
+                  //   : Link({
+                  //       href: '/login',
+                  //       className: 'btn btn-outline-success',
+                  //       attributes: { type: 'button', role: 'button' },
+                  //       content: 'Login',
+                  //     }),
                 ],
               }),
             ],

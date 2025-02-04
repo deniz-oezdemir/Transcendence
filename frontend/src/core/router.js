@@ -1,12 +1,19 @@
 import { createComponent } from '@component';
 import { createSignal, createEffect } from '@reactivity';
+// import isAuthenticated from '../main.js';
 
 export class Router {
   constructor({
     routes,
     rootElement,
     layoutComponent = null,
-    middlewares = [],
+    middlewares = [
+      isAuthenticated,
+      async (path, context) => {
+        console.log(`Navigating to: ${path}`);
+        return true;
+      },
+    ],
     errorComponent = null,
   }) {
     this.routes = routes;

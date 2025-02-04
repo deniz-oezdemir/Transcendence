@@ -66,6 +66,12 @@
     font-size: 0.875rem;
     margin-top: 0.5rem;
 }
+
+.success-message {
+  color: #1ac43f;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
   
 .toggle-link {
     text-align: center;

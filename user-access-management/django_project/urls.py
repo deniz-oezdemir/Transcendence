@@ -22,7 +22,7 @@ from django.conf.urls.static import static #for django to serve media files duri
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("user/", include("accounts.urls")),
+    path("", include("accounts.urls")),
     # path("user/", include("accounts.urls")),
 ]
 

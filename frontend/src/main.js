@@ -26,13 +26,19 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 
 import '@styles/global.css';
-import SignupPage from './pages/SignupPage.js/SignupPage';
+import SignupPage from './pages/SignupPage/SignupPage';
+import { checkAuth } from './auth';
 
 // Authentication Middleware
 const isAuthenticated = async (path, context) => {
   const isAuthenticated = checkAuth();
   console.log('path:', path);
   console.log('isAuthenticated:', isAuthenticated);
+  if (path.startsWith('/login') && isAuthenticated) {
+    console.log('Already authenticated. Redirecting to home page...');
+    router.navigate('/');
+    return false;
+  }
   if (
     !isAuthenticated &&
     (path.startsWith('/profile') ||
@@ -64,13 +70,6 @@ const middlewares = [
     return true;
   },
 ];
-
-// Check if the user is authenticated
-function checkAuth() {
-  //const token = localStorage.getItem('authToken');
-  //return !!token;
-  return true;
-}
 
 // Nested Layout for Admin Section: With nested layout you can define a layout
 // for a specific section of your app, in this case the admin section.
@@ -136,6 +135,16 @@ const router = new Router({
   middlewares,
   errorComponent: ErrorPage,
 });
+
+// // Run the middleware on initial page load
+// const initialPath = window.location.pathname;
+// isAuthenticated(initialPath, {}).then((allowed) => {
+//   if (!allowed) {
+//     router.navigate('/login');
+//   } else {
+//     router.resolve(initialPath);
+//   }
+// });
 
 // Expose router to the window object
 window.router = router;

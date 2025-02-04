@@ -10,17 +10,20 @@ export default function SignupPage() {
   const [email, setEmail] = createSignal('');
   const [password, setPassword] = createSignal('');
   const [usernameError, setUsernameError] = createSignal('');
+  const [emailError, setEmailError] = createSignal('');
+  const [passwordError, setPasswordError] = createSignal('');
   const [submitError, setSubmitError] = createSignal('');
-  const [isUsernameValid, setIsUsernameValid] = createSignal(false);
+  const [submitSuccess, setSubmitSuccess] = createSignal('');
+  const [isSigningUp, setIsSigningUp] = createSignal(false);
 
-  // Validation function
+  // Validation functions
   function validateUsername(value) {
     const isValid = 
       value.length >= 3 && 
       value.length <= 20 && 
       /^[a-zA-Z0-9]+$/.test(value);
 
-    setIsUsernameValid(isValid);
+    // setIsUsernameValid(isValid);
     setUsernameError(
       isValid 
         ? '' 
@@ -30,14 +33,45 @@ export default function SignupPage() {
     return isValid;
   }
 
+  function validateEmail(value) {
+    const isValid =
+      value.length >= 8 &&
+      value.length <= 50 &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+    setEmailError(
+      isValid
+        ? ''
+        : 'Invalid email address'
+    );
+    return isValid;
+  }
+
+  function validatePassword(value) {
+    const isValid =
+      value.length >= 8 &&
+      value.length <= 50;
+
+    setPasswordError(
+      isValid
+        ? ''
+        : 'Password must be 8-50 characters'
+    );
+    return isValid;
+  }
+
+
   // Registration handler
   async function handleRegistration(event) {
-    console.log('DEBUG: Registration attempt started!');
+    // console.log('DEBUG: Registration attempt started!');
     event.preventDefault();
     setSubmitError('');
+    setSubmitSuccess('');
+    setIsSigningUp(true);
 
     // Basic validation
-    if (!validateUsername(username())) {
+    if (!validateUsername(username()) || !validateEmail(email()) || !validatePassword(password())) {
+      setIsSigningUp(false);
       return;
     }
 
@@ -59,15 +93,7 @@ export default function SignupPage() {
 
     try {
       // For local development
-      // const baseUrl = window.location.hostname === 'localhost' 
-      //   ? 'http://localhost:8000' 
-      //   : '/user';  // Use proxy or service name in container
-      // const registerUrl = window.location.hostname === 'localhost' 
-      // ? 'http://host.docker.internal:8000/register'
-      // : '/register';
-
-      // const response = await fetch(`${baseUrl}/register`, {
-      const response = await fetch(`http://localhost:8006/user/register/`, {
+      const response = await fetch(`http://localhost:8006/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,14 +106,17 @@ export default function SignupPage() {
         })
       });
       
-      console.log('DEBUG: username: ', username());
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Registration failed');
       }
       
       // Handle successful registration
-      window.router.navigate('/login');
+      setSubmitSuccess('User created successfully! Redirecting to login page...');
+
+      setTimeout(() => {
+        window.router.navigate('/login');
+      }, 2000);
     } catch (error) {
       console.error('Registration error:', error);
       setSubmitError(error.message);
@@ -150,9 +179,16 @@ export default function SignupPage() {
                 required: true,
                 events: {
                   input: (event) => {
-                    setEmail(event.target.value);
+                    // setEmail(event.target.value);
+                    const value = event.target.value;
+                    setEmail(value);
+                    validateEmail(value);
                   }
                 }
+              }),
+              createComponent('div', {
+                className: styles.errorMessage,
+                content: () => emailError()
               })
             ],
           }),
@@ -172,9 +208,15 @@ export default function SignupPage() {
                 required: true,
                 events: {
                   input: (event) => {
-                    setPassword(event.target.value);
+                    const value = event.target.value;
+                    setPassword(value);
+                    validatePassword(value);
                   }
                 }
+              }),
+              createComponent('div', {
+                className: styles.errorMessage,
+                content: () => passwordError()
               })
             ],
           }),
@@ -183,13 +225,17 @@ export default function SignupPage() {
             className: styles.errorMessage,
             content: () => submitError()
           }),
+          // Submit Success Message
+          createComponent('div', {
+            className: styles.successMessage,
+            content: () => submitSuccess()
+          }),
           // Submit Button
           createComponent('button', {
             type: 'submit',
             className: styles.submitButton,
             content: 'Signup',
-            // attributes: {
-            //   disabled: () => !isUsernameValid()},
+            disabled: () => isSigningUp(),
             events: {
               click: (event) => {
                 handleRegistration(event);
