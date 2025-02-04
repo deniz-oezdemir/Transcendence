@@ -4,6 +4,7 @@ import { createSignal } from '@reactivity';
 
 export default function LoginPage() {
   const cleanup = createCleanupContext();
+  
 
   const [username, setUsername] = createSignal('');
   const [password, setPassword] = createSignal('');
@@ -12,7 +13,6 @@ export default function LoginPage() {
   const [submitError, setSubmitError] = createSignal('');
   const [submitSuccess, setSubmitSuccess] = createSignal('');
   const [isLoggingIn, setIsLoggingIn] = createSignal(false);
-  // const [isAuthenticated, setIsAuthenticated] = createSignal(checkAuth());
 
   function validateUsername(value) {
     const isValid = 
@@ -81,7 +81,6 @@ export default function LoginPage() {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('username', data.username);
       localStorage.setItem('userId', data.userId);
-      // setIsAuthenticated(true);
       
       setSubmitSuccess('User logged in successfully! Redirecting to home page...');
 
