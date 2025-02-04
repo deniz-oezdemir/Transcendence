@@ -7,7 +7,6 @@ import HomePage from './pages/HomePage/HomePage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
-import PongGamePage from './pages/PongGamePage/PongGamePage';
 import OnlinePongGamePage from './pages/OnlinePongGamePage/OnlinePongGamePage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
 
@@ -97,7 +96,6 @@ const routes = [
   { path: '/login', component: LoginPage },
   { path: '/user/:username', component: ProfilePage },
   { path: '/leaderboard', component: LeaderboardPage},
-  { path: '/pong-game', component: PongGamePage },
   { path: '/admin', component: AdminPage, layoutComponent: AdminLayout },
   {
     path: '/admin/settings',

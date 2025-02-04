@@ -1,6 +1,7 @@
 import { createSignal, createEffect } from '@reactivity';
 import { createComponent, onCleanup, createCleanupContext } from '@component';
 
+import WaitingRoom from '@/components/WaitingRoom/WaitingRoom';
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
 import GameControls from '@/components/GameControls/GameControls';
@@ -391,7 +392,9 @@ export default function OnlinePongGamePage({ navigate }) {
       gameDimensions: gameDimensions,
       gamePositions: gamePositions,
     });
+    const waitingroom = WaitingRoom();
     const controls = GameControls();
+    content.element.appendChild(waitingroom.element);
     content.element.appendChild(score.element);
     content.element.appendChild(board.element);
     content.element.appendChild(controls.element);

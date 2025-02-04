@@ -23,7 +23,7 @@ export default function HomePage() {
         attributes: { type: 'button', role: 'button' },
       }),
       Link({
-        href: '/pong-game',
+        href: '/online-pong-game',
         content: 'Go to Pong Game Page',
         className: 'mx-2 btn btn-secondary',
         attributes: { type: 'button', role: 'button' },
