@@ -95,9 +95,9 @@ export default function Navbar({ location, navigate }) {
                     className: 'nav-item',
                     children: [
                       Link({
-                        href: '/stats',
-                        content: 'Stats',
-                        className: `nav-link ${path === '/stats' ? 'active' : ''}`,
+                        href: '/leaderboard',
+                        content: 'Leaderboard',
+                        className: `nav-link ${path === '/leaderboard' ? 'active' : ''}`,
                         attributes: { 'aria-current': 'page' },
                       }),
                     ],

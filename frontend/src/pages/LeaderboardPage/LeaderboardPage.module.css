@@ -1,0 +1,73 @@
+.container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    margin: 3 auto;
+    padding: 20px;
+    background-color: #1e1e1e;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    border: 2px solid #fff;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  .leaderboardTitle {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: #00ffcc;
+  }
+  
+  .leaderboardDescription {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #ccc;
+  }
+  
+  .leaderboardTable {
+    margin-top: 20px;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  .tableHeader {
+    display: flex;
+    background-color: #333;
+    padding: 10px;
+    font-weight: bold;
+    border-bottom: 1px solid #444;
+  }
+  
+  .tableRow {
+    display: flex;
+    padding: 10px;
+    border-bottom: 1px solid #444;
+    transition: background-color 0.3s ease;
+  }
+  
+  .tableRow:hover {
+    background-color: #3a3a3a;
+  }
+  
+  .headerCell,
+  .tableCell {
+    flex: 1;
+    text-align: center;
+    padding: 5px;
+  }
+  
+  .headerCell {
+    color: #00ffcc;
+  }
+  
+  .tableCell {
+    color: #ccc;
+  }
+  
+  .homeLink {
+    text-align: center;
+    margin-top: 20px;
+  }

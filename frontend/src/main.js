@@ -6,7 +6,7 @@ import AppLayout from './Layout';
 import HomePage from './pages/HomePage/HomePage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
-import StatsPage from './pages/StatsPage/StatsPage';
+import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
 import PongGamePage from './pages/PongGamePage/PongGamePage';
 import OnlinePongGamePage from './pages/OnlinePongGamePage/OnlinePongGamePage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
@@ -31,16 +31,10 @@ import SignupPage from './pages/SignupPage.js/SignupPage';
 // Authentication Middleware
 const isAuthenticated = async (path, context) => {
   const isAuthenticated = checkAuth();
-  console.log('path:', path);
-  console.log('isAuthenticated:', isAuthenticated);
-  if (
-    !isAuthenticated &&
-    (path.startsWith('/profile') ||
-      path.startsWith('/admin') ||
-      path.startsWith('/user/username') ||
-      path.startsWith('/pong-game') ||
-      path.startsWith('/stats'))
-  ) {
+  if (path === '/' || path === '/login' || path === '/signup') {
+    return true;
+  }
+  if (!isAuthenticated) {
     console.log('Unauthorized access. Redirecting to login page...');
     router.navigate('/login');
     return false;
@@ -54,22 +48,11 @@ library.add(faCircleUp, faCircleDown, faW, faS, faKeyboard);
 // Replace i tags with SVG automatically
 dom.watch();
 
-// --- EXAMPLES ----
-// Example: Middlewares are functions that run before a navigation, when you
-// add this to the the router config.
-const middlewares = [
-  isAuthenticated,
-  async (path, context) => {
-    console.log(`Navigating to: ${path}`);
-    return true;
-  },
-];
-
 // Check if the user is authenticated
 function checkAuth() {
   //const token = localStorage.getItem('authToken');
   //return !!token;
-  return true;
+  return false;
 }
 
 // Nested Layout for Admin Section: With nested layout you can define a layout
@@ -113,7 +96,7 @@ const routes = [
   { path: '/signup', component: SignupPage },
   { path: '/login', component: LoginPage },
   { path: '/user/:username', component: ProfilePage },
-  { path: '/stats', component: StatsPage },
+  { path: '/leaderboard', component: LeaderboardPage},
   { path: '/pong-game', component: PongGamePage },
   { path: '/admin', component: AdminPage, layoutComponent: AdminLayout },
   {
@@ -133,8 +116,19 @@ const router = new Router({
   routes,
   rootElement: root,
   layoutComponent: AppLayout,
-  middlewares,
+  middlewares: [isAuthenticated],
+  //middlewares,
   errorComponent: ErrorPage,
+});
+
+// Run the middleware on initial page load
+const initialPath = window.location.pathname;
+isAuthenticated(initialPath, {}).then((allowed) => {
+  if (!allowed) {
+    router.navigate('/login');
+  } else {
+    router.resolve(initialPath);
+  }
 });
 
 // Expose router to the window object
