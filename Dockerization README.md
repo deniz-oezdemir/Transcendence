@@ -106,10 +106,10 @@ make clean   # Clean up Docker resources
 
 | Service      | Port |
 | ------------ | ---- |
-| Frontend     | 8005 |
 | Matchmaking  | 8001 |
 | Game engine  | 8002 |
-| Game history | tbd  |
-| UAM          | tbd  |
 | AI messages  | 8003 |
 | AI player    | 8004 |
+| Frontend     | 8005 |
+| Game history | 8006 |
+| UAM          | 8007 |
