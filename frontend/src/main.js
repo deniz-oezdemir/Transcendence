@@ -52,7 +52,7 @@ dom.watch();
 function checkAuth() {
   //const token = localStorage.getItem('authToken');
   //return !!token;
-  return false;
+  return true;
 }
 
 // Nested Layout for Admin Section: With nested layout you can define a layout
