@@ -1,5 +1,4 @@
 import { Router } from '@router';
-import { createComponent, Link, NestedLayoutContent } from '@component';
 import { applyInitialTheme, addSystemThemeListener } from '@themeManager';
 
 import AppLayout from './Layout';
@@ -8,6 +7,7 @@ import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import StatsPage from './pages/StatsPage/StatsPage';
 import PongGamePage from './pages/PongGamePage/PongGamePage';
+import PongGame3DPage from './pages/PongGame3DPage/PongGame3DPage';
 import OnlinePongGamePage from './pages/OnlinePongGamePage/OnlinePongGamePage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
 
@@ -54,9 +54,6 @@ library.add(faCircleUp, faCircleDown, faW, faS, faKeyboard);
 // Replace i tags with SVG automatically
 dom.watch();
 
-// --- EXAMPLES ----
-// Example: Middlewares are functions that run before a navigation, when you
-// add this to the the router config.
 const middlewares = [
   isAuthenticated,
   async (path, context) => {
@@ -72,38 +69,6 @@ function checkAuth() {
   return true;
 }
 
-// Nested Layout for Admin Section: With nested layout you can define a layout
-// for a specific section of your app, in this case the admin section.
-function AdminLayout() {
-  const layout = createComponent('div', {
-    className: 'admin-layout',
-    content: `
-      <header class="admin-header">Admin Header - this is an example of a nested layout</header>
-    `,
-    children: [NestedLayoutContent()],
-  });
-  return layout;
-}
-
-function AdminPage() {
-  return createComponent('div', {
-    content: '<h1>Admin Dashboard</h1>',
-    children: [
-      Link({
-        href: '/admin/settings',
-        content: 'Go to admin settings',
-        className: 'btn btn-primary',
-        attributes: { type: 'button', role: 'button' },
-      }),
-    ],
-  });
-}
-
-function AdminSettingsPage() {
-  return createComponent('div', { content: '<h1>Admin Settings</h1>' });
-}
-// --- END EXAMPLE ---
-
 // Root element
 const root = document.getElementById('app');
 
@@ -115,12 +80,7 @@ const routes = [
   { path: '/user/:username', component: ProfilePage },
   { path: '/stats', component: StatsPage },
   { path: '/pong-game', component: PongGamePage },
-  { path: '/admin', component: AdminPage, layoutComponent: AdminLayout },
-  {
-    path: '/admin/settings',
-    component: AdminSettingsPage,
-    layoutComponent: AdminLayout,
-  },
+  { path: '/pong-game-3d', component: PongGame3DPage },
   { path: '/online-pong-game', component: OnlinePongGamePage },
 ];
 

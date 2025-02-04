@@ -2,6 +2,8 @@ import { createComponent, Link } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import { setTheme, getPreferredTheme } from '@themeManager';
 
+import styles from './Navbar.module.css';
+
 export default function Navbar({ location, navigate }) {
   const path = location();
 
@@ -47,7 +49,7 @@ export default function Navbar({ location, navigate }) {
   });
 
   return createComponent('nav', {
-    className: 'navbar navbar-expand-lg bg-body-tertiary',
+    className: `navbar navbar-expand-lg bg-body-tertiary ${styles.navbarCustom}`,
     children: [
       createComponent('div', {
         className: 'container-fluid',
@@ -128,9 +130,9 @@ export default function Navbar({ location, navigate }) {
                     className: 'nav-item',
                     children: [
                       Link({
-                        href: '/admin',
-                        content: 'Admin',
-                        className: `nav-link ${path === '/admin' ? 'active' : ''}`,
+                        href: '/pong-game-3d',
+                        content: 'Pong Game 3D',
+                        className: `nav-link ${path === '/pong-game-3d' ? 'active' : ''}`,
                         attributes: { 'aria-current': 'page' },
                       }),
                     ],

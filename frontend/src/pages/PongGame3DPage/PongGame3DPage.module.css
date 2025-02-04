@@ -1,0 +1,13 @@
+.gameWrapper {
+  position: absolute;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.info {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  filter: drop-shadow(1px 1px #000);
+}

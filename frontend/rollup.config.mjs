@@ -56,6 +56,28 @@ export default {
           find: '@styles',
           replacement: path.resolve(__dirname, 'src/assets/styles'),
         },
+        // To use directly WebGPU in the browser
+        {
+          find: /^three$/,
+          replacement: path.resolve(
+            __dirname,
+            'node_modules/three/build/three.webgpu.js'
+          ),
+        },
+        {
+          find: /^three\/tsl$/,
+          replacement: path.resolve(
+            __dirname,
+            'node_modules/three/build/three.webgpu.js'
+          ),
+        },
+        {
+          find: /^three\/addons$/,
+          replacement: path.resolve(
+            __dirname,
+            'node_modules/three/examples/jsm'
+          ),
+        },
       ],
     }),
     nodeResolve({

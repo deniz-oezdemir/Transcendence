@@ -1,7 +1,6 @@
 .footer {
-  position: fixed;
+  position: stycky;
   bottom: 0;
-  left: 0;
   width: 100%;
   background-color: var(--bs-light-text-emphasis);
   border-top: 1px solid var(--bs-light-bg-subtle);

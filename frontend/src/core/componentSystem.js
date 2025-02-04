@@ -1,12 +1,21 @@
 import { createEffect } from '@reactivity';
 
 let cleanupContext = null;
+let mountContext = null;
 
 export function onCleanup(fn) {
   if (cleanupContext) {
     cleanupContext.push(fn);
   } else {
     throw new Error('onCleanup must be called during component creation.');
+  }
+}
+
+export function onMount(fn) {
+  if (mountContext) {
+    mountContext.push(fn);
+  } else {
+    throw new Error('onMount must be called during component creation.');
   }
 }
 
@@ -62,9 +71,43 @@ export function createCleanupContext() {
   return cleanup;
 }
 
+export function createMountContext() {
+  const mountFns = [];
+  const previousMountContext = mountContext;
+  mountContext = mountFns;
+
+  return () => {
+    mountFns.forEach((fn) => fn());
+    mountFns.length = 0;
+    mountContext = previousMountContext;
+  };
+}
+
+/**
+ * @param {string} tag - The tag name of the element to create
+ * @param {Object} options - An object containing the options for the component
+ * @param {string} options.className - The class name of the element
+ * @param {string} options.content - The inner HTML content of the element
+ * @param {Array} options.children - An array of child components
+ * @param {Object} options.attributes - An object containing attributes to set on the element
+ * @param {Object} options.events - An object containing event listeners to set on the element
+ * @param {Function} options.ref - A function to call with the element as an argument when the component is created
+ * @param {Function} options.cleanup - A function to call when the component is cleaned up
+ * @returns {Object} An object containing the element and a cleanup function
+ */
 export function createComponent(
   tag,
-  { className, content, children, id, attributes, events, cleanup } = {}
+  {
+    className,
+    content,
+    children,
+    id,
+    attributes,
+    events,
+    ref,
+    cleanup,
+    mount,
+  } = {}
 ) {
   validateTag(tag);
   const element = document.createElement(tag);
@@ -89,6 +132,11 @@ export function createComponent(
   }
 
   if (children) setChildren(element, children);
+
+  if (typeof ref === 'function') ref(element);
+
+  // Execute OnMount() callbacks from the context
+  if (mount) requestAnimationFrame(mount);
 
   return {
     element,

@@ -20,6 +20,12 @@ importers:
       bootstrap:
         specifier: ^5.3.3
         version: 5.3.3(@popperjs/core@2.11.8)
+      lil-gui:
+        specifier: ^0.20.0
+        version: 0.20.0
+      three:
+        specifier: ^0.173.0
+        version: 0.173.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.17.0
@@ -1089,6 +1095,9 @@ packages:
   light-my-request@4.12.0:
     resolution: {integrity: sha512-0y+9VIfJEsPVzK5ArSIJ8Dkxp8QMP7/aCuxCUtG/tr9a2NoOf/snATE/OUc05XUplJCEnRh6gTkH7xh9POt1DQ==}
 
+  lil-gui@0.20.0:
+    resolution: {integrity: sha512-k7Ipr0ztqslMA2XvM5z5ZaWhxQtnEOwJBfI/hmSuRh6q4iMG9L0boqqrnZSzBR1jzyJ28OMl47l65ILzRe1TdA==}
+
   lilconfig@2.1.0:
     resolution: {integrity: sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ==}
     engines: {node: '>=10'}
@@ -1711,6 +1720,9 @@ packages:
     resolution: {integrity: sha512-B8wRRkmre4ERucLM/uXx4MOV5cbnOlVAqUst+1+iLKPI0dOgFO28f84ptoQt9HEI537PMzfYa/d+GEPKTRXmYA==}
     engines: {node: '>=10'}
     hasBin: true
+
+  three@0.173.0:
+    resolution: {integrity: sha512-AUwVmViIEUgBwxJJ7stnF0NkPpZxx1aZ6WiAbQ/Qq61h6I9UR4grXtZDmO8mnlaNORhHnIBlXJ1uBxILEKuVyw==}
 
   time-zone@2.0.0:
     resolution: {integrity: sha512-2cp/YLRm7ly33CzvySyXqo/QEOu4KMn6fCof0gpqosWY3PEJUJJhXP/Cb2wXFUuCzWWJYEmPvdHNzjLlfXC49A==}
@@ -2781,6 +2793,8 @@ snapshots:
       process-warning: 1.0.0
       set-cookie-parser: 2.7.1
 
+  lil-gui@0.20.0: {}
+
   lilconfig@2.1.0: {}
 
   livereload-js@3.4.1: {}
@@ -3410,6 +3424,8 @@ snapshots:
       acorn: 8.14.0
       commander: 2.20.3
       source-map-support: 0.5.21
+
+  three@0.173.0: {}
 
   time-zone@2.0.0: {}
 

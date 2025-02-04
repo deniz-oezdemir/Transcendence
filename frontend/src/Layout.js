@@ -17,8 +17,13 @@ export default function AppLayout(context) {
       createComponent('div', {
         className: 'container',
         children: [LayoutContent()],
+        attributes: { style: 'flex-grow: 1;' },
       }),
       Footer(),
     ],
+    attributes: {
+      style:
+        'display: flex; flex-direction: column; width: 100vw; height: 100vh;',
+    },
   });
 }
