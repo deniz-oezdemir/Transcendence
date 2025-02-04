@@ -4,6 +4,7 @@ import styles from './WaitingRoom.module.css';
 
 export default function WaitingRoom() {
   const [matches, setMatches] = createSignal([]);
+  const [tournaments, setTournaments] = createSignal([]);
   const [socket, setSocket] = createSignal(null);
 
   createEffect(() => {
@@ -14,21 +15,34 @@ export default function WaitingRoom() {
       setSocket(ws);
     };
   
-    // to be continued
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         console.log('Received:', data);
-        if (data.type === 'match_created' || data.type === 'tournament_created') {
-          console.log('test test0');
-          if (Array.isArray(data.available_games.status)) {
-            console.log('test test');
-            setMatches(data.available_games);
-            console.log('Updated matches:', matches());
-          } else {
-            console.error('Invalid matches format:', data.available_games);
-          }
+        
+        switch (data.type) {
+          case 'initial_games':
+            setMatches(data.games.matches || []);
+            setTournaments(data.games.tournaments || []);
+            break;
+
+          case 'match_created':
+          case 'tournament_created':
+          case 'player_joined':
+          case 'tournament_started':
+          case 'games_deleted':
+            setMatches(data.available_games?.matches || []);
+            setTournaments(data.available_games?.tournaments || []);
+            break;
+
+          case 'error':
+            console.log('error');
+            break;
+
+          default:
+            console.warn('Unknown message type:', data.type);
         }
+
       } catch (err) {
         console.error('Error parsing WebSocket message:', err);
       }
@@ -83,23 +97,54 @@ export default function WaitingRoom() {
     }));
   };
 
+  const joinRegularMatch = () => {
+    if (!socket()) return;
+    socket().send(JSON.stringify({
+      gameType: 'match',
+      type: 'join_match',
+      player_id: 2
+    }));
+  };
+
+  const joinFourTournament = () => {
+    if (!socket()) return;
+    socket().send(JSON.stringify({
+      type: 'join_tournament',
+      tournament_id: tournaments()[0].tournament_id,
+      player_id: 4
+    }));
+  };
+
+  const joinEightTournament = () => {
+    if (!socket()) return;
+    socket().send(JSON.stringify({
+      type: 'join_tournament',
+      tournament_id: tournaments()[1].tournament_id,
+      player_id: 8
+    }));
+  };
+
   const gameList = createComponent("ul");
   createEffect(() => {
     const m = matches();
-    console.log('gamelist', gameList, m);
-    
-    if (Array.isArray(m)) {
-      gameList.element.innerHTML = '';
+    const t = tournaments();
+    gameList.element.innerHTML = '';
 
-      m.forEach((match) => {
-        const element = createComponent("div", {
-          content: `Match ID: ${match.match_id}, Player1: ${match.player_id}, Player2: ${match.player_id}, Status: ${match.status}`,
-        });
-        gameList.element.appendChild(element.element);
+    // Render matches
+    m.forEach((match) => {
+      const element = createComponent('div', {
+        content: `Match ${match.match_id} (Created by Player ${match.player_id})`,
       });
-    } else {
-      console.error('Matches is not an array:', m);
-    }
+      gameList.element.appendChild(element.element);
+    });
+
+    // Render tournaments
+    t.forEach((tournament) => {
+      const element = createComponent('div', {
+        content: `${tournament.max_players}-Player Tournament ${tournament.tournament_id} (${tournament.players.length}/${tournament.max_players} players)`,
+      });
+      gameList.element.appendChild(element.element);
+    });
   });
 
   let selectedGameType = '';
@@ -144,6 +189,43 @@ export default function WaitingRoom() {
         ]
       }),
 
+      createComponent('div', {
+        className: styles.dropdownContainer,
+        children: [
+          createComponent('select', {
+            className: styles.dropdown,
+            events: {
+              change: (event) => {
+                selectedGameType = event.target.value;
+              }
+            },
+            children: [
+              createComponent('option', { content: 'Select Game Mode', attributes: { value: '' } }),
+              createComponent('option', { content: '1v1 Match', attributes: { value: 'match' } }),
+              createComponent('option', { content: 'Tournament (4 Players)', attributes: { value: 'tournament4' } }),
+              createComponent('option', { content: 'Tournament (8 Players)', attributes: { value: 'tournament8' } }),
+            ]
+          }),
+          createComponent('button', {
+            className: styles.createButton,
+            content: 'Join Game',
+            events: {
+              click: () => {
+                if (selectedGameType === 'match') {
+                  joinRegularMatch();
+                } else if (selectedGameType === 'tournament4') {
+                  joinFourTournament();
+                } else if (selectedGameType === 'tournament8') {
+                  joinEightTournament();
+                } else {
+                  alert('Please select a game type!');
+                }
+              }
+            }
+          })
+        ]
+      }),
+
       createComponent('button', {
         className: styles.createButton,
         content: 'Delete All Games (to be deleted)',
@@ -155,10 +237,10 @@ export default function WaitingRoom() {
         children: [
           createComponent('pre', {
             style: 'color: white;',
-            content: matches() ? JSON.stringify(matches(), null, 2) : '',
+            content: 'Waiting Room', tournaments, matches,
           }),
           gameList,
-        ]
+        ],
       }),
     ]
   });  
