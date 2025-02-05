@@ -122,25 +122,39 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
   };
 
   const gameList = createComponent("ul");
+
   createEffect(() => {
     const m = matches();
     const t = tournaments();
+  
     gameList.element.innerHTML = '';
-
-    // Render matches
+  
+    // Append match buttons
     m.forEach((match) => {
-      const element = createComponent('div', {
-        content: `Match ${match.match_id} (Created by Player ${match.player_id})`,
+      const matchButton = createComponent('button', {
+        className: styles.createButton,
+        content: `Match ${match.match_id}`,
+        events: {
+          click: () => {
+            joinGame();
+          }
+        }
       });
-      gameList.element.appendChild(element.element);
+      gameList.element.appendChild(matchButton.element);
     });
-
-    // Render tournaments
+  
+    // Append tournament buttons
     t.forEach((tournament) => {
-      const element = createComponent('div', {
-        content: `${tournament.max_players}-Player Tournament ${tournament.tournament_id} (${tournament.players.length}/${tournament.max_players} players)`,
+      const tournamentButton = createComponent('button', {
+        className: styles.createButton,
+        content: `${tournament.max_players}-Player Tournament ${tournament.tournament_id}`,
+        events: {
+          click: () => {
+            joinTournament();
+          }
+        }
       });
-      gameList.element.appendChild(element.element);
+      gameList.element.appendChild(tournamentButton.element);
     });
   });
 
@@ -253,7 +267,7 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
     className: styles.waitingRoom,
     children: [
       creatGame,
-      openGame,
+      //openGame,
       deleteAllGames,
       createComponent('div', {
         className: styles.matchList,
