@@ -28,27 +28,18 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 
 import '@styles/global.css';
 import SignupPage from './pages/SignupPage/SignupPage';
-import { isAuthenticated, checkAuth } from './auth';
+import { checkAuth } from './auth';
 
 // Authentication Middleware
 const authentication = async (path, context) => {
-  console.log('path:', path);
-  console.log('from main isAuthenticated:', isAuthenticated());
-  if (path.startsWith('/login') && isAuthenticated) {
-    console.log('Already authenticated. Redirecting to home page...');
-    window.router.navigate('/');
-    return false;
+  const isAuthenticated = checkAuth();
+  console.log('isAuthenticated in middleware:', isAuthenticated);
+  if (context.nextPath === '/' || context.nextPath === '/login' || context.nextPath === '/signup') {
+    return true;
   }
-  if (
-    !isAuthenticated &&
-    (path.startsWith('/profile') ||
-      path.startsWith('/admin') ||
-      path.startsWith('/user/username') ||
-      path.startsWith('/pong-game') ||
-      path.startsWith('/stats'))
-  ) {
+  if (!isAuthenticated) {
     console.log('Unauthorized access. Redirecting to login page...');
-    window.router.navigate('/login');
+    history.pushState(null, '', '/login');
     return false;
   }
   return true;
@@ -140,7 +131,7 @@ const router = new Router({
   routes,
   rootElement: root,
   layoutComponent: AppLayout,
-  middlewares: middlewares,
+  middlewares: [authentication],
   //middlewares,
   errorComponent: ErrorPage,
 });
@@ -150,9 +141,10 @@ const initialPath = window.location.pathname;
   authentication(initialPath, {}).then((allowed) => {
     if (!allowed) {
       router.navigate('/login');
-    } else {
-      history.pushState(null, '', initialPath);
     }
+    // } else {
+    //   history.pushState(null, '', initialPath);
+    // }
 });
 
 // Expose router to the window object

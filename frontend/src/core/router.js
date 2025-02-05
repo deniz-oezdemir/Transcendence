@@ -199,16 +199,16 @@ export class Router {
 
   // Execute middleware functions
   async executeMiddlewares(path, context) {
-    if (this.middlewareCache.has(path)) {
-      return this.middlewareCache.get(path);
-    }
+    // if (this.middlewareCache.has(path)) {
+    //   return this.middlewareCache.get(path);
+    // }
 
     const results = await Promise.all(
       this.middlewares.map((middleware) => middleware(path, context))
     );
     const proceed = results.every((result) => result !== false);
 
-    this.middlewareCache.set(path, proceed);
+    // this.middlewareCache.set(path, proceed);
     return proceed;
   }
 
@@ -222,6 +222,7 @@ export class Router {
     const proceed = await this.executeMiddlewares(path, context);
     if (!proceed) {
       console.log('Middleware blocked navigation');
+      // history.pushState(null, '', '/login');
       return;
     }
 
