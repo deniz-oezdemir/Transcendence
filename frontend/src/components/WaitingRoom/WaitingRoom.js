@@ -2,9 +2,10 @@ import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
 import styles from './WaitingRoom.module.css';
 
-export default function WaitingRoom() {
+export default function WaitingRoom(/*{ onStartGame }*/) {
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
+  const [hasGames, setHasGames] = createSignal(false);
   const [socket, setSocket] = createSignal(null);
 
   createEffect(() => {
@@ -34,9 +35,14 @@ export default function WaitingRoom() {
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
             break;
+          
+          /*case data.games.matches.status === 'active':
+            // Notify the parent component that the game has started
+            onStartGame();
+            break;*/
 
           case 'error':
-            console.log('error');
+            console.log('error', data.message);
             break;
 
           default:
@@ -100,7 +106,6 @@ export default function WaitingRoom() {
   const joinRegularMatch = () => {
     if (!socket()) return;
     socket().send(JSON.stringify({
-      gameType: 'match',
       type: 'join_match',
       player_id: 2
     }));
@@ -147,49 +152,25 @@ export default function WaitingRoom() {
     });
   });
 
-  let selectedGameType = '';
-  return createComponent('div', {
-    className: styles.waitingRoom,
-    children: [
-      // Dropdown Container
-      createComponent('div', {
-        className: styles.dropdownContainer,
-        children: [
-          createComponent('select', {
-            className: styles.dropdown,
-            events: {
-              change: (event) => {
-                selectedGameType = event.target.value;
-              }
-            },
-            children: [
-              createComponent('option', { content: 'Select Game Mode', attributes: { value: '' } }),
-              createComponent('option', { content: '1v1 Match', attributes: { value: 'match' } }),
-              createComponent('option', { content: 'Tournament (4 Players)', attributes: { value: 'tournament4' } }),
-              createComponent('option', { content: 'Tournament (8 Players)', attributes: { value: 'tournament8' } }),
-            ]
-          }),
-          createComponent('button', {
-            className: styles.createButton,
-            content: 'Create Game',
-            events: {
-              click: () => {
-                if (selectedGameType === 'match') {
-                  createRegularMatch();
-                } else if (selectedGameType === 'tournament4') {
-                  createFourTournament();
-                } else if (selectedGameType === 'tournament8') {
-                  createEightTournament();
-                } else {
-                  alert('Please select a game type!');
-                }
-              }
-            }
-          })
-        ]
-      }),
+  const deleteAllGames = createComponent("ul");
+  createEffect(() => {
+    deleteAllGames.element.innerHTML = '';
+    deleteAllGames.element.appendChild(createComponent('button', {
+        className: styles.createButton,
+        content: 'Delete All Games (to be deleted)',
+        events: { click: deleteGames }
+      }).element);
+  });
 
-      createComponent('div', {
+  const openGame = createComponent("ul");
+  createEffect(() => {
+    const m = matches();
+    const t = tournaments();
+    console.log('Matches:', m, 'Tournaments:', t);
+    setHasGames(m.length > 0 || t.length > 0);
+    if (hasGames()) {
+      openGame.element.innerHTML = '';
+      openGame.element.appendChild(createComponent('div', {
         className: styles.dropdownContainer,
         children: [
           createComponent('select', {
@@ -224,14 +205,61 @@ export default function WaitingRoom() {
             }
           })
         ]
-      }),
+      }).element);
+    } else {
+      openGame.element.innerHTML = '';
+    }
+  });
 
-      createComponent('button', {
-        className: styles.createButton,
-        content: 'Delete All Games (to be deleted)',
-        events: { click: deleteGames }
-      }),
+  const creatGame = createComponent("ul");
+  createEffect(() => {
+    creatGame.element.innerHTML = '';
+    creatGame.element.appendChild(createComponent('div', {
+      className: styles.dropdownContainer,
+      children: [
+        createComponent('select', {
+          className: styles.dropdown,
+          events: {
+            change: (event) => {
+              selectedGameType = event.target.value;
+            }
+          },
+          children: [
+            createComponent('option', { content: 'Select Game Mode', attributes: { value: '' } }),
+            createComponent('option', { content: '1v1 Match', attributes: { value: 'match' } }),
+            createComponent('option', { content: 'Tournament (4 Players)', attributes: { value: 'tournament4' } }),
+            createComponent('option', { content: 'Tournament (8 Players)', attributes: { value: 'tournament8' } }),
+          ]
+        }),
+        createComponent('button', {
+          className: styles.createButton,
+          content: 'Create Game',
+          events: {
+            click: () => {
+              if (selectedGameType === 'match') {
+                createRegularMatch();
+              } else if (selectedGameType === 'tournament4') {
+                createFourTournament();
+              } else if (selectedGameType === 'tournament8') {
+                createEightTournament();
+              } else {
+                alert('Please select a game type!');
+              }
+            }
+          }
+        })
+      ]
+    }).element);
+  });
 
+
+  let selectedGameType = '';
+  return createComponent('div', {
+    className: styles.waitingRoom,
+    children: [
+      creatGame,
+      openGame,
+      deleteAllGames,
       createComponent('div', {
         className: styles.matchList,
         children: [

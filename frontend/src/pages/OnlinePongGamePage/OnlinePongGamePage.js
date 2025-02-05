@@ -10,6 +10,7 @@ export default function OnlinePongGamePage({ navigate }) {
   const cleanup = createCleanupContext();
 
   // Game state signals
+  //const [isWaitingRoom, setWaitingRoom] = createSignal(true);
   const [isLoading, setIsLoading] = createSignal(true);
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameId, setGameId] = createSignal(-1);
@@ -387,17 +388,33 @@ export default function OnlinePongGamePage({ navigate }) {
     const content = createComponent('div', {
       className: `container position-relative`,
     });
-    const score = Score({ gameScore });
-    const board = GameBoard({
-      gameDimensions: gameDimensions,
-      gamePositions: gamePositions,
-    });
-    const waitingroom = WaitingRoom();
-    const controls = GameControls();
-    content.element.appendChild(waitingroom.element);
-    content.element.appendChild(score.element);
-    content.element.appendChild(board.element);
-    content.element.appendChild(controls.element);
+    /*console.log('Is Waiting Room:', isWaitingRoom());
+    if (isWaitingRoom()) {
+      const waitingroom = WaitingRoom({
+        onStartGame: () => {
+          setWaitingRoom(false);
+          toogleGame();
+        },
+      });
+      content.element.appendChild(waitingroom.element);
+    } else {
+      const score = Score({ gameScore });
+      const board = GameBoard({
+        gameDimensions: gameDimensions,
+        gamePositions: gamePositions,
+      });*/
+      const waitingroom = WaitingRoom();
+      const score = Score({ gameScore });
+      const board = GameBoard({
+        gameDimensions: gameDimensions,
+        gamePositions: gamePositions,
+      });
+      const controls = GameControls();
+      content.element.appendChild(waitingroom.element);
+      content.element.appendChild(score.element);
+      content.element.appendChild(board.element);
+      content.element.appendChild(controls.element);
+    //}
     return content;
   };
 
