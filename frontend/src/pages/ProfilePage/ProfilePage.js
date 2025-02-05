@@ -1,3 +1,137 @@
+// import { createComponent } from '@component';
+
+// import { createSignal, createEffect } from '@reactivity';
+// import styles from './ProfilePage.module.css';
+
+// export default function ProfilePage({ params, query }) {
+//   const username = localStorage.getItem('username');
+//   const userId = localStorage.getItem('userId');
+//   const [userData, setUserData] = createSignal(null);
+//   const [error, setError] = createSignal(null);
+//   const [loading, setLoading] = createSignal(true);
+
+//   const fetchUserData = async () => {
+//     try {
+//       const response = await fetch(`http://localhost:8006/profile/`, {
+//         method: 'GET',
+//         headers: {
+//           'Authorization': `Token ${localStorage.getItem('token')}`,
+//           'Content-Type': 'application/json',
+//         },
+//       });
+//       if (!response.ok) {
+//         throw new Error('Failed to fetch user data');
+//       }
+//       const data = await response.json();
+//       setUserData(data);
+//     } catch (error) {
+//       console.error(error);
+//       setError(error.message);
+//     }
+//   }
+
+//   // //example code for fetching stats and achievements
+//   // const fetchStats = async () => {
+//   //   try {
+//   //     const response = await fetch(`/stats/${username}`);
+//   //     if (!response.ok) throw new Error('Failed to fetch stats');
+//   //     const data = await response.json();
+//   //     setStats(data);
+//   //   } catch (err) {
+//   //     setError(err.message);
+//   //   }
+//   // };
+
+//   // createEffect(() => {
+//   //   setLoading(true);
+//   //   Promise.all([fetchUserData(), fetchStats()]).finally(() => {
+//   //     setLoading(false);
+//   //   });
+//   // });
+//   createEffect(() => {
+//     setLoading(true);
+//     fetchUserData().finally(() => {
+//       setLoading(false);
+//     });
+//   });
+
+//   if (loading()) {
+//     return createComponent('div', {
+//       className: 'loading',
+//       content: 'Loading...',
+//     });
+//   }
+
+//   if (error()) {
+//     return createComponent('div', {
+//       className: 'error',
+//       content: error(),
+//     });
+//   }
+
+//   return createComponent('div', {
+//     className: styles.container,
+//     children: [
+//       // User Info Section
+//       createComponent('div', {
+//         className: 'user-info',
+//         children: [
+//           createComponent('img', {
+//             className: 'avatar',
+//             attributes: {
+//               src: userData().avatar_url || '/avatars/default.png',
+//               alt: `${username}'s avatar`,
+//             },
+//           }),
+//           createComponent('h1', {
+//             className: 'username',
+//             content: username,
+//           }),
+//         ],
+//       }),
+
+//       // Friends List Section
+//       createComponent('div', {
+//         className: 'friends-list',
+//         children: [
+//           createComponent('h2', { content: 'Friends' }),
+//           createComponent('ul', {
+//             children: userData().friends.map((friend) =>
+//               createComponent('li', {
+//                 className: `friend ${friend.online ? 'online' : 'offline'}`,
+//                 content: `${friend.username} (${friend.online ? 'Online' : 'Offline'})`,
+//               })
+//             ),
+//           }),
+//         ],
+//       }),
+
+//       // Stats and Achievements Section
+//       createComponent('div', {
+//         className: 'stats-achievements',
+//         children: [
+//           createComponent('h2', { content: 'Stats' }),
+//           createComponent('ul', {
+//             children: Object.entries(stats().stats).map(([key, value]) =>
+//               createComponent('li', {
+//                 content: `${key}: ${value}`,
+//               })
+//             ),
+//           }),
+//           createComponent('h2', { content: 'Achievements' }),
+//           createComponent('ul', {
+//             children: stats().achievements.map((achievement) =>
+//               createComponent('li', {
+//                 content: achievement,
+//               })
+//             ),
+//           }),
+//         ],
+//       }),
+//     ],
+//     cleanup,
+//   });
+// }
 import { createComponent, Link, createCleanupContext } from '@component';
 import styles from './ProfilePage.module.css';
 

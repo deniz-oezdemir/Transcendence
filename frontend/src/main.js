@@ -1,4 +1,5 @@
 import { Router } from '@router';
+import { createMemo } from '@reactivity';
 import { createComponent, Link, NestedLayoutContent } from '@component';
 import { applyInitialTheme, addSystemThemeListener } from '@themeManager';
 
@@ -27,16 +28,15 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 
 import '@styles/global.css';
 import SignupPage from './pages/SignupPage/SignupPage';
-import { checkAuth } from './auth';
+import { isAuthenticated, checkAuth } from './auth';
 
 // Authentication Middleware
-const isAuthenticated = async (path, context) => {
-  const isAuthenticated = checkAuth();
+const authentication = async (path, context) => {
   console.log('path:', path);
-  console.log('isAuthenticated:', isAuthenticated);
+  console.log('from main isAuthenticated:', isAuthenticated());
   if (path.startsWith('/login') && isAuthenticated) {
     console.log('Already authenticated. Redirecting to home page...');
-    router.navigate('/');
+    window.router.navigate('/');
     return false;
   }
   if (
@@ -48,7 +48,7 @@ const isAuthenticated = async (path, context) => {
       path.startsWith('/stats'))
   ) {
     console.log('Unauthorized access. Redirecting to login page...');
-    router.navigate('/login');
+    window.router.navigate('/login');
     return false;
   }
   return true;
@@ -63,8 +63,15 @@ dom.watch();
 // --- EXAMPLES ----
 // Example: Middlewares are functions that run before a navigation, when you
 // add this to the the router config.
+const test = async () => {
+  const isAuth = createMemo(checkAuth);
+  console.log('isAuth:', isAuth());
+  if (!isAuth()) {
+      window.router.navigate('/login');
+  }
+}
 const middlewares = [
-  isAuthenticated,
+  authentication,
   async (path, context) => {
     console.log(`Navigating to: ${path}`);
     return true;
@@ -74,6 +81,7 @@ const middlewares = [
 // Nested Layout for Admin Section: With nested layout you can define a layout
 // for a specific section of your app, in this case the admin section.
 function AdminLayout() {
+
   const layout = createComponent('div', {
     className: 'admin-layout',
     content: `
@@ -132,19 +140,19 @@ const router = new Router({
   routes,
   rootElement: root,
   layoutComponent: AppLayout,
-  middlewares: [isAuthenticated],
+  middlewares: middlewares,
   //middlewares,
   errorComponent: ErrorPage,
 });
 
-// Run the middleware on initial page load
+// // Run the middleware on initial page load
 const initialPath = window.location.pathname;
-isAuthenticated(initialPath, {}).then((allowed) => {
-  if (!allowed) {
-    router.navigate('/login');
-  } else {
-    router.resolve(initialPath);
-  }
+  authentication(initialPath, {}).then((allowed) => {
+    if (!allowed) {
+      router.navigate('/login');
+    } else {
+      history.pushState(null, '', initialPath);
+    }
 });
 
 // Expose router to the window object

@@ -16,8 +16,15 @@ export default function Navbar({ location, navigate }) {
   // Handle the login/logout button
   const handleAuthButtonClick = () => {
     if (isAuthenticated()) {
-      logout();
-      navigate('/');
+      try {
+        logout();
+        setTimeout(() => {
+          window.router.navigate('/login');
+        }, 1000);
+      } catch (error) {
+        console.error('Error logging out:', error);
+        navigate('/profile');
+      }
     } else {
       navigate('/login'); // Redirect to login page if not authenticated
     }

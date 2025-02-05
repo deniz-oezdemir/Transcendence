@@ -6,7 +6,6 @@ import { login } from '../../auth';
 export default function LoginPage() {
   const cleanup = createCleanupContext();
   
-
   const [username, setUsername] = createSignal('');
   const [password, setPassword] = createSignal('');
   const [usernameError, setUsernameError] = createSignal('');
@@ -18,14 +17,13 @@ export default function LoginPage() {
   function validateUsername(value) {
     const isValid = 
       value.length >= 3 && 
-      value.length <= 20 && 
-      /^[a-zA-Z0-9]+$/.test(value);
+      value.length <= 20 &&
+      /^[a-zA-Z0-9_]+$/.test(value);
 
-    // setIsUsernameValid(isValid);
     setUsernameError(
       isValid 
         ? '' 
-        : 'Username must be 3-20 alphanumeric characters'
+        : 'Username must be 3-20 alphanumeric characters and/or underscores'
     );
 
     return isValid;
@@ -34,17 +32,17 @@ export default function LoginPage() {
   function validatePassword(value) {
     const isValid =
       value.length >= 8 &&
-      value.length <= 50;
-
-    setPasswordError(
+      value.length <= 20 &&
+      !/[ /\\]/.test(value);
+      setPasswordError(
       isValid
         ? ''
-        : 'Password must be 8-50 characters'
+        : 'Password must be 8-20 characters and cannot contain spaces, forward slashes, or backslashes'
     );
     return isValid;
   }
 
-  async function handleLogin(event) {
+  function handleLogin(event) {
     event.preventDefault();
     setSubmitError('');
     setSubmitSuccess('');
@@ -54,40 +52,20 @@ export default function LoginPage() {
       setIsLoggingIn(false);
       return;
     }
-
     try {
       // For local development
       console.log('Attempting login with:', {
         username: username(),
         password: password()
       });
-      const response = await fetch(`http://localhost:8006/login/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // 'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: JSON.stringify({
-          username: username(),
-          password: password()
-        })
-      });
-      console.log('Response received:', response)
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
-      }
-
-      const data = await response.json();
-      login(data);
-      
+      login(username(), password());
+      setIsLoggingIn(false);
       setSubmitSuccess('User logged in successfully! Redirecting to home page...');
-
       setTimeout(() => {
         window.router.navigate('/');
       }, 2000);
     } catch (error) {
-      console.error('Login error:', error);
+      setIsLoggingIn(false);
       setSubmitError(error.message);
     }
   }

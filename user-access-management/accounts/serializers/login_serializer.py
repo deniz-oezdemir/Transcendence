@@ -18,7 +18,6 @@ class LoginSerializer(serializers.Serializer):
         password = data.get('password')
 
         user = authenticate(username=username, password=password) #returns user object
-        print("user")
         if not user:
             raise serializers.ValidationError('Invalid username or password.')
         if not user.is_active:

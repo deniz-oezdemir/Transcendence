@@ -14,7 +14,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True,
         required=True,
         min_length=8,
-        max_length=30,
+        max_length=20,
         error_messages={
             "min_length": "Password must be at least 8 characters long.",
             "max_length": "Password cannot exceed 30 characters."

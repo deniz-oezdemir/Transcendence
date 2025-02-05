@@ -2,7 +2,7 @@ from rest_framework import serializers
 from accounts.models import CustomUser
 
 #checks which query parameters are requested, initializes the serializer with them and returns the corresponding fields
-class GetProfileSerializer(serializers.ModelSerializer):
+class GetProfileDataSerializer(serializers.ModelSerializer):
     RESTRICTED_FIELDS = ['password']
 
     def __init__(self, *args, **kwargs):

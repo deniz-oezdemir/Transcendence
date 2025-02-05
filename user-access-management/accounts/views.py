@@ -7,7 +7,7 @@ from .serializers.login_serializer import LoginSerializer
 # from .serializers.logout_serializer import LogoutSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .serializers.get_profile_serializer import GetProfileSerializer
+from .serializers.get_profile_serializer import GetProfileDataSerializer
 
 class RegisterView(APIView):
     authentication_classes = []
@@ -57,12 +57,14 @@ class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        fields_param = request.query_params.get('fields')
-        requested_fields = fields_param.split(',') if fields_param else None
-        if not requested_fields or requested_fields == ['']:
-            requested_fields = ['id', 'username', 'avatar_url', 'status', 'friends']
-        serializer = GetProfileSerializer(request.user, fields=requested_fields)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # fields_param = request.query_params.get('fields')
+        # requested_fields = fields_param.split(',') if fields_param else None
+        # if not requested_fields or requested_fields == ['']:
+        #     requested_fields = ['id', 'username', 'avatar_url', 'status', 'friends']
+        # serializer = GetProfileDataSerializer(request.user, fields=requested_fields)
+        # return Response(serializer.data, status=status.HTTP_200_OK)
+        #return username, user_id, avatar_url, status, friends
+        return Response({"username": request.user.username, "user_id": request.user.id, "avatar_url": request.user.avatar_url, "status": request.user.status, "friends": request.user.friends}, status=status.HTTP_200_OK)
 
 
     def put(self, request):

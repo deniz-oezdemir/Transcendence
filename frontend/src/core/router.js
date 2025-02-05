@@ -7,13 +7,7 @@ export class Router {
     routes,
     rootElement,
     layoutComponent = null,
-    middlewares = [
-      isAuthenticated,
-      async (path, context) => {
-        console.log(`Navigating to: ${path}`);
-        return true;
-      },
-    ],
+    middlewares = [],
     errorComponent = null,
   }) {
     this.routes = routes;
@@ -226,7 +220,10 @@ export class Router {
 
     const context = { currentPath: window.location.pathname, nextPath: path };
     const proceed = await this.executeMiddlewares(path, context);
-    if (!proceed) return;
+    if (!proceed) {
+      console.log('Middleware blocked navigation');
+      return;
+    }
 
     if (replace) {
       history.replaceState(null, '', path);
