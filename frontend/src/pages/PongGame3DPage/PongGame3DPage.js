@@ -25,6 +25,7 @@ import {
   DirectionalLightHelper,
   ACESFilmicToneMapping,
   Raycaster,
+  MathUtils,
 } from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -39,6 +40,11 @@ import Ball from '@/game/Ball.js';
 import Paddle from '@/game/Paddle.js';
 
 import styles from './PongGame3DPage.module.css';
+
+function lerp(from, to, speed) {
+  const amount = (1 - speed) * from + speed * to;
+  return Math.abs(from - to) < 0.001 ? to : amount;
+}
 
 export default function PongGame3DPage({ navigate }) {
   const cleanup = createCleanupContext();
@@ -96,7 +102,11 @@ export default function PongGame3DPage({ navigate }) {
     boundaries.y * 20
   );
   planeGeometry.rotateX(-Math.PI * 0.5);
-  const planeMaterial = new MeshNormalMaterial({ wireframe: true });
+  const planeMaterial = new MeshNormalMaterial({
+    wireframe: true,
+    transparent: true,
+    opacity: 0.1,
+  });
 
   const plane = new Mesh(planeGeometry, planeMaterial);
   scene.add(plane);
@@ -111,9 +121,9 @@ export default function PongGame3DPage({ navigate }) {
   scene.add(leftBound);
   scene.add(rightBound);
 
-  const ball = new Ball(scene, boundaries);
-  const playerPaddle = new Paddle(scene, new Vector3(0, 0, 15));
-  const pcPaddle = new Paddle(scene, new Vector3(0, 0, -15));
+  const playerPaddle = new Paddle(scene, boundaries, new Vector3(0, 0, 15));
+  const pcPaddle = new Paddle(scene, boundaries, new Vector3(0, 0, -15));
+  const ball = new Ball(scene, boundaries, [playerPaddle, pcPaddle]);
 
   const directionalLight = new DirectionalLight(data.lightColor, Math.PI);
   directionalLight.position.set(1, 1, 1);
@@ -154,7 +164,6 @@ export default function PongGame3DPage({ navigate }) {
 
   onMount(() => {
     if (gameRef) {
-      console.log('Game Ref:', gameRef);
       setSize({
         width: window.innerWidth,
         height: gameRef.offsetHeight,
@@ -220,11 +229,13 @@ export default function PongGame3DPage({ navigate }) {
     const [intersection] = raycaster.intersectObject(plane);
 
     if (intersection) {
-      playerPaddle.mesh.position.x = intersection.point.x;
+      const nextX = intersection.point.x;
+      const prevX = playerPaddle.mesh.position.x;
+      playerPaddle.setX(lerp(prevX, nextX, 0.1));
     }
 
     ball.update(deltaTime);
-    pcPaddle.mesh.position.x = ball.mesh.position.x;
+    pcPaddle.setX(ball.mesh.position.x);
 
     controls.update();
 
