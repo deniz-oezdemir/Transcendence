@@ -11,6 +11,7 @@ import path from 'path';
 import dev from 'rollup-plugin-dev';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
+import json from '@rollup/plugin-json';
 
 const isDev = process.env.ROLLUP_WATCH;
 const isProduction = process.env.NODE_ENV === 'production';
@@ -24,6 +25,7 @@ export default {
     sourcemap: true,
   },
   plugins: [
+    // json(),
     replace({
       'process.env.NODE_ENV': JSON.stringify(
         isProduction ? 'production' : 'development'
@@ -107,6 +109,10 @@ export default {
         { src: 'src/assets/icons/favicon.ico', dest: 'dist' },
         { src: 'src/assets/images', dest: 'dist/assets' },
         { src: 'src/assets/fonts', dest: 'dist/assets' },
+        // {
+        //   src: 'node_modules/three/examples/fonts/*',
+        //   dest: 'dist/assets/fonts',
+        // },
       ],
     }),
     isDev &&

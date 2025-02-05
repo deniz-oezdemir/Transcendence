@@ -5,13 +5,16 @@ import {
   SphereGeometry,
   Vector3,
   Raycaster,
+  EventDispatcher,
 } from 'three';
 
-export default class Ball {
-  speed = 5;
+export default class Ball extends EventDispatcher {
+  speed = 15;
   velocity = new Vector3(1, 0, 1);
 
   constructor(scene, boundaries, paddles) {
+    super();
+
     this.scene = scene;
     this.boundaries = boundaries;
     this.paddles = paddles;
@@ -28,12 +31,18 @@ export default class Ball {
     this.raycaster.near = 0;
     this.raycaster.far = this.boundaries.y * 2.5;
 
-    this.pointCollision = new Mesh(
-      new SphereGeometry(0.1),
-      new MeshBasicMaterial({ color: 'red' })
-    );
+    // For Debugging
+    // this.pointCollision = new Mesh(
+    //   new SphereGeometry(0.1),
+    //   new MeshBasicMaterial({ color: 'red' })
+    // );
+    // this.scene.add(this.pointCollision);
+  }
 
-    this.scene.add(this.pointCollision);
+  resetVelocity() {
+    this.speed = 15;
+    this.velocity.z *= -1;
+    this.velocity.normalize().multiplyScalar(this.speed);
   }
 
   update(deltaTime) {
@@ -54,8 +63,12 @@ export default class Ball {
     }
 
     if (dz < 0) {
+      const z = this.mesh.position.z;
+      const message = z > 0 ? 'pc' : 'player';
+      this.dispatchEvent({ type: 'onGoal', message: message });
+
       tPos.set(0, 0, 0);
-      this.velocity.z *= -1;
+      this.resetVelocity();
     }
 
     // Collision with one of the paddle
@@ -68,23 +81,27 @@ export default class Ball {
     );
 
     if (intersection) {
-      this.pointCollision.position.copy(intersection.point);
+      // this.pointCollision.position.copy(intersection.point);
 
       if (intersection.distance < s.length()) {
-        console.log(s);
         tPos.copy(intersection.point);
         const d = s.length() - intersection.distance;
 
-        this.velocity.reflect(intersection.normal);
+        const normal = intersection.normal;
+        normal.y = 0;
+        normal.normalize();
+        this.velocity.reflect(normal);
+
         const dS = this.velocity.clone().normalize().multiplyScalar(d);
         tPos.add(dS);
 
-        this.speed *= 1.05;
+        this.speed *= 1.1;
         this.velocity.normalize().multiplyScalar(this.speed);
       }
-    } else {
-      this.pointCollision.position.set(0, 0, 0);
     }
+    // else {
+    //     this.pointCollision.position.set(0, 0, 0);
+    //   }
 
     this.mesh.position.copy(tPos);
   }

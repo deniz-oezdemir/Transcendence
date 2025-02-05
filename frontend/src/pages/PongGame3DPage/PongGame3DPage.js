@@ -32,12 +32,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
 import GameControls from '@/components/GameControls/GameControls';
 import Ball from '@/game/Ball.js';
 import Paddle from '@/game/Paddle.js';
+import AIController from '@/game/AIController.js';
+import lights from '@/game/lights.js';
 
 import styles from './PongGame3DPage.module.css';
 
@@ -58,6 +62,7 @@ export default function PongGame3DPage({ navigate }) {
   });
 
   const fov = 60;
+  //colors
   const data = {
     color: 0x00ff00,
     lightColor: 0xffffff,
@@ -68,13 +73,66 @@ export default function PongGame3DPage({ navigate }) {
     paddleColor: 0x3633ff,
     ballColor: 0xce47ff,
   };
+
+  // Score
+  const score = {
+    pc: 0,
+    player: 0,
+  };
+
+  // Font Loader
+
+  let pcScoreMesh, playerScoreMesh, loadedFont;
+  const TEXT_PARAMS = {
+    size: 4,
+    depth: 0.5,
+    curveSegments: 16,
+    bevelEnabled: true,
+    bevelThickness: 0.3,
+    bevelSize: 0.15,
+    bevelOffset: 0,
+    bevelSegments: 8,
+  };
+
+  const fontLoader = new FontLoader();
+  fontLoader.load(
+    'assets/fonts/helvetiker_bold.typeface.json',
+    function (font) {
+      loadedFont = font;
+      const geometry = new TextGeometry('0', {
+        font: font,
+        ...TEXT_PARAMS,
+      });
+
+      geometry.center();
+
+      pcScoreMesh = new Mesh(geometry, new MeshNormalMaterial());
+      playerScoreMesh = new Mesh(geometry, new MeshNormalMaterial());
+      pcScoreMesh.position.set(0, 4, -boundaries.y - 2);
+      playerScoreMesh.position.set(0, 4, boundaries.y + 2);
+
+      scene.add(pcScoreMesh, playerScoreMesh);
+    }
+  );
+
+  function getScoreGeometry(score) {
+    const geometry = new TextGeometry(`${score}`, {
+      font: loadedFont,
+      ...TEXT_PARAMS,
+    });
+
+    geometry.center();
+    return geometry;
+  }
+
   let camera, renderer, gameRef, controls;
 
   // Scene Setup
   const scene = new Scene();
+  scene.add(...lights);
 
-  const gridHelper = new GridHelper();
-  scene.add(gridHelper);
+  // const gridHelper = new GridHelper();
+  // scene.add(gridHelper);
 
   // const helpers = new Group();
   // helpers.visible = true;
@@ -102,6 +160,7 @@ export default function PongGame3DPage({ navigate }) {
     boundaries.y * 20
   );
   planeGeometry.rotateX(-Math.PI * 0.5);
+  planeGeometry.translate(0, -5, 0);
   const planeMaterial = new MeshNormalMaterial({
     wireframe: true,
     transparent: true,
@@ -124,6 +183,19 @@ export default function PongGame3DPage({ navigate }) {
   const playerPaddle = new Paddle(scene, boundaries, new Vector3(0, 0, 15));
   const pcPaddle = new Paddle(scene, boundaries, new Vector3(0, 0, -15));
   const ball = new Ball(scene, boundaries, [playerPaddle, pcPaddle]);
+  const controller = new AIController(pcPaddle, ball);
+
+  ball.addEventListener('onGoal', (e) => {
+    score[e.message] += 1;
+
+    const mesh = e.message === 'pc' ? pcScoreMesh : playerScoreMesh;
+
+    const geometry = getScoreGeometry(score[e.message]);
+    mesh.geometry = geometry;
+    // playerScoreMesh.geometry.getAttibute('position').needUpdate = true;
+  });
+
+  //
 
   const directionalLight = new DirectionalLight(data.lightColor, Math.PI);
   directionalLight.position.set(1, 1, 1);
@@ -198,7 +270,7 @@ export default function PongGame3DPage({ navigate }) {
       const { width, height } = size();
 
       camera = new PerspectiveCamera(fov, width / height, 0.1, 1000);
-      camera.position.set(-10, 20, 40);
+      camera.position.set(-5, 30, 60);
       camera.lookAt(0, 2.5, 0);
 
       // WebGPU Renderer setup
@@ -228,14 +300,18 @@ export default function PongGame3DPage({ navigate }) {
     raycaster.setFromCamera(cursor, camera);
     const [intersection] = raycaster.intersectObject(plane);
 
-    if (intersection) {
-      const nextX = intersection.point.x;
-      const prevX = playerPaddle.mesh.position.x;
-      playerPaddle.setX(lerp(prevX, nextX, 0.1));
-    }
+    const dt = deltaTime * 0.1;
 
-    ball.update(deltaTime);
-    pcPaddle.setX(ball.mesh.position.x);
+    for (let i = 0; i < 10; i++) {
+      if (intersection) {
+        const nextX = intersection.point.x;
+        const prevX = playerPaddle.mesh.position.x;
+        playerPaddle.setX(lerp(prevX, nextX, 0.5));
+      }
+
+      ball.update(dt);
+      controller.update(dt);
+    }
 
     controls.update();
 
