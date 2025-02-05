@@ -136,15 +136,15 @@ const router = new Router({
   errorComponent: ErrorPage,
 });
 
-// // Run the middleware on initial page load
-// const initialPath = window.location.pathname;
-// isAuthenticated(initialPath, {}).then((allowed) => {
-//   if (!allowed) {
-//     router.navigate('/login');
-//   } else {
-//     router.resolve(initialPath);
-//   }
-// });
+// Run the middleware on initial page load
+const initialPath = window.location.pathname;
+isAuthenticated(initialPath, {}).then((allowed) => {
+  if (!allowed) {
+    router.navigate('/login');
+  } else {
+    router.resolve(initialPath);
+  }
+});
 
 // Expose router to the window object
 window.router = router;

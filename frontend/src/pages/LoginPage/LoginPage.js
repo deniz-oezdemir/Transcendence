@@ -1,6 +1,7 @@
 import { createComponent, Link, createCleanupContext } from '@component';
 import styles from './LoginPage.module.css';
 import { createSignal } from '@reactivity';
+import { login } from '../../auth';
 
 export default function LoginPage() {
   const cleanup = createCleanupContext();
@@ -78,9 +79,7 @@ export default function LoginPage() {
       }
 
       const data = await response.json();
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('username', data.username);
-      localStorage.setItem('userId', data.userId);
+      login(data);
       
       setSubmitSuccess('User logged in successfully! Redirecting to home page...');
 
