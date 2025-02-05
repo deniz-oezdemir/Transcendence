@@ -1,0 +1,49 @@
+services:
+  game-history:
+    container_name: game-history
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8006:8000"
+    depends_on:
+      game-history-postgres:
+        condition: service_healthy
+    volumes:
+      - ..:/app
+    env_file:
+      - path: ./.env
+        required: true
+    environment:
+      - DJANGO_SETTINGS_MODULE=gameHistory.settings
+      - PYTHONPATH=/app
+      - POSTGRES_HOST=game-history-postgres
+      - POSTGRES_URL=${POSTGRES_URL}
+    networks:
+      - transcendence
+      - game-history-internal
+
+  game-history-postgres:
+    image: postgres:16.6
+    container_name: game-history-postgres
+    env_file:
+      - path: ./.env
+        required: true
+    volumes:
+      - game-history-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - game-history-internal
+
+networks:
+  transcendence:
+    external: true
+  game-history-internal:
+    driver: bridge
+
+volumes:
+  game-history-postgres-data:

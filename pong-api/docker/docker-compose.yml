@@ -1,5 +1,6 @@
 services:
   pong-api:
+    container_name: pong-api
     build:
       context: ..
       dockerfile: docker/Dockerfile
