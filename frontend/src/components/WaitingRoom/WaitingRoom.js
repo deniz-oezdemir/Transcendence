@@ -103,29 +103,21 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
     }));
   };
 
-  const joinRegularMatch = () => {
+  const joinGame = () => {
     if (!socket()) return;
     socket().send(JSON.stringify({
       type: 'join_match',
+      match_id: matches()[0].match_id,
       player_id: 2
     }));
   };
 
-  const joinFourTournament = () => {
+  const joinTournament = () => {
     if (!socket()) return;
     socket().send(JSON.stringify({
       type: 'join_tournament',
       tournament_id: tournaments()[0].tournament_id,
       player_id: 4
-    }));
-  };
-
-  const joinEightTournament = () => {
-    if (!socket()) return;
-    socket().send(JSON.stringify({
-      type: 'join_tournament',
-      tournament_id: tournaments()[1].tournament_id,
-      player_id: 8
     }));
   };
 
@@ -182,9 +174,14 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
             },
             children: [
               createComponent('option', { content: 'Select Game Mode', attributes: { value: '' } }),
-              createComponent('option', { content: '1v1 Match', attributes: { value: 'match' } }),
-              createComponent('option', { content: 'Tournament (4 Players)', attributes: { value: 'tournament4' } }),
-              createComponent('option', { content: 'Tournament (8 Players)', attributes: { value: 'tournament8' } }),
+              ...m.map((match) => createComponent('option', {
+                content: `Match ${match.match_id}`,
+                attributes: { value: 'match' }
+              })),
+              ...t.map((tournament) => createComponent('option', {
+                content: `${tournament.max_players}-Player Tournament ${tournament.tournament_id}`,
+                attributes: { value: 'tournament' }
+              }))
             ]
           }),
           createComponent('button', {
@@ -193,11 +190,9 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
             events: {
               click: () => {
                 if (selectedGameType === 'match') {
-                  joinRegularMatch();
-                } else if (selectedGameType === 'tournament4') {
-                  joinFourTournament();
-                } else if (selectedGameType === 'tournament8') {
-                  joinEightTournament();
+                  joinGame();
+                } else if (selectedGameType === 'tournament') {
+                  joinTournament();
                 } else {
                   alert('Please select a game type!');
                 }
