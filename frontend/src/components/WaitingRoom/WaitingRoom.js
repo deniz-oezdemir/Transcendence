@@ -20,7 +20,7 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
       try {
         const data = JSON.parse(event.data);
         console.log('Received:', data);
-        
+
         switch (data.type) {
           case 'initial_games':
             setMatches(data.games.matches || []);
@@ -29,19 +29,30 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
 
           case 'match_created':
           case 'tournament_created':
-          case 'player_joined':
+          //case 'player_joined':
           case 'tournament_started':
           case 'games_deleted':
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
             break;
           
-          /*case data.games.matches.status === 'active':
-            // Notify the parent component that the game has started
-            onStartGame();
-            break;*/
+          case 'player_joined':
+            console.log('Player joined Tsts:', data.available_games);
+            switch (data.available_games.matches[0].status || data.available_games.tournaments[0].status) {
+              case 'active':
+                console.log('Game Started');
+                break;
+              case 'pending':
+                console.log('Game Pending');
+                break;
+              default:
+                console.log('Game Status:', data.available_games.matches[0].status);
+            }
+            //onStartGame(data.game);
+            break;
 
           case 'error':
+            alert(data.message);
             console.log('error', data.message);
             break;
 
@@ -168,58 +179,6 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
       }).element);
   });
 
-  const openGame = createComponent("ul");
-  createEffect(() => {
-    const m = matches();
-    const t = tournaments();
-    console.log('Matches:', m, 'Tournaments:', t);
-    setHasGames(m.length > 0 || t.length > 0);
-    if (hasGames()) {
-      openGame.element.innerHTML = '';
-      openGame.element.appendChild(createComponent('div', {
-        className: styles.dropdownContainer,
-        children: [
-          createComponent('select', {
-            className: styles.dropdown,
-            events: {
-              change: (event) => {
-                selectedGameType = event.target.value;
-              }
-            },
-            children: [
-              createComponent('option', { content: 'Select Game Mode', attributes: { value: '' } }),
-              ...m.map((match) => createComponent('option', {
-                content: `Match ${match.match_id}`,
-                attributes: { value: 'match' }
-              })),
-              ...t.map((tournament) => createComponent('option', {
-                content: `${tournament.max_players}-Player Tournament ${tournament.tournament_id}`,
-                attributes: { value: 'tournament' }
-              }))
-            ]
-          }),
-          createComponent('button', {
-            className: styles.createButton,
-            content: 'Join Game',
-            events: {
-              click: () => {
-                if (selectedGameType === 'match') {
-                  joinGame();
-                } else if (selectedGameType === 'tournament') {
-                  joinTournament();
-                } else {
-                  alert('Please select a game type!');
-                }
-              }
-            }
-          })
-        ]
-      }).element);
-    } else {
-      openGame.element.innerHTML = '';
-    }
-  });
-
   const creatGame = createComponent("ul");
   createEffect(() => {
     creatGame.element.innerHTML = '';
@@ -267,7 +226,6 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
     className: styles.waitingRoom,
     children: [
       creatGame,
-      //openGame,
       deleteAllGames,
       createComponent('div', {
         className: styles.matchList,

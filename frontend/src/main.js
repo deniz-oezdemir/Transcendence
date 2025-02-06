@@ -124,8 +124,6 @@ const initialPath = window.location.pathname;
 isAuthenticated(initialPath, {}).then((allowed) => {
   if (!allowed) {
     router.navigate('/login');
-  } else {
-    router.resolve(initialPath);
   }
 });
 
