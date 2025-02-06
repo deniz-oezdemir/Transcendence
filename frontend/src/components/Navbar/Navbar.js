@@ -1,5 +1,5 @@
 import { createComponent, Link } from '@component';
-import { createSignal, createEffect, createMemo } from '@reactivity';
+import { createSignal, createEffect } from '@reactivity';
 import { setTheme, getPreferredTheme } from '@themeManager';
 import { isAuthenticated, login, logout } from '../../auth.js';
 
@@ -13,20 +13,17 @@ export default function Navbar({ location, navigate }) {
     setThemeState(newTheme);
   };
 
-  // Handle the login/logout button
   const handleAuthButtonClick = () => {
     if (isAuthenticated()) {
       try {
         logout();
-        setTimeout(() => {
-          window.router.navigate('/login');
-        }, 1000);
+        router.navigate('/login');
       } catch (error) {
         console.error('Error logging out:', error);
         navigate('/profile');
       }
     } else {
-      navigate('/login'); // Redirect to login page if not authenticated
+      navigate('/login');
     }
   };
 
@@ -42,9 +39,9 @@ export default function Navbar({ location, navigate }) {
   const authButton = createComponent('button', {
     className: 'btn btn-outline-success',
     attributes: { type: 'button', role: 'button' },
-    content: isAuthenticated() ? 'Logout' : 'Login', // Conditional content
+    content: isAuthenticated() ? 'Logout' : 'Login',
     events: {
-      click: handleAuthButtonClick, // Handle click event
+      click: handleAuthButtonClick,
     },
   });
 
@@ -59,76 +56,6 @@ export default function Navbar({ location, navigate }) {
     themeButton.element.classList.toggle('btn-outline-light', th === 'dark');
     themeButton.element.classList.toggle('btn-outline-dark', th === 'light');
   });
-  
-  // // Using createMemo to update nav links based on authentication state
-  // const navLinks = createMemo(() => {
-  //   const links = [
-  //     createComponent('li', {
-  //       className: 'nav-item',
-  //       children: [
-  //         Link({
-  //           href: '/pong-game',
-  //           content: 'Pong Game',
-  //           className: `nav-link ${path === '/pong-game' ? 'active' : ''}`,
-  //         }),
-  //       ],
-  //     }),
-  //   ];
-
-  //   // Only show these links if authenticated
-  //   if (isAuthenticated()) {
-  //     links.push(
-  //       createComponent('li', {
-  //         className: 'nav-item',
-  //         children: [
-  //           Link({
-  //             href: '/user/username',
-  //             content: 'Profile',
-  //             className: `nav-link ${path === '/user/username' ? 'active' : ''}`,
-  //           }),
-  //         ],
-  //       }),
-  //       createComponent('li', {
-  //         className: 'nav-item',
-  //         children: [
-  //           Link({
-  //             href: '/online-pong-game',
-  //             content: 'Online Pong Game',
-  //             className: `nav-link ${path === '/online-pong-game' ? 'active' : ''}`,
-  //           }),
-  //         ],
-  //       }),
-  //       createComponent('li', {
-  //         className: 'nav-item',
-  //         children: [
-  //           Link({
-  //             href: '/stats',
-  //             content: 'Stats',
-  //             className: `nav-link ${path === '/stats' ? 'active' : ''}`,
-  //           }),
-  //         ],
-  //       }),
-  //     );
-  //   }
-
-  //   // Conditionally render Admin link based on authentication
-  //   if (isAuthenticated() && isAdmin()) { // Assuming `isAdmin()` is a function that checks if the user is an admin
-  //     links.push(
-  //       createComponent('li', {
-  //         className: 'nav-item',
-  //         children: [
-  //           Link({
-  //             href: '/admin',
-  //             content: 'Admin',
-  //             className: `nav-link ${path === '/admin' ? 'active' : ''}`,
-  //           }),
-  //         ],
-  //       })
-  //     );
-  //   }
-
-  //   return links;
-  // });
 
   return createComponent('nav', {
     className: 'navbar navbar-expand-lg bg-body-tertiary',
@@ -162,10 +89,6 @@ export default function Navbar({ location, navigate }) {
             className: 'collapse navbar-collapse',
             id: 'navbarSupportedContent',
             children: [
-              // createComponent('ul', {
-              //   className: 'navbar-nav me-auto mb-2 mb-lg-0',
-              //   children: navLinks() || [],
-              // }),
               createComponent('ul', {
                 className: 'navbar-nav me-auto mb-2 mb-lg-0',
                 children: [
@@ -212,17 +135,17 @@ export default function Navbar({ location, navigate }) {
                       }),
                     ],
                   }),
-                  createComponent('li', {
-                    className: 'nav-item',
-                    children: [
-                      Link({
-                        href: '/admin',
-                        content: 'Admin',
-                        className: `nav-link ${path === '/admin' ? 'active' : ''}`,
-                        attributes: { 'aria-current': 'page' },
-                      }),
-                    ],
-                  }),
+                  // createComponent('li', {
+                  //   className: 'nav-item',
+                  //   children: [
+                  //     Link({
+                  //       href: '/admin',
+                  //       content: 'Admin',
+                  //       className: `nav-link ${path === '/admin' ? 'active' : ''}`,
+                  //       attributes: { 'aria-current': 'page' },
+                  //     }),
+                  //   ],
+                  // }),
                 ],
               }),
               createComponent('div', {
