@@ -1,22 +1,25 @@
-"""
-URL configuration for gameHistory project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path
+from historyDB.views import (
+    FinishedGameCreateView,
+    FinishedGameDetailView,
+    get_games_by_player,
+    top_ten_winners,
+)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
+    path(
+        "api/finished-game/",
+        FinishedGameCreateView.as_view(),
+        name="create-finished-game",
+    ),
+    path(
+        "api/finished-game/<int:pk>/",
+        FinishedGameDetailView.as_view(),
+        name="detail-finished-game",
+    ),
+    path("api/player/<int:player_id>/", get_games_by_player, name="games-by-player"),
+    path("api/top-ten-winners/", top_ten_winners, name="top-ten-winners"),
 ]
+
