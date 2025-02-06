@@ -8,13 +8,13 @@ import {
 } from '@component';
 
 import {
+  WebGPURenderer,
   BoxGeometry,
   MeshStandardMaterial,
   MeshNormalMaterial,
   Mesh,
   PerspectiveCamera,
   Scene,
-  WebGPURenderer,
   GridHelper,
   Clock,
   Group,
@@ -26,6 +26,10 @@ import {
   ACESFilmicToneMapping,
   Raycaster,
   MathUtils,
+  Color,
+  Fog,
+  VSMShadowMap,
+  AxesHelper,
 } from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -42,6 +46,7 @@ import Ball from '@/game/Ball.js';
 import Paddle from '@/game/Paddle.js';
 import AIController from '@/game/AIController.js';
 import lights from '@/game/lights.js';
+import Firework from '@/game/Firework.js';
 
 import styles from './PongGame3DPage.module.css';
 
@@ -63,15 +68,13 @@ export default function PongGame3DPage({ navigate }) {
 
   const fov = 60;
   //colors
-  const data = {
-    color: 0x00ff00,
-    lightColor: 0xffffff,
-    planeColor: 0x994ff,
-    fogColor: 0xb499ff,
-    fogNear: 25,
-    fogFar: 150,
-    paddleColor: 0x3633ff,
-    ballColor: 0xce47ff,
+  const params = {
+    planeColor: 0xb994ff, //0x9b71ea, //0x6966ff,
+    fogColor: 0xb499ff, //0x9e7aff,
+    fogNear: 30,
+    fogFar: 300,
+    paddleColor: 0x3633ff, //0x3633ff,
+    ballColor: 0xce47ff, //0xe63d05,
   };
 
   // Score
@@ -94,6 +97,8 @@ export default function PongGame3DPage({ navigate }) {
     bevelSegments: 8,
   };
 
+  const scoreMaterial = new MeshStandardMaterial({ color: params.ballColor });
+
   const fontLoader = new FontLoader();
   fontLoader.load(
     'assets/fonts/helvetiker_bold.typeface.json',
@@ -106,10 +111,13 @@ export default function PongGame3DPage({ navigate }) {
 
       geometry.center();
 
-      pcScoreMesh = new Mesh(geometry, new MeshNormalMaterial());
-      playerScoreMesh = new Mesh(geometry, new MeshNormalMaterial());
+      pcScoreMesh = new Mesh(geometry, scoreMaterial);
+      playerScoreMesh = new Mesh(geometry, scoreMaterial);
       pcScoreMesh.position.set(0, 4, -boundaries.y - 2);
       playerScoreMesh.position.set(0, 4, boundaries.y + 2);
+
+      pcScoreMesh.castShadow = true;
+      playerScoreMesh.castShadow = true;
 
       scene.add(pcScoreMesh, playerScoreMesh);
     }
@@ -129,8 +137,13 @@ export default function PongGame3DPage({ navigate }) {
 
   // Scene Setup
   const scene = new Scene();
+  scene.background = new Color(params.fogColor);
+  scene.fog = new Fog(params.fogColor, params.fogNear, params.fogFar);
+
   scene.add(...lights);
 
+  // const axesHelper = new AxesHelper(3);
+  // scene.add(axesHelper);
   // const gridHelper = new GridHelper();
   // scene.add(gridHelper);
 
@@ -139,8 +152,58 @@ export default function PongGame3DPage({ navigate }) {
   // scene.add(helpers);
 
   const stats = new Stats();
+
   const gui = new GUI();
-  // gui.add(helpers, 'visible').name('helpers');
+
+  gui
+    .addColor(params, 'paddleColor')
+    .name('PC Paddle Color')
+    .onChange((val) => {
+      pcPaddle.material.color.set(val);
+    });
+
+  gui
+    .addColor(params, 'paddleColor')
+    .name('Player Paddle Color')
+    .onChange((val) => {
+      playerPaddle.material.color.set(val);
+    });
+
+  gui
+    .addColor(params, 'ballColor')
+    .name('Ball Color')
+    .onChange((val) => {
+      ball.material.color.set(val);
+    });
+
+  gui
+    .add(params, 'fogNear', 0, 100, 1)
+    .name('Near')
+    .onChange((val) => {
+      scene.fog.near = val;
+    });
+
+  gui
+    .add(params, 'fogFar', 50, 500, 1)
+    .name('Far')
+    .onChange((val) => {
+      scene.fog.far = val;
+    });
+
+  gui
+    .addColor(params, 'planeColor')
+    .name('Plane Color')
+    .onChange((val) => {
+      planeMaterial.color.set(val);
+    });
+
+  gui
+    .addColor(params, 'fogColor')
+    .name('Fog Color')
+    .onChange((val) => {
+      scene.bakground.set(val);
+      scene.fog.color.set(val);
+    });
 
   // Cursor
   const cursor = new Vector2(0, 0);
@@ -160,22 +223,30 @@ export default function PongGame3DPage({ navigate }) {
     boundaries.y * 20
   );
   planeGeometry.rotateX(-Math.PI * 0.5);
-  planeGeometry.translate(0, -5, 0);
-  const planeMaterial = new MeshNormalMaterial({
-    wireframe: true,
-    transparent: true,
-    opacity: 0.1,
+  const planeMaterial = new MeshStandardMaterial({
+    color: params.planeColor,
+    // wireframe: true,
+    // transparent: true,
+    // opacity: 0.1,
   });
 
   const plane = new Mesh(planeGeometry, planeMaterial);
+  // plane.castShadow = true;
+  plane.receiveShadow = true;
+  plane.position.y = -1.5;
   scene.add(plane);
 
   const boundGeometry = new RoundedBoxGeometry(1, 2, boundaries.y * 2, 5, 0.5);
-  const boundMaterial = new MeshNormalMaterial();
+  const boundMaterial = new MeshStandardMaterial({ color: 0xdddddd });
   const leftBound = new Mesh(boundGeometry, boundMaterial);
   leftBound.position.x = -boundaries.x - 0.25;
   const rightBound = leftBound.clone();
   rightBound.position.x *= -1;
+
+  leftBound.castShadow = true;
+  // leftBound.receiveShadow = true;
+  rightBound.castShadow = true;
+  rightBound.receiveShadow = true;
 
   scene.add(leftBound);
   scene.add(rightBound);
@@ -183,56 +254,15 @@ export default function PongGame3DPage({ navigate }) {
   const playerPaddle = new Paddle(scene, boundaries, new Vector3(0, 0, 15));
   const pcPaddle = new Paddle(scene, boundaries, new Vector3(0, 0, -15));
   const ball = new Ball(scene, boundaries, [playerPaddle, pcPaddle]);
+  ball.material.color.set(params.ballColor);
+  pcPaddle.material.color.set(params.paddleColor);
+  playerPaddle.material.color.set(params.paddleColor);
+
+  const fireworks = [];
+
   const controller = new AIController(pcPaddle, ball);
 
-  ball.addEventListener('onGoal', (e) => {
-    score[e.message] += 1;
-
-    const mesh = e.message === 'pc' ? pcScoreMesh : playerScoreMesh;
-
-    const geometry = getScoreGeometry(score[e.message]);
-    mesh.geometry = geometry;
-    // playerScoreMesh.geometry.getAttibute('position').needUpdate = true;
-  });
-
   //
-
-  const directionalLight = new DirectionalLight(data.lightColor, Math.PI);
-  directionalLight.position.set(1, 1, 1);
-  scene.add(directionalLight);
-
-  const directionalLightHelper = new DirectionalLightHelper(directionalLight);
-  directionalLightHelper.visible = false;
-  scene.add(directionalLightHelper);
-
-  const directionalLightFolder = gui.addFolder('DirectionalLight');
-  directionalLightFolder.add(directionalLight, 'visible');
-  directionalLightFolder.addColor(data, 'lightColor').onChange(() => {
-    directionalLight.color.set(data.lightColor);
-  });
-  directionalLightFolder.add(directionalLight, 'intensity', 0, Math.PI * 10);
-
-  const directionalLightFolderControls =
-    directionalLightFolder.addFolder('Controls');
-  directionalLightFolderControls
-    .add(directionalLight.position, 'x', -1, 1, 0.001)
-    .onChange(() => {
-      directionalLightHelper.update();
-    });
-  directionalLightFolderControls
-    .add(directionalLight.position, 'y', -1, 1, 0.001)
-    .onChange(() => {
-      directionalLightHelper.update();
-    });
-  directionalLightFolderControls
-    .add(directionalLight.position, 'z', -1, 1, 0.001)
-    .onChange(() => {
-      directionalLightHelper.update();
-    });
-  directionalLightFolderControls
-    .add(directionalLightHelper, 'visible')
-    .name('Helper Visible');
-  directionalLightFolderControls.close();
 
   onMount(() => {
     if (gameRef) {
@@ -242,7 +272,11 @@ export default function PongGame3DPage({ navigate }) {
       });
     }
 
+    init();
+
     const resizeObserver = new ResizeObserver(() => {
+      console.log('from observer:', camera);
+      if (!renderer || !camera) return;
       setSize({
         width: window.innerWidth,
         height: gameRef.offsetHeight,
@@ -250,42 +284,93 @@ export default function PongGame3DPage({ navigate }) {
       const { width, height } = size();
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+
       renderer.setSize(width, height);
+
+      const pixelRatio = Math.min(window.devicePixelRatio, 2);
+      renderer.setPixelRatio(pixelRatio);
     });
 
     resizeObserver.observe(gameRef);
 
-    onCleanup(() => resizeObserver.disconnect());
-
-    init();
+    onCleanup(() => {
+      resizeObserver.disconnect();
+      device?.destroy();
+      // fireworks.forEach((f) => f.dispose());
+    });
   });
 
-  const init = async () => {
-    if (!navigator.gpu) {
-      alert('WebGPU not supported. Falling back to WebGL');
-      return;
-    }
+  let adapter, device, format;
 
+  async function initWebGPU() {
+    if (!navigator.gpu) throw new Error('WebGPU not supported');
+    adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) throw new Error('No WebGPU adapter found');
+    device = await adapter.requestDevice();
+    format = navigator.gpu.getPreferredCanvasFormat();
+    return {
+      adapter,
+      device,
+      format,
+    };
+  }
+
+  const init = async () => {
     try {
+      const { adap, devi, form } = await initWebGPU();
+
+      renderer = new WebGPURenderer({
+        antialias: window.devicePixelRatio < 2,
+        // device: devi,
+        // format: form,
+        // logarithmicDepthBuffer: true,
+      });
+      renderer.toneMapping = ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = VSMShadowMap;
+      renderer.setPixelRatio(window.devicePixelRatio);
+
       const { width, height } = size();
 
-      camera = new PerspectiveCamera(fov, width / height, 0.1, 1000);
-      camera.position.set(-5, 30, 60);
-      camera.lookAt(0, 2.5, 0);
-
-      // WebGPU Renderer setup
-      renderer = new WebGPURenderer({ antialias: true });
-      // renderer.toneMapping = ACESFilmicToneMapping;
-      // renderer.toneMappingExposure = 0.333;
-      // renderer.shadowMap.enabled = true;
-      renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(width, height);
-      renderer.setAnimationLoop(animate);
+      camera = new PerspectiveCamera(fov, width / height, 0.1, 1000);
+      camera.position.set(0, 20, 45);
+      camera.lookAt(new Vector3(0, 0, 0));
+
+      ball.addEventListener('onGoal', (e) => {
+        score[e.message] += 1;
+        const mesh = e.message === 'pc' ? pcScoreMesh : playerScoreMesh;
+        const geometry = getScoreGeometry(score[e.message]);
+        mesh.geometry = geometry;
+
+        const firework = new Firework(
+          20,
+          3,
+          e.message === 'pc' ? pcScoreMesh.position : playerScoreMesh.position
+        );
+        scene.add(firework.mesh);
+        // firework.mesh.position.copy(
+        //   e.message === 'pc' ? pcScoreMesh.position : playerScoreMesh.position
+        // );
+        fireworks.push(firework);
+        // playerScoreMesh.geometry.getAttibute('position').needUpdate = true;
+      });
+
+      ball.addEventListener('collide', () => {
+        const firework = new Firework(50, 5, ball.mesh.position);
+        scene.add(firework.mesh);
+        // firework.mesh.position.copy(ball.mesh.position);
+        fireworks.push(firework);
+      });
+
       gameRef.appendChild(renderer.domElement);
       gameRef.appendChild(stats.dom);
 
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
+
+      renderer.setAnimationLoop(animate);
     } catch (error) {
       console.error('WebGPU setup failed:', error);
     }
@@ -313,8 +398,16 @@ export default function PongGame3DPage({ navigate }) {
       controller.update(dt);
     }
 
-    controls.update();
+    fireworks.forEach((firework, index) => {
+      if (firework.isDie) {
+        scene.remove(firework.mesh);
+        fireworks.splice(index, 1);
+      } else {
+        firework.update(deltaTime);
+      }
+    });
 
+    controls.update();
     renderer.render(scene, camera);
     stats.update();
   }

@@ -20,6 +20,9 @@ importers:
       bootstrap:
         specifier: ^5.3.3
         version: 5.3.3(@popperjs/core@2.11.8)
+      gsap:
+        specifier: ^3.12.7
+        version: 3.12.7
       lil-gui:
         specifier: ^0.20.0
         version: 0.20.0
@@ -90,6 +93,9 @@ importers:
       rollup-plugin-dev:
         specifier: ^2.0.5
         version: 2.0.5
+      rollup-plugin-glsl:
+        specifier: ^1.3.0
+        version: 1.3.0
       rollup-plugin-livereload:
         specifier: ^2.0.5
         version: 2.0.5
@@ -989,6 +995,9 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
+  gsap@3.12.7:
+    resolution: {integrity: sha512-V4GsyVamhmKefvcAKaoy0h6si0xX7ogwBoBSs2CTJwt7luW0oZzC0LhdkyuKV8PJAXr7Yaj8pMjCKD4GJ+eEMg==}
+
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
@@ -1144,6 +1153,9 @@ packages:
 
   lodash.uniq@4.5.0:
     resolution: {integrity: sha512-xfBaXQd9ryd9dlSDvnvI0lvxfLJlYAZzXomUYzLKtUeOQvOP5piqAWuGtrhWeqaXK9hhoM/iyJc5AV+XfsX3HQ==}
+
+  magic-string@0.21.3:
+    resolution: {integrity: sha512-U66DN4L1NJsQTCaWbP9MTW+iydrqkYW8Is1QV+1tT44oZYfr0t1BUbtDew40YXrNOZSJAUYPZ8s4gd//2AZBUQ==}
 
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
@@ -1596,6 +1608,9 @@ packages:
   rollup-plugin-dev@2.0.5:
     resolution: {integrity: sha512-DV6slBM7wH9tWzlvvT4c+4/klrk7cpdyfxhbYfmdk3/IJjQpcq/uoSZK15VsHl/l4uWdv4rpvrIB8iWx/WY7NQ==}
 
+  rollup-plugin-glsl@1.3.0:
+    resolution: {integrity: sha512-iddxdkQmuo6Hfk5JuT2ntVe8D5hvZ+r3uyPotjIkF2JYNOEdamEWCnieoLGCcxU16pWFoV/tmu74qkeR5Q/ChQ==}
+
   rollup-plugin-livereload@2.0.5:
     resolution: {integrity: sha512-vqQZ/UQowTW7VoiKEM5ouNW90wE5/GZLfdWuR0ELxyKOJUIaj+uismPZZaICU4DnWPVjnpCDDxEqwU7pcKY/PA==}
     engines: {node: '>=8.3'}
@@ -1787,6 +1802,9 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  vlq@0.2.3:
+    resolution: {integrity: sha512-DRibZL6DsNhIgYQ+wNdWDL2SL3bKPlVrRiBqV5yuMm++op8W4kGFtaQfCs4KEJn0wBZcHVHJ3eoywX8983k1ow==}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -2697,6 +2715,8 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  gsap@3.12.7: {}
+
   has-flag@4.0.0: {}
 
   hasown@2.0.2:
@@ -2846,6 +2866,10 @@ snapshots:
   lodash.merge@4.6.2: {}
 
   lodash.uniq@4.5.0: {}
+
+  magic-string@0.21.3:
+    dependencies:
+      vlq: 0.2.3
 
   magic-string@0.30.17:
     dependencies:
@@ -3274,6 +3298,11 @@ snapshots:
       - supports-color
       - utf-8-validate
 
+  rollup-plugin-glsl@1.3.0:
+    dependencies:
+      magic-string: 0.21.3
+      rollup-pluginutils: 2.8.2
+
   rollup-plugin-livereload@2.0.5:
     dependencies:
       livereload: 0.9.3
@@ -3488,6 +3517,8 @@ snapshots:
       punycode: 2.3.1
 
   util-deprecate@1.0.2: {}
+
+  vlq@0.2.3: {}
 
   which@2.0.2:
     dependencies:

@@ -1,7 +1,8 @@
 import {
   Mesh,
-  MeshBasicMaterial,
+  MeshStandardMaterial,
   MeshNormalMaterial,
+  MeshBasicMaterial,
   SphereGeometry,
   Vector3,
   Raycaster,
@@ -20,8 +21,10 @@ export default class Ball extends EventDispatcher {
     this.paddles = paddles;
     this.radius = 0.5;
     this.geometry = new SphereGeometry(this.radius);
-    this.material = new MeshNormalMaterial();
+    this.material = new MeshStandardMaterial({ color: 0xffaa00 });
     this.mesh = new Mesh(this.geometry, this.material);
+    this.mesh.castShadow = true;
+    this.mesh.receiveShadow = true;
 
     this.velocity.multiplyScalar(this.speed);
 
@@ -32,10 +35,10 @@ export default class Ball extends EventDispatcher {
     this.raycaster.far = this.boundaries.y * 2.5;
 
     // For Debugging
-    // this.pointCollision = new Mesh(
-    //   new SphereGeometry(0.1),
-    //   new MeshBasicMaterial({ color: 'red' })
-    // );
+    this.pointCollision = new Mesh(
+      new SphereGeometry(0.1),
+      new MeshBasicMaterial({ color: 'red' })
+    );
     // this.scene.add(this.pointCollision);
   }
 
@@ -60,6 +63,7 @@ export default class Ball extends EventDispatcher {
         (this.boundaries.x - this.radius + dx) *
         Math.sign(this.mesh.position.x);
       this.velocity.x *= -1;
+      this.dispatchEvent({ type: 'collide' });
     }
 
     if (dz < 0) {

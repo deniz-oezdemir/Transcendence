@@ -1,11 +1,16 @@
-import { CapsuleGeometry, Mesh, MeshNormalMaterial } from 'three';
+import {
+  CapsuleGeometry,
+  Mesh,
+  MeshNormalMaterial,
+  MeshStandardMaterial,
+} from 'three';
 
-const GEOMETRY = new CapsuleGeometry(0.5, 5, 24, 24);
+const GEOMETRY = new CapsuleGeometry(0.5, 5, 20, 20);
 const HELPER_GEOMETRY = new CapsuleGeometry(0.5 + 0.5, 5, 24, 8);
 HELPER_GEOMETRY.rotateZ(Math.PI * 0.5);
 HELPER_GEOMETRY.rotateX(Math.PI * 0.125);
 GEOMETRY.rotateZ(Math.PI * 0.5);
-const MATERIAL = new MeshNormalMaterial();
+const MATERIAL = new MeshStandardMaterial({ color: 0xaa00ff });
 
 export default class Paddle {
   constructor(scene, boundaries, position) {
@@ -15,6 +20,8 @@ export default class Paddle {
     this.geometry = GEOMETRY;
     this.material = MATERIAL;
     this.mesh = new Mesh(GEOMETRY, MATERIAL);
+    this.mesh.castShadow = true;
+    this.mesh.receiveShadow = true;
 
     this.collisionHelper = new Mesh(
       HELPER_GEOMETRY,

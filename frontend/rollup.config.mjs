@@ -12,6 +12,7 @@ import dev from 'rollup-plugin-dev';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import json from '@rollup/plugin-json';
+import glsl from 'rollup-plugin-glsl';
 
 const isDev = process.env.ROLLUP_WATCH;
 const isProduction = process.env.NODE_ENV === 'production';
@@ -26,6 +27,9 @@ export default {
   },
   plugins: [
     // json(),
+    glsl({
+      include: ['**/*.glsl'],
+    }),
     replace({
       'process.env.NODE_ENV': JSON.stringify(
         isProduction ? 'production' : 'development'
@@ -70,7 +74,7 @@ export default {
           find: /^three\/tsl$/,
           replacement: path.resolve(
             __dirname,
-            'node_modules/three/build/three.webgpu.js'
+            'node_modules/three/build/three.tsl.js'
           ),
         },
         {
@@ -102,6 +106,7 @@ export default {
         parser: { syntax: 'ecmascript' },
         target: 'es2021',
       },
+      exclude: ['**/*.glsl'],
     }),
     copy({
       targets: [
