@@ -19,13 +19,19 @@ Info: match and game are used synonymously.
 
 **Create and Join Games/Tournaments**: Use [test_websocket.html](matchmaking/test_websocket.html) to create and join games or tournaments.
 
-**Post Match Results**: Modify the IDs and use the following curl command to post match results:
-	```bash
-	curl -X POST \
-	-H "Content-Type: application/json" \
-	-d '{"winner_id": id}' \
-	http://localhost:8001/api/match/id/result/
-	```
+**Post Match Results**: Post match results using the following endpoint:
+```bash
+curl -X POST \
+-H "Content-Type: application/json" \
+-d '{
+    "winner_id": <player_id>,
+    "player_1_score": <score>,
+    "player_2_score": <score>,
+    "start_time": "<ISO8601_timestamp>",
+    "end_time": "<ISO8601_timestamp>"
+}' \
+http://localhost:8001/api/match/<match_id>/result/
+```
 
 **View Results**: Refresh [test_websocket.html](matchmaking/test_websocket.html) to see the updated results.
 
