@@ -18,7 +18,7 @@ async def create_game_in_pong_api(match):
                 'http://pong-api:8000/game/create_game/',
                 json={
                     "id": match.match_id,
-                    "max_score": 1,  # Configure as needed
+                    "max_score": 1,
                     "player_1_id": match.player_1_id,
                     "player_1_name": f"Player {match.player_1_id}",
                     "player_2_id": match.player_2_id,
@@ -52,17 +52,27 @@ def update_game_result(request, match_id):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    # Update match with scores and times for both tournament and non-tournament matches
+    serializer = GameResultSerializer(match, data=request.data, partial=True)
+    if not serializer.is_valid():
+        logger.error(f"Failed to update match {match_id}: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer.save(
+        status=Match.FINISHED,
+        winner_id=winner_id,
+        player_1_score=request.data.get('player_1_score'),
+        player_2_score=request.data.get('player_2_score'),
+        start_time=request.data.get('start_time'),
+        end_time=request.data.get('end_time')
+    )
+    logger.info(f"Match {match_id} updated with scores and times")
+
     # If this is a tournament match, handle tournament progression
     if match.tournament_id:
         logger.info(f"Handling tournament progression for match {match_id}")
         tournament = Tournament.objects.get(tournament_id=match.tournament_id)
         current_round = match.round
-
-        # Update the current match
-        serializer = GameResultSerializer(match, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save(status=Match.FINISHED)
-            logger.info(f"Match {match_id} updated successfully")
 
         # Check if all matches in current round are finished
         round_matches = Match.objects.filter(
@@ -70,12 +80,10 @@ def update_game_result(request, match_id):
         )
         if all(m.status == Match.FINISHED for m in round_matches):
             logger.info(f"All matches in round {current_round} are finished")
-            # Create next round matches
             winners = [m.winner_id for m in round_matches]
 
             if current_round < len(tournament.matches):
                 logger.info(f"Creating matches for next round {current_round + 1}")
-                # Create matches for next round
                 new_matches = []
                 for i in range(0, len(winners), 2):
                     if i + 1 < len(winners):
@@ -90,31 +98,18 @@ def update_game_result(request, match_id):
                         new_matches.append(new_match.match_id)
                         logger.info(f"Created new match {new_match.match_id} for round {current_round + 1}")
 
-                        # Create game in pong-api for the new match
                         success = async_to_sync(create_game_in_pong_api)(new_match)
                         if not success:
                             logger.error(f"Failed to create game in pong-api for match {new_match.match_id}")
 
-                # Update tournament matches structure
                 tournament.matches[current_round]["matches"] = new_matches
                 tournament.save()
                 logger.info(f"Tournament {tournament.tournament_id} updated with new matches for round {current_round + 1}")
 
-            # If this was the final round, update tournament
             if current_round == len(tournament.matches):
                 tournament.status = Tournament.FINISHED
                 tournament.winner_id = winner_id
                 tournament.save()
                 logger.info(f"Tournament {tournament.tournament_id} finished with winner {winner_id}")
 
-        return Response({"message": "Match result updated"}, status=status.HTTP_200_OK)
-
-    # For non-tournament matches, just update the result
-    serializer = GameResultSerializer(match, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save(status=Match.FINISHED)
-        logger.info(f"Non-tournament match {match_id} updated successfully")
-        return Response({"message": "Match result updated"}, status=status.HTTP_200_OK)
-
-    logger.error(f"Failed to update match {match_id}: {serializer.errors}")
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"message": "Match result updated"}, status=status.HTTP_200_OK)
