@@ -17,8 +17,8 @@ def validate_friend_username(current_user, friend_username, is_delete_operation=
 class FriendRequestSerializer(serializers.Serializer):
     
     friend_username = serializers.CharField(
-        min_length=1,
-        max_length=150,
+        min_length=3,
+        max_length=20,
         required=True,
         error_messages={"blank": "Friend username cannot be empty."}
     )
@@ -40,8 +40,8 @@ class FriendRequestSerializer(serializers.Serializer):
 
 class FriendRequestDeleteSerializer(serializers.Serializer):
     friend_username = serializers.CharField(
-        min_length=1,
-        max_length=150,
+        min_length=3,
+        max_length=20,
         required=True,
         error_messages={"blank": "Friend username cannot be empty."}
     )

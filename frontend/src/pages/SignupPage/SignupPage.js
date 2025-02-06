@@ -57,14 +57,13 @@ export default function SignupPage() {
     return isValid;
   }
 
-  createEffect(() => {
-    submitButton.element.disabled = isSigningUp();
-  });
-
   async function handleRegistration(event) {
     event.preventDefault();
     setSubmitError('');
     setSubmitSuccess('');
+
+    if (isSigningUp()) return;
+
     setIsSigningUp(true);
 
     if (!validateUsername(username()) || !validateEmail(email()) || !validatePassword(password())) {

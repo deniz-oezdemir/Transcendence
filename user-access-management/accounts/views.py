@@ -4,17 +4,17 @@ from rest_framework import status
 from .serializers.register_serializer import RegisterSerializer
 from .serializers.friend_request_serializer import FriendRequestSerializer, FriendRequestDeleteSerializer
 from .serializers.login_serializer import LoginSerializer
-# from .serializers.logout_serializer import LogoutSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .serializers.get_profile_serializer import GetProfileDataSerializer
+from .serializers.profile_serializer import ProfileDataSerializer
+from .models import CustomUser
 
 class RegisterView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     def post(self, request):
         print(f"Received request")
-        serializer = RegisterSerializer(data=request.data) #binds the data to the serializer
+        serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
@@ -57,15 +57,17 @@ class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user_profile = CustomUser.objects.get(id=request.user.id)
+        serializer = ProfileDataSerializer(user_profile, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
         # fields_param = request.query_params.get('fields')
         # requested_fields = fields_param.split(',') if fields_param else None
         # if not requested_fields or requested_fields == ['']:
         #     requested_fields = ['id', 'username', 'avatar_url', 'status', 'friends']
-        # serializer = GetProfileDataSerializer(request.user, fields=requested_fields)
+        # serializer = ProfileDataSerializer(request.user, fields=requested_fields)
         # return Response(serializer.data, status=status.HTTP_200_OK)
         #return username, user_id, avatar_url, status, friends
-        return Response({"username": request.user.username, "user_id": request.user.id, "avatar_url": request.user.avatar_url, "status": request.user.status, "friends": request.user.friends}, status=status.HTTP_200_OK)
-
+        # return Response({"username": request.user.username, "user_id": request.user.id, "avatar_url": request.user.avatar_url, "status": request.user.status, "friends": request.user.friends}, status=status.HTTP_200_OK)
 
     def put(self, request):
         pass

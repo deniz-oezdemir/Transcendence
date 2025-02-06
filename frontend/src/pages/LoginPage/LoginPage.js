@@ -43,14 +43,13 @@ export default function LoginPage() {
     return isValid;
   }
 
-  createEffect(() => {
-    submitButton.element.disabled = isloggingIn();
-  });
-
   function handleLogin(event) {
     event.preventDefault();
     setSubmitError('');
     setSubmitSuccess('');
+
+    if (isLoggingIn()) return;
+
     setIsLoggingIn(true);
 
     if (!validateUsername(username()) || !validatePassword(password())) {
