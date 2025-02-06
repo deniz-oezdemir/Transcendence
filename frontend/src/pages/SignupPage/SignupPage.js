@@ -24,7 +24,7 @@ export default function SignupPage() {
     setUsernameError(
       isValid 
         ? '' 
-        : 'Username must be 3-20 alphanumeric characters'
+        : 'Username must be 3-20 alphanumeric characters and/or underscores'
     );
 
     return isValid;

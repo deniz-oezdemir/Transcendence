@@ -1,6 +1,6 @@
 import { createComponent, Link, createCleanupContext } from '@component';
 import styles from './LoginPage.module.css';
-import { createSignal } from '@reactivity';
+import { createSignal, createEffect } from '@reactivity';
 import { login } from '../../auth';
 
 export default function LoginPage() {
@@ -34,13 +34,18 @@ export default function LoginPage() {
       value.length >= 8 &&
       value.length <= 20 &&
       !/[ /\\]/.test(value);
+
       setPasswordError(
       isValid
         ? ''
-        : 'Password must be 8-20 characters and cannot contain spaces, forward slashes, or backslashes'
+        : 'Password must be 8-20 characters and cannot contain spaces, /, or \\'
     );
     return isValid;
   }
+
+  createEffect(() => {
+    submitButton.element.disabled = isloggingIn();
+  });
 
   function handleLogin(event) {
     event.preventDefault();
@@ -53,15 +58,10 @@ export default function LoginPage() {
       return;
     }
     try {
-      // For local development
-      console.log('Attempting login with:', {
-        username: username(),
-        password: password()
-      });
       login(username(), password());
-      setIsLoggingIn(false);
       setSubmitSuccess('User logged in successfully! Redirecting to home page...');
       setTimeout(() => {
+        setIsLoggingIn(false);
         window.router.navigate('/');
       }, 2000);
     } catch (error) {
@@ -69,7 +69,6 @@ export default function LoginPage() {
       setSubmitError(error.message);
     }
   }
-
 
   return createComponent('div', {
     className: styles.container,
@@ -79,9 +78,6 @@ export default function LoginPage() {
         content: 'Login'
       }),
       createComponent('form', {
-        events: {
-          submit: handleLogin
-        },
         children: [
           createComponent('div', {
             className: styles.formGroupLabel,
@@ -106,7 +102,7 @@ export default function LoginPage() {
               }),
               createComponent('span', {
                 className: styles.errorMessage,
-                content: usernameError()
+                content: () => usernameError()
               })
             ],
           }),
@@ -131,18 +127,16 @@ export default function LoginPage() {
                   }
                 }
               }),
-              createComponent('span', {
+              createComponent('div', {
                 className: styles.errorMessage,
-                content: passwordError()
+                content: () => passwordError()
               })
             ],
           }),
-          // Submit Error Message
           createComponent('div', {
             className: styles.errorMessage,
             content: () => submitError()
           }),
-          // Submit Success Message
           createComponent('div', {
             className: styles.successMessage,
             content: () => submitSuccess()
@@ -150,11 +144,10 @@ export default function LoginPage() {
           createComponent('button', {
             type: 'submit',
             className: styles.submitButton,
-            content: 'Login',
-            disabled: () => isLoggingIn(),
+            content: () => (isLoggingIn() ? 'Logging in...' : 'Login'),
+            disabled: () => Boolean(isLoggingIn()),
             events: {
               click: (event) => {
-                // event.preventDefault();
                 handleLogin(event);
               }
             }
