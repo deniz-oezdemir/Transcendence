@@ -13,6 +13,7 @@ This API allows you to manage and retrieve game history data, including player s
 **Request Body:**
 ```json
 {
+    "game_id": 1,
     "player_1_id": 1,
     "player_2_id": 2,
     "player_1_score": 10,
@@ -28,6 +29,7 @@ This API allows you to manage and retrieve game history data, including player s
 curl -X POST http://127.0.0.1:8006/api/finished-game/ \
 -H "Content-Type: application/json" \
 -d '{
+    "game_id": 1,
     "player_1_id": 1,
     "player_2_id": 2,
     "player_1_score": 10,
@@ -70,31 +72,4 @@ curl -X GET http://127.0.0.1:8006/api/player/1/
 ```sh
 curl -X GET http://127.0.0.1:8006/api/top-ten-winners/
 ```
-
-## Setup and Run
-
-1. **Clone the repository:**
-   ```sh
-   git clone <repository-url>
-   cd <repository-directory>
-   ```
-
-2. **Install dependencies:**
-   ```sh
-   pip install -r requirements.txt
-   ```
-
-3. **Apply migrations:**
-   ```sh
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-4. **Run the server:**
-   ```sh
-   python manage.py runserver 8006
-   ```
-
-5. **Access the API:**
-   - The API will be available at `http://127.0.0.1:8006/`
 

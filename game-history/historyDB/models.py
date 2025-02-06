@@ -10,14 +10,16 @@ class Player(models.Model):
     points_scored = models.IntegerField(default=0)
     points_conceded = models.IntegerField(default=0)
     total_time_played = models.FloatField(default=0.0)
+    win_ratio = models.FloatField(default=0.0)
 
-    @property
-    def win_ratio(self):
+    def update_win_ratio(self):
         total_games = self.games_won + self.games_lost
-        return self.games_won / total_games if total_games > 0 else 0
+        self.win_ratio = self.games_won / total_games if total_games > 0 else 0
+        self.save()
 
 
 class FinishedGame(models.Model):
+    game_id = models.IntegerField(unique=True)
     player_1_id = models.IntegerField()
     player_2_id = models.IntegerField()
     player_1_score = models.IntegerField()
@@ -50,5 +52,5 @@ def update_player_stats(sender, instance, **kwargs):
         player_1.games_lost += 1
         player_2.games_won += 1
 
-    player_1.save()
-    player_2.save()
+    player_1.update_win_ratio()
+    player_2.update_win_ratio()
