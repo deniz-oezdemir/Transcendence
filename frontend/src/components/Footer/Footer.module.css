@@ -1,5 +1,5 @@
 .footer {
-  position: stycky;
+  position: sticky;
   bottom: 0;
   width: 100%;
   background-color: var(--bs-light-text-emphasis);
@@ -14,13 +14,24 @@
 
 .content {
   display: flex;
+  width: 100%;
+  /* padding: 0 1rem; */
   flex-wrap: wrap;
-  gap: 1rem;
+  /* gap: 1rem; */
   align-items: center;
+  justify-content: space-around;
   font-size: 0.9rem;
   color: var(--bs-light-bg-subtle);
 }
+.hiddenOnSmall {
+  display: block;
+}
 
+@media (max-width: 500px) {
+  .hiddenOnSmall {
+    display: none;
+  }
+}
 .text {
   white-space: nowrap;
 }

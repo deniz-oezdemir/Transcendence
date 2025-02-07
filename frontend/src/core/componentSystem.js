@@ -164,7 +164,10 @@ export function Link({ href, content, className = '', events = {} }) {
 }
 
 export function LayoutContent() {
-  return createComponent('div', { className: 'route-content' });
+  return createComponent('div', {
+    className: 'route-content',
+    attributes: { style: 'height: 100%;' },
+  });
 }
 
 export function NestedLayoutContent() {

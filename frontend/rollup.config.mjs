@@ -113,11 +113,12 @@ export default {
         { src: 'src/index.html', dest: 'dist' },
         { src: 'src/assets/icons/favicon.ico', dest: 'dist' },
         { src: 'src/assets/images', dest: 'dist/assets' },
+        { src: 'src/assets/models', dest: 'dist/assets' },
         { src: 'src/assets/fonts', dest: 'dist/assets' },
-        // {
-        //   src: 'node_modules/three/examples/fonts/*',
-        //   dest: 'dist/assets/fonts',
-        // },
+        {
+          src: 'node_modules/three/examples/jsm/libs/basis',
+          dest: 'dist/assets',
+        },
       ],
     }),
     isDev &&

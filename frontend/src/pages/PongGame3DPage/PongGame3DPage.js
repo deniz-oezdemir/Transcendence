@@ -30,6 +30,15 @@ import {
   Fog,
   VSMShadowMap,
   AxesHelper,
+  EquirectangularReflectionMapping,
+  FloatType,
+  HalfFloatType,
+  PMREMGenerator,
+  LinearColorSpace,
+  LinearFilter,
+  LinearEncoding,
+  SRGBColorSpace,
+  ClampToEdgeWrapping,
 } from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -38,6 +47,9 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { UltraHDRLoader } from 'three/addons/loaders/UltraHDRLoader.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
@@ -137,8 +149,8 @@ export default function PongGame3DPage({ navigate }) {
 
   // Scene Setup
   const scene = new Scene();
-  scene.background = new Color(params.fogColor);
-  scene.fog = new Fog(params.fogColor, params.fogNear, params.fogFar);
+  // scene.background = new Color(params.fogColor);
+  // scene.fog = new Fog(params.fogColor, params.fogNear, params.fogFar);
 
   scene.add(...lights);
 
@@ -265,23 +277,24 @@ export default function PongGame3DPage({ navigate }) {
   //
 
   onMount(() => {
+    const container = window.document.querySelector('.container');
     if (gameRef) {
       setSize({
         width: window.innerWidth,
-        height: gameRef.offsetHeight,
+        height: container.getBoundingClientRect().height,
       });
     }
 
     init();
 
-    const resizeObserver = new ResizeObserver(() => {
-      console.log('from observer:', camera);
+    window.addEventListener('resize', () => {
       if (!renderer || !camera) return;
       setSize({
         width: window.innerWidth,
-        height: gameRef.offsetHeight,
+        height: container.getBoundingClientRect().height,
       });
       const { width, height } = size();
+
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
 
@@ -291,12 +304,10 @@ export default function PongGame3DPage({ navigate }) {
       renderer.setPixelRatio(pixelRatio);
     });
 
-    resizeObserver.observe(gameRef);
-
     onCleanup(() => {
       resizeObserver.disconnect();
       device?.destroy();
-      // fireworks.forEach((f) => f.dispose());
+      fireworks.forEach((f) => f.die());
     });
   });
 
@@ -326,16 +337,82 @@ export default function PongGame3DPage({ navigate }) {
         // logarithmicDepthBuffer: true,
       });
       renderer.toneMapping = ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.2;
+      renderer.toneMappingExposure = 1;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = VSMShadowMap;
       renderer.setPixelRatio(window.devicePixelRatio);
+
+      // environment
+      // const hdr = 'assets/images/shanghai_bund_4k.hdr';
+      // const hdr = 'assets/images/kloppenheim_02_puresky_2k.hdr';
+      // const hdr = 'assets/images/kloppenheim_03_puresky_2k.hdr';
+      // const hdr = 'assets/images/autumn_field_puresky_2k.hdr';
+      const hdr = 'assets/images/autumn_field_puresky_4k.hdr.jpg';
+
+      // NOTE: loader for hdri
+      // // let environmentTexture;
+      // const pmremGenerator = new PMREMGenerator(renderer);
+      // pmremGenerator.compileEquirectangularShader();
+
+      // const loadEnv = async () => {
+      //   new RGBELoader().loadAsync(hdr).then((texture) => {
+      //     // environmentTexture = texture;
+      //     // environmentTexture.mapping = EquirectangularReflectionMapping;
+      //     // environmentTexture.needsUpdate = true;
+
+      //     texture.mapping = EquirectangularReflectionMapping;
+      //     // texture.colorSpace = LinearColorSpace;
+      //     texture.colorSpace = SRGBColorSpace;
+      //     texture.minFilter = LinearFilter;
+      //     texture.magFilter = LinearFilter;
+      //     texture.generateMipmaps = false;
+
+      //     const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+      //     texture.dispose();
+
+      //     scene.environment = envMap;
+      //     scene.environmentIntensity = 0.75;
+      //     scene.background = envMap;
+      //     scene.backgroundIntensity = 0.75;
+      //     scene.backgroundBlurriness = 0.0;
+      //   });
+      // };
+
+      // loadEnv();
+
+      // NOTE: Loader for hdri+jpg
+      let loader = new UltraHDRLoader();
+      // loader.setDataType(FloatType);
+      loader.setDataType(HalfFloatType);
+
+      const loadEnvironment = async () => {
+        loader.load(hdr, (texture) => {
+          texture.mapping = EquirectangularReflectionMapping;
+          texture.colorSpace = SRGBColorSpace;
+          texture.wrapS = ClampToEdgeWrapping;
+          texture.wrapT = ClampToEdgeWrapping;
+          texture.minFilter = LinearFilter;
+          texture.magFilter = LinearFilter;
+          texture.generateMipmaps = false;
+
+          scene.background = texture;
+          // scene.backgroundIntensity = 0.75;
+          scene.backgroundBlurriness = 0.0;
+          scene.environment = texture;
+          // scene.environmentIntensity = 0.75;
+        });
+      };
+
+      loadEnvironment();
+
+      //
 
       const { width, height } = size();
 
       renderer.setSize(width, height);
       camera = new PerspectiveCamera(fov, width / height, 0.1, 1000);
-      camera.position.set(0, 20, 45);
+      // camera.position.set(0, 20, 45);
+      camera.position.set(0, 50, 1000);
       camera.lookAt(new Vector3(0, 0, 0));
 
       ball.addEventListener('onGoal', (e) => {
@@ -369,7 +446,6 @@ export default function PongGame3DPage({ navigate }) {
 
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-
       renderer.setAnimationLoop(animate);
     } catch (error) {
       console.error('WebGPU setup failed:', error);
