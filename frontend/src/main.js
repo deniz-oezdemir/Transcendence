@@ -4,7 +4,7 @@ import { createComponent, Link, NestedLayoutContent } from '@component';
 import { applyInitialTheme, addSystemThemeListener } from '@themeManager';
 
 import AppLayout from './Layout';
-// import HomePage from './pages/HomePage/HomePage';
+import HomePage from './pages/HomePage/HomePage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
@@ -40,7 +40,7 @@ const authentication = async (path, context) => {
   if (!isAuthenticated) {
     console.log('Unauthorized access. Redirecting to login page...');
     router.navigate('/login');
-    // history.pushState(null, '', '/login'); doesn't redirect to login page, just changes the url
+    // history.pushState(null, '', '/login'); //doesn't redirect to login page, just changes the url
     return false;
   }
   return true;
@@ -108,7 +108,7 @@ const root = document.getElementById('app');
 
 // Routes
 const routes = [
-  { path: '/', component: LoginPage },
+  { path: '/', component: HomePage },
   { path: '/signup', component: SignupPage },
   { path: '/login', component: LoginPage },
   { path: '/user/:username', component: ProfilePage },
