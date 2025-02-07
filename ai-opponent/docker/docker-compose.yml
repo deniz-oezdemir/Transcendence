@@ -1,5 +1,6 @@
 services:
   ai-opponent:
+    container_name: ai-opponent
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -12,7 +13,7 @@ services:
     networks:
       - transcendence
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8004/health/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 10s
       timeout: 5s
       retries: 3

@@ -40,3 +40,6 @@ frontend/node_modules/
 
 # LLM
 .safetensors
+
+# Dumps
+dump.rdb
