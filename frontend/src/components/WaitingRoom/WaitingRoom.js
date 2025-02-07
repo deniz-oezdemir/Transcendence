@@ -29,27 +29,52 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
 
           case 'match_created':
           case 'tournament_created':
-          //case 'player_joined':
           case 'tournament_started':
           case 'games_deleted':
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
             break;
           
-          case 'player_joined':
-            console.log('Player joined Tsts:', data.available_games);
-            switch (data.available_games.matches[0].status || data.available_games.tournaments[0].status) {
-              case 'active':
-                console.log('Game Started');
-                break;
-              case 'pending':
-                console.log('Game Pending');
-                break;
-              default:
-                console.log('Game Status:', data.available_games.matches[0].status);
-            }
-            //onStartGame(data.game);
-            break;
+            case 'player_joined':
+              console.log('Player joined:', data.available_games);
+            
+              if (data.available_games) {
+                if (data.available_games.matches && data.available_games.matches.length > 0) {
+                  switch (data.available_games.matches[0].status) {
+                    case 'active':
+                      console.log('Match Started');
+                      //onStartGame(data.game);
+                      break;
+                    case 'pending':
+                      console.log('Match Pending');
+                      break;
+                    default:
+                      console.log('Match Status:', data.available_games.matches[0].status);
+                  }
+                } else {
+                  console.log('No matches available');
+                }
+            
+                if (data.available_games.tournaments && data.available_games.tournaments.length > 0) {
+                  switch (data.available_games.tournaments[0].status) {
+                    case 'active':
+                      console.log('Tournament Started');
+                      //onStartGame(data.game);
+                      break;
+                    case 'pending':
+                      console.log('Tournament Pending');
+                      break;
+                    default:
+                      console.log('Tournament Status:', data.available_games.tournaments[0].status);
+                  }
+                } else {
+                  console.log('No tournaments available');
+                }
+              } else {
+                console.log('No available games data found');
+              }
+            
+              break;
 
           case 'error':
             alert(data.message);
@@ -132,8 +157,14 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
     }));
   };
 
-  const gameList = createComponent("ul");
+  const fetchAvailableGames = () => {
+    if (!socket()) return;
+    socket().send(JSON.stringify({
+      type: 'get_games',
+    }));
+  }
 
+  const gameList = createComponent("ul");
   createEffect(() => {
     const m = matches();
     const t = tournaments();
@@ -220,12 +251,22 @@ export default function WaitingRoom(/*{ onStartGame }*/) {
     }).element);
   });
 
+  const checkAvailableGames = createComponent("ul");
+  createEffect(() => {
+    checkAvailableGames.element.innerHTML = '';
+    checkAvailableGames.element.appendChild(createComponent('button', {
+      className: styles.createButton,
+      content: 'Check Available Games',
+      events: { click: fetchAvailableGames }
+    }).element);
+  });
 
   let selectedGameType = '';
   return createComponent('div', {
     className: styles.waitingRoom,
     children: [
       creatGame,
+      checkAvailableGames,
       deleteAllGames,
       createComponent('div', {
         className: styles.matchList,
