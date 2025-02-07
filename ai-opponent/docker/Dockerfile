@@ -19,9 +19,5 @@ COPY . .
 
 EXPOSE 8004
 
-# Create non-root user for security
-RUN adduser --disabled-password --gecos '' appuser
-USER appuser
-
 ENTRYPOINT ["/entrypoint.sh"]
 
