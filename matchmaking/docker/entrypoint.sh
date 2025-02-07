@@ -32,7 +32,7 @@ if not User.objects.filter(username='admin').exists():
 END
 
 echo "Collecting static files..."
-python manage.py collectstatic --noinput --clear
+python manage.py collectstatic --noinput --clear --verbosity 0
 
 # Start server
 echo "Starting Daphne server..."
