@@ -72,7 +72,7 @@ services:
       - matchmaking_internal
     restart: on-failure
 
-  # AI messages service
+  # AI messages service (DistilGPT2)
   ai-messages:
     extends:
       file: ./ai_messages/docker/docker-compose.yml
@@ -80,6 +80,17 @@ services:
     networks:
       - transcendence
     restart: on-failure
+
+  # AI messages service (Deepseek)
+  ai-messages-deepseek:
+    extends:
+      file: ./ai_messages_deepseek/docker/docker-compose.yml
+      service: ai-messages-deepseek
+    networks:
+      - transcendence
+    restart: on-failure
+    volumes:
+      - ai_messages_models:/app/models
 
 networks:
   transcendence:
@@ -97,3 +108,4 @@ volumes:
     driver: local
   game-history-postgres-data:
     driver: local
+  ai_messages_models:

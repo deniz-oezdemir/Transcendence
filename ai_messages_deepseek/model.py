@@ -1,6 +1,7 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import gc
+import os
 
 
 class ModelHandler:
@@ -9,6 +10,10 @@ class ModelHandler:
         self.tokenizer = None
         self.model = None
         self.device = "cpu"
+
+        # Verify model path exists
+        if not os.path.exists(self.model_path):
+            raise RuntimeError(f"Model path not found: {self.model_path}")
 
     def load_model(self):
         if not self.model:
