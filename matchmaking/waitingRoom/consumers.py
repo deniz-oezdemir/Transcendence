@@ -179,6 +179,36 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     },
                 )
 
+        elif data["type"] == "create_AI_match":
+            if await self.is_player_in_game(data["player_id"]):
+                logger.debug(f"Player {data['player_id']} already in a game")
+                await self.send_error("Player already in a game")
+                return
+
+            match = await self.create_match(data["player_id"], is_ai_opponent=True)
+            logger.debug(f"Created AI match {match.match_id} for player {data['player_id']}")
+
+            # Create game in pong-api immediately since AI matches are active
+            success = await self.create_game_in_pong_api(match)
+            if not success:
+                logger.error(f"Failed to create AI game in pong-api for match {match.match_id}")
+                await self.send_error("Failed to create AI game in pong-api")
+                return
+
+            logger.debug(f"Broadcasting AI match creation: match_id={match.match_id}, player={match.player_1_id}, ai={match.player_2_id}")
+            available_games = await self.get_available_games()
+            await self.channel_layer.group_send(
+                "waiting_room",
+                {
+                    "type": "match_created",
+                    "id": match.match_id,
+                    "creator_id": match.player_1_id,
+                    "is_ai_match": True,
+                    "ai_id": match.player_2_id,
+                    "available_games": available_games,
+                },
+            )
+
     async def games_deleted(self, event):
         await self.send(text_data=json.dumps(event))
 
@@ -198,10 +228,23 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({"type": "error", "message": message}))
 
     @database_sync_to_async
-    def create_match(self, player_id):
-        match = Match.objects.create(
-            player_1_id=player_id,
-        )
+    def create_match(self, player_id, is_ai_opponent=False):
+        """Creates a match, optionally against an AI opponent"""
+        if is_ai_opponent:
+            # Get the next available negative AI ID
+            latest_ai_match = Match.objects.filter(player_2_id__lt=0).order_by('player_2_id').first()
+            ai_id = -1 if not latest_ai_match else latest_ai_match.player_2_id - 1
+
+            match = Match.objects.create(
+                player_1_id=player_id,
+                player_2_id=ai_id,
+                status=Match.ACTIVE  # AI matches are immediately active
+            )
+        else:
+            match = Match.objects.create(
+                player_1_id=player_id,
+                status=Match.PENDING
+            )
         return match
 
     @database_sync_to_async

@@ -61,6 +61,7 @@
 			<h3>Create Match/Tournament</h3>
 			<select id="gameType">
 				<option value="match">Regular Match (2 Players)</option>
+				<option value="ai_match">Match vs AI</option>
 				<option value="tournament4">Tournament (4 Players)</option>
 				<option value="tournament8">Tournament (8 Players)</option>
 			</select>
@@ -114,11 +115,12 @@
 		function createGame(playerId) {
 			const gameType = document.getElementById('gameType').value;
 			const message = {
-				type: gameType === 'match' ? 'create_match' : 'create_tournament',
+				type: gameType === 'match' ? 'create_match' :
+					gameType === 'ai_match' ? 'create_AI_match' : 'create_tournament',
 				player_id: playerId
 			};
 
-			if (gameType !== 'match') {
+			if (gameType.startsWith('tournament')) {
 				message.max_players = gameType === 'tournament4' ? 4 : 8;
 			}
 
@@ -156,12 +158,21 @@
 			select.innerHTML = '<option value="">Select a game to join...</option>';
 
 			// Add available matches
-			data.matches?.filter(m => !m.player_2_id).forEach(match => {
+			data.matches?.filter(m => !m.player_2_id && !m.is_ai_match).forEach(match => {
 				select.innerHTML += `
-					<option value="match-${match.match_id}">
-						Match ${match.match_id} (Created by Player ${match.player_1_id})
-					</option>
-				`;
+                <option value="match-${match.match_id}">
+                    Match ${match.match_id} (Created by Player ${match.player_1_id})
+                </option>
+            `;
+			});
+
+			// Add AI matches (display only, not joinable)
+			data.matches?.filter(m => m.is_ai_match).forEach(match => {
+				select.innerHTML += `
+                <option value="" disabled>
+                    AI Match ${match.match_id} (Player ${match.player_1_id} vs AI ${match.ai_id})
+                </option>
+            `;
 			});
 
 			// Add available tournaments
@@ -195,7 +206,9 @@
 					break;
 
 				case 'match_created':
-					addMessage('Success', `Match ${data.id} created by Player ${data.creator_id}`);
+					const matchType = data.is_ai_match ? "AI Match" : "Match";
+					const opponent = data.is_ai_match ? `vs AI ${data.ai_id}` : "";
+					addMessage('Success', `${matchType} ${data.id} created by Player ${data.creator_id} ${opponent}`);
 					addGameDataMessage('Info', data);
 					updateGameList(data.available_games);
 					break;
