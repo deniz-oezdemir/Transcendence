@@ -137,13 +137,8 @@ class WebSocketClient:
         logger.info(f"Sent move command: {move_command}")
 
     def delete_ai_player(self):
-        if self.ai_player.id is not None:
-            self.ai_player.delete()
-            logger.info(
-                f"AI player {self.ai_player.id} deleted from database and Redis"
-            )
-        else:
-            logger.error("AI player ID is None, cannot delete")
+        self.ai_player.delete()
+        logger.info(f"AI player {self.ai_player.id} deleted from database and Redis")
 
     def run(self):
         self.connection_error = False
