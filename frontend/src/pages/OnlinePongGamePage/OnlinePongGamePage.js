@@ -6,6 +6,11 @@ import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
 import GameControls from '@/components/GameControls/GameControls';
 
+const hostname = window.location.hostname;
+const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // Use HTTP(S) for fetch requests
+const port = 8002;
+const apiUrl = `${protocol}//${hostname}:${port}`;
+
 export default function OnlinePongGamePage({ navigate }) {
   const cleanup = createCleanupContext();
 
@@ -83,7 +88,7 @@ export default function OnlinePongGamePage({ navigate }) {
    */
   async function initializeGame() {
     try {
-      const response = await fetch('http://localhost:8002/game/create_game/', {
+      const response = await fetch(`${apiUrl}/game/create_game/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +183,7 @@ export default function OnlinePongGamePage({ navigate }) {
   async function toogleGame() {
     try {
       const response = await fetch(
-        `http://localhost:8002/game/toggle_game/${gameId()}/`,
+        `${apiUrl}/game/toggle_game/${gameId()}/`,
         {
           method: 'PUT',
         }
@@ -210,7 +215,7 @@ export default function OnlinePongGamePage({ navigate }) {
   async function endGame(id) {
     try {
       const response = await fetch(
-        'http://localhost:8002/game/delete_game/' + id + '/',
+        `${apiUrl}/game/delete_game/${id}/`,
         {
           method: 'DELETE',
         }
@@ -241,7 +246,7 @@ export default function OnlinePongGamePage({ navigate }) {
    * Handles game state updates and score changes
    */
   function connectWebSocket() {
-    const ws = new WebSocket(`ws://localhost:8002/ws/game/${gameId()}/`);
+    const ws = new WebSocket(`${apiUrl}/ws/game/${gameId()}/`);
     ws.onopen = () => {
       console.log('WebSocket connected.');
       setWebsocket(ws);

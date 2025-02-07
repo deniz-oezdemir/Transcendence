@@ -7,9 +7,16 @@ export default function WaitingRoom({ onStartGame }) {
   const [tournaments, setTournaments] = createSignal([]);
   const [hasGames, setHasGames] = createSignal(false);
   const [socket, setSocket] = createSignal(null);
+  
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
+  const port = 8001;
+  const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
+  const ws = new WebSocket(wsUrl);
 
   createEffect(() => {
-    const ws = new WebSocket('ws://localhost:8001/ws/waiting-room/');
+    const ws = new WebSocket(wsUrl);
+    //const ws = new WebSocket('ws://matchmaking:8001/ws/waiting-room/');
   
     ws.onopen = () => {
       console.log('Connected to matchmaking service');
