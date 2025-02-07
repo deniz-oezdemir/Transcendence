@@ -1,4 +1,5 @@
 import asyncio
+import time
 import websockets
 import json
 import logging
@@ -9,10 +10,18 @@ from django.http import JsonResponse
 logger = logging.getLogger(__name__)
 
 
+class WebSocketConnectionError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.status_code = 450
+
+
 class WebSocketClient:
     def __init__(self, uri, ai_player):
         self.uri = uri
         self.ai_player = ai_player
+        self.websocket = None
+        self.last_update_time = 0
 
     async def connect(self):
         try:
@@ -24,22 +33,25 @@ class WebSocketClient:
             ConnectionClosedError,
             InvalidURI,
             InvalidHandshake,
+            OSError,
         ) as e:
             logger.error(f"WebSocket connection error: {e}")
             self.connection_error = True
+            raise WebSocketConnectionError(f"WebSocket connection error: {e}")
 
     async def listen(self):
         try:
             while True:
                 message = await self.websocket.recv()
                 data = json.loads(message)
-                logger.info(f"Received message: {data}")
-                self.handle_game_update(data)
-                await asyncio.sleep(
-                    1
-                )  # Update game information at most once per second
+                current_time = time.time()
+                if current_time - self.last_update_time >= 1:
+                    logger.info(f"Received message: {data}")
+                    self.handle_game_update(data)
+                    self.last_update_time = current_time
         except websockets.ConnectionClosed:
             logger.warning("Connection closed")
+            self.delete_ai_player()
 
     def handle_game_update(self, data):
         if data.get("type") == "game_state_update":
@@ -124,6 +136,15 @@ class WebSocketClient:
         )
         logger.info(f"Sent move command: {move_command}")
 
+    def delete_ai_player(self):
+        if self.ai_player.id is not None:
+            self.ai_player.delete()
+            logger.info(
+                f"AI player {self.ai_player.id} deleted from database and Redis"
+            )
+        else:
+            logger.error("AI player ID is None, cannot delete")
+
     def run(self):
         self.connection_error = False
         loop = asyncio.new_event_loop()
@@ -132,5 +153,8 @@ class WebSocketClient:
         return self.connection_error
 
     def start(self):
-        thread = Thread(target=self.run)
-        thread.start()
+        self.connection_error = False
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.connect())
+        return self.connection_error

@@ -11,32 +11,25 @@ logger = logging.getLogger(__name__)
 class AIPlayer(models.Model):
     ai_player_id = models.IntegerField()
     target_game_id = models.IntegerField()
-    position = models.FloatField(default=160)
+    position = models.FloatField()
 
     objects = AIPlayerManager()
 
     # Overloaded functions for Redis use
     def save(self, *args, **kwargs):
-        if settings.USE_REDIS:
-            cache_key = f"ai_player_{self.ai_player_id}"
-            ai_player_data = {
-                "ai_player_id": self.ai_player_id,
-                "target_game_id": self.target_game_id,
-            }
-            cache.set(cache_key, json.dumps(ai_player_data), timeout=None)
-            logger.info(f"Saved AI player to cache with key {cache_key}")
-        else:
-            super().save(*args, **kwargs)
-            logger.info(
-                f"Saved AI player to database with ai_player_id {self.ai_player_id}"
-            )
+        cache_key = f"ai_player_{self.ai_player_id}"
+        ai_player_data = {
+            "ai_player_id": self.ai_player_id,
+            "target_game_id": self.target_game_id,
+        }
+        cache.set(cache_key, json.dumps(ai_player_data), timeout=None)
+        logger.info(f"Saved AI player to cache with key {cache_key}")
 
     def delete(self, *args, **kwargs):
         if settings.USE_REDIS:
             cache_key = f"ai_player_{self.ai_player_id}"
             cache.delete(cache_key)
             logger.info(f"Deleted AI player from cache with key {cache_key}")
-        super().delete(*args, **kwargs)
 
     @classmethod
     def from_cache(cls, player_id):
