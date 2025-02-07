@@ -45,6 +45,27 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 print(f"Error creating game in pong-api: {e}")
                 return False
 
+    async def create_ai_player(self, match):
+        """Creates an AI player in the ai-opponent service"""
+        async with aiohttp.ClientSession() as session:
+            try:
+                logger.debug(f"Creating AI player for match {match.match_id} with AI ID {match.player_2_id}")
+                async with session.post(
+                    'http://ai-opponent:8000/ai_player/create_ai_player/',
+                    json={
+                        "ai_player_id": match.player_2_id,
+                        "target_game_id": match.match_id
+                    }
+                ) as response:
+                    if response.status != 201:
+                        logger.error(f"Failed to create AI player: {await response.text()}")
+                        return False
+                    logger.debug(f"Successfully created AI player for match {match.match_id}")
+                    return True
+            except Exception as e:
+                logger.error(f"Error creating AI player: {e}")
+                return False
+
     async def receive(self, text_data):
         """
         Called with a decoded WebSocket frame.
@@ -188,8 +209,19 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             match = await self.create_match(data["player_id"], is_ai_opponent=True)
             logger.debug(f"Created AI match {match.match_id} for player {data['player_id']}")
 
-            # Create game in pong-api immediately since AI matches are active
+            # Create AI player in ai-opponent service
+            logger.debug(f"Creating AI player for match {match.match_id}")
+            ai_success = await self.create_ai_player(match)
+            logger.debug(f"AI player creation {'succeeded' if ai_success else 'failed'} for match {match.match_id}")
+            if not ai_success:
+                logger.error(f"Failed to create AI player for match {match.match_id}")
+                await self.send_error("Failed to create AI player")
+                return
+
+            # Create game in pong-api after AI player is created
+            logger.debug(f"Creating game in pong-api for AI match {match.match_id}")
             success = await self.create_game_in_pong_api(match)
+            logger.debug(f"Game creation in pong-api {'succeeded' if success else 'failed'} for AI match {match.match_id}")
             if not success:
                 logger.error(f"Failed to create AI game in pong-api for match {match.match_id}")
                 await self.send_error("Failed to create AI game in pong-api")
