@@ -28,7 +28,7 @@ class CreateAIPlayer(generics.CreateAPIView):
         # Connect to the WebSocket server
         try:
             ws_client = WebSocketClient(
-                f"ws://localhost:8000/ws/game/{target_game_id}/", ai_player
+                f"ws://localhost:8002/ws/game/{target_game_id}/", ai_player
             )
             ws_client.start()
             logger.info(

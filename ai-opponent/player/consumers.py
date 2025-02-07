@@ -4,6 +4,7 @@ import websockets
 import json
 import logging
 from threading import Thread
+from channels.generic.websocket import AsyncWebsocketConsumer
 from websockets.exceptions import ConnectionClosedError, InvalidURI, InvalidHandshake
 from django.http import JsonResponse
 
@@ -16,7 +17,7 @@ class WebSocketConnectionError(Exception):
         self.status_code = 450
 
 
-class WebSocketClient:
+class WebSocketClient(AsyncWebsocketConsumer):
     def __init__(self, uri, ai_player):
         self.uri = uri
         self.ai_player = ai_player

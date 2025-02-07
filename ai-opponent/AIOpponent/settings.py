@@ -73,6 +73,7 @@ LOGGING = {
 
 INSTALLED_APPS = [
     "daphne",
+    "channels",
     "rest_framework",
     "player",
     "corsheaders",
