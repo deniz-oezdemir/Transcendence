@@ -3,26 +3,41 @@ import websockets
 import json
 import logging
 from threading import Thread
+from websockets.exceptions import ConnectionClosedError, InvalidURI, InvalidHandshake
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
 
 class WebSocketClient:
     def __init__(self, uri, ai_player):
-        self.uri = uri.replace("8000", "8002")  # Replace port 8000 with 8002
+        self.uri = uri
         self.ai_player = ai_player
 
     async def connect(self):
-        async with websockets.connect(self.uri) as websocket:
-            self.websocket = websocket
-            await self.listen()
+        try:
+            async with websockets.connect(self.uri) as websocket:
+                self.websocket = websocket
+                await self.listen()
+        except (
+            ConnectionRefusedError,
+            ConnectionClosedError,
+            InvalidURI,
+            InvalidHandshake,
+        ) as e:
+            logger.error(f"WebSocket connection error: {e}")
+            self.connection_error = True
 
     async def listen(self):
         try:
-            async for message in self.websocket:
+            while True:
+                message = await self.websocket.recv()
                 data = json.loads(message)
                 logger.info(f"Received message: {data}")
                 self.handle_game_update(data)
+                await asyncio.sleep(
+                    1
+                )  # Update game information at most once per second
         except websockets.ConnectionClosed:
             logger.warning("Connection closed")
 
@@ -35,28 +50,40 @@ class WebSocketClient:
             ball_y_direction = state.get("ball_y_direction")
             game_width = state.get("game_width")
             game_height = state.get("game_height")
-            players = state.get("players", [])
+            player_1_id = state.get("player_1_id")
+            player_2_id = state.get("player_2_id")
+            player_1_position = state.get("player_1_position")
+            player_2_position = state.get("player_2_position")
+
             ai_player_position = None
 
             # Find the AI player's position
-            for player in players:
-                if player["player"] == self.ai_player.ai_player_id:
-                    ai_player_position = player["player_position"]
-                    break
+            if self.ai_player == player_1_id:
+                ai_player_position = player_1_position
+            elif self.ai_player == player_2_id:
+                ai_player_position = player_2_position
 
             if (
                 ai_player_position is not None
                 and ball_x_position is not None
                 and ball_y_position is not None
             ):
-                predicted_y = self.predict_ball_y(
-                    ball_x_position,
-                    ball_y_position,
-                    ball_x_direction,
-                    ball_y_direction,
-                    game_width,
-                    game_height,
-                )
+                if (self.ai_player == player_1_id and ball_x_direction < 0) or (
+                    self.ai_player == player_2_id and ball_x_direction > 0
+                ):
+                    # Ball is moving towards the AI player
+                    predicted_y = self.predict_ball_y(
+                        ball_x_position,
+                        ball_y_position,
+                        ball_x_direction,
+                        ball_y_direction,
+                        game_width,
+                        game_height,
+                    )
+                else:
+                    # Ball is moving away from the AI player, move towards the center
+                    predicted_y = game_height / 2
+
                 self.move_towards_ball(ai_player_position, predicted_y)
 
     def predict_ball_y(
@@ -98,9 +125,11 @@ class WebSocketClient:
         logger.info(f"Sent move command: {move_command}")
 
     def run(self):
+        self.connection_error = False
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self.connect())
+        return self.connection_error
 
     def start(self):
         thread = Thread(target=self.run)

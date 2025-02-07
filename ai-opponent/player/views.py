@@ -26,22 +26,27 @@ class CreateAIPlayer(generics.CreateAPIView):
         ai_player = serializer.save()
 
         # Connect to the WebSocket server
-        # try:
-        #     ws_client = WebSocketClient(
-        #         f"ws://localhost:8001/ws/game/{target_game_id}/", ai_player
-        #     )  # TODO: chech the uri
-        #     ws_client.start()
-        #     logger.info(
-        #         f"Successfully connected to WebSocket for game {target_game_id}"
-        #     )
-        # except Exception as e:
-        #     logger.error(
-        #         f"Failed to connect to WebSocket for game {target_game_id}: {e}"
-        #     )
+        try:
+            ws_client = WebSocketClient(
+                f"ws://localhost:8002/ws/game/{target_game_id}/", ai_player
+            )
+            ws_client.start()
+            logger.info(
+                f"Successfully connected to WebSocket for game {target_game_id}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to connect to WebSocket for game {target_game_id}: {e}"
+            )
+            # Rollback the AI player creation if WebSocket connection fails
+            ai_player.delete()
+            raise serializers.ValidationError(
+                f"Failed to connect to WebSocket for game {target_game_id}: {e}"
+            )
 
         return ai_player
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         ai_player = self.perform_create(serializer)
