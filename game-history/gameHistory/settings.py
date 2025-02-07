@@ -29,7 +29,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 
-
 # Application definition
 
 LOGGING = {

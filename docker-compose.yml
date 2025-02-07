@@ -9,7 +9,7 @@ services:
     depends_on:
       - pong-api
       - matchmaking
-      # - ai-messages
+      - ai-messages
     restart: on-failure
 
   # pong-api service
@@ -63,6 +63,7 @@ services:
     depends_on:
       - matchmaking-postgres
       - matchmaking-redis
+      - game-history
     networks:
       - transcendence
       - matchmaking_internal
@@ -84,25 +85,25 @@ services:
       - matchmaking_internal
     restart: on-failure
 
-  # # AI messages service (DistilGPT2)
-  # ai-messages:
-  #   extends:
-  #     file: ./ai_messages/docker/docker-compose.yml
-  #     service: ai-messages
-  #   networks:
-  #     - transcendence
-  #   restart: on-failure
-  #
-  # # AI messages service (Deepseek)
-  # ai-messages-deepseek:
-  #   extends:
-  #     file: ./ai_messages_deepseek/docker/docker-compose.yml
-  #     service: ai-messages-deepseek
-  #   networks:
-  #     - transcendence
-  #   restart: on-failure
-  #   volumes:
-  #     - ai_messages_models:/app/models
+  # AI messages service (DistilGPT2)
+  ai-messages:
+    extends:
+      file: ./ai_messages/docker/docker-compose.yml
+      service: ai-messages
+    networks:
+      - transcendence
+    restart: on-failure
+
+  # AI messages service (Deepseek)
+  ai-messages-deepseek:
+    extends:
+      file: ./ai_messages_deepseek/docker/docker-compose.yml
+      service: ai-messages-deepseek
+    networks:
+      - transcendence
+    restart: on-failure
+    volumes:
+      - ai_messages_models:/app/models
 
 networks:
   transcendence:
