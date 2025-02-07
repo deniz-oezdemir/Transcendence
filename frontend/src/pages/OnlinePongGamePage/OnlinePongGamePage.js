@@ -10,7 +10,7 @@ export default function OnlinePongGamePage({ navigate }) {
   const cleanup = createCleanupContext();
 
   // Game state signals
-  //const [isWaitingRoom, setWaitingRoom] = createSignal(true);
+  const [isWaitingRoom, setWaitingRoom] = createSignal(true);
   const [isLoading, setIsLoading] = createSignal(true);
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameId, setGameId] = createSignal(-1);
@@ -388,7 +388,7 @@ export default function OnlinePongGamePage({ navigate }) {
     const content = createComponent('div', {
       className: `container position-relative`,
     });
-    /*console.log('Is Waiting Room:', isWaitingRoom());
+    console.log('Is Waiting Room:', isWaitingRoom());
     if (isWaitingRoom()) {
       const waitingroom = WaitingRoom({
         onStartGame: () => {
@@ -402,8 +402,13 @@ export default function OnlinePongGamePage({ navigate }) {
       const board = GameBoard({
         gameDimensions: gameDimensions,
         gamePositions: gamePositions,
-      });*/
-      const waitingroom = WaitingRoom();
+      });
+      const controls = GameControls();
+      content.element.appendChild(score.element);
+      content.element.appendChild(board.element);
+      content.element.appendChild(controls.element);
+
+      /*const waitingroom = WaitingRoom();
       const score = Score({ gameScore });
       const board = GameBoard({
         gameDimensions: gameDimensions,
@@ -413,8 +418,8 @@ export default function OnlinePongGamePage({ navigate }) {
       content.element.appendChild(waitingroom.element);
       content.element.appendChild(score.element);
       content.element.appendChild(board.element);
-      content.element.appendChild(controls.element);
-    //}
+      content.element.appendChild(controls.element);*/
+    }
     return content;
   };
 
