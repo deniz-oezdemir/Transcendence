@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import F, FloatField, ExpressionWrapper
 from rest_framework import generics
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from .models import FinishedGame, Player
 from .serializers import FinishedGameSerializer, PlayerSerializer
@@ -20,16 +21,24 @@ class FinishedGameCreateView(generics.CreateAPIView):
         logger.info("Finished game created successfully")
         return response
 
-
 class FinishedGameDetailView(generics.RetrieveAPIView):
     queryset = FinishedGame.objects.all()
     serializer_class = FinishedGameSerializer
+    lookup_field = 'game_id'
+
+    def get_object(self):
+        game_id = self.kwargs.get('pk')
+        logger.info(f"Looking up finished game with game_id: {game_id}")
+        return get_object_or_404(FinishedGame, game_id=game_id)
 
     def retrieve(self, request, *args, **kwargs):
-        logger.info(f"Retrieving finished game with id: {kwargs.get('pk')}")
-        response = super().retrieve(request, *args, **kwargs)
-        logger.info("Finished game retrieved successfully")
-        return response
+        try:
+            response = super().retrieve(request, *args, **kwargs)
+            logger.info(f"Successfully retrieved game with game_id: {kwargs.get('pk')}")
+            return response
+        except Exception as e:
+            logger.error(f"Error retrieving game: {str(e)}")
+            raise
 
 
 @api_view(["GET"])

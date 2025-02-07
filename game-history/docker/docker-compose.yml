@@ -22,6 +22,11 @@ services:
     networks:
       - transcendence
       - game-history-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   game-history-postgres:
     image: postgres:16.6
