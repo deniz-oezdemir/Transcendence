@@ -51,6 +51,7 @@ services:
     depends_on:
       - matchmaking-postgres
       - matchmaking-redis
+      - game-history
     networks:
       - transcendence
       - matchmaking_internal

@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from asgiref.sync import async_to_sync
 from .models import Match, Tournament
 from .serializers import GameResultSerializer
+from django.utils.dateparse import parse_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,62 @@ async def create_game_in_pong_api(match):
                 return True
         except Exception as e:
             logger.error(f"Error creating game in pong-api: {e}")
+            return False
+
+async def send_match_to_history(match):
+    """Sends finished match data to the game history service"""
+    logger.info(f"Attempting to send match {match.match_id} to history service")
+    logger.debug(f"Match data: player1={match.player_1_id}, player2={match.player_2_id}, " \
+                f"score={match.player_1_score}-{match.player_2_score}, winner={match.winner_id}")
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            # Log initial timestamp data
+            logger.debug(f"Raw timestamps: start={match.start_time} ({type(match.start_time)}), " \
+                        f"end={match.end_time} ({type(match.end_time)})")
+
+            # Convert string dates to datetime if needed
+            start_time = match.start_time
+            end_time = match.end_time
+
+            if isinstance(start_time, str):
+                start_time = parse_datetime(start_time)
+                logger.debug(f"Parsed start_time from string to: {start_time}")
+            if isinstance(end_time, str):
+                end_time = parse_datetime(end_time)
+                logger.debug(f"Parsed end_time from string to: {end_time}")
+
+            payload = {
+                "game_id": match.match_id,
+                "player_1_id": match.player_1_id,
+                "player_2_id": match.player_2_id,
+                "player_1_score": match.player_1_score,
+                "player_2_score": match.player_2_score,
+                "winner_id": match.winner_id,
+                "start_time": start_time.isoformat() if start_time else None,
+                "end_time": end_time.isoformat() if end_time else None
+            }
+            logger.debug(f"Sending payload to history service: {payload}")
+
+            async with session.post(
+                'http://game-history:8000/api/finished-game/',
+                json=payload
+            ) as response:
+                response_text = await response.text()
+                logger.debug(f"History service response: status={response.status}, body={response_text}")
+
+                if response.status != 201:
+                    logger.error(f"Failed to send match to history. Status: {response.status}, Response: {response_text}")
+                    return False
+
+                logger.info(f"Successfully sent match {match.match_id} to history service")
+                return True
+
+        except aiohttp.ClientError as e:
+            logger.error(f"Network error sending match to history: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error sending match to history: {str(e)}", exc_info=True)
             return False
 
 @api_view(["POST"])
@@ -67,6 +124,11 @@ def update_game_result(request, match_id):
         end_time=request.data.get('end_time')
     )
     logger.info(f"Match {match_id} updated with scores and times")
+
+    # Send match data to history service
+    success = async_to_sync(send_match_to_history)(match)
+    if not success:
+        logger.warning(f"Failed to send match {match_id} to history service")
 
     # If this is a tournament match, handle tournament progression
     if match.tournament_id:
