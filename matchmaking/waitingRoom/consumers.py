@@ -1,234 +1,372 @@
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from channels.db import database_sync_to_async
-from django.db import models
-from .models import Match
-import logging
 import json
 import aiohttp
+import logging
+from django.conf import settings
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from .models import Match, Tournament
 
+# Configure logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
-
-class WaitingRoomConsumer(AsyncJsonWebsocketConsumer):
+class WaitingRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.channel_layer.group_add("waiting_room", self.channel_name)
         await self.accept()
-        # Send current matches on connection
-        matches = await self.get_all_matches()
-        await self.send_json({"type": "match_created", "all_matches": matches})
 
-    # Called when WebSocket disconnects. Removes connection from waiting_room group
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard("waiting_room", self.channel_name)
 
-    # Handles incoming WebSocket messages. Processes create_match and join_match requests
-    # Validates player status and broadcasts updates to all connections
+    async def create_game_in_pong_api(self, match):
+        """Creates a game in the pong-api service"""
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(
+                    'http://pong-api:8000/game/create_game/',
+                    json={
+                        "id": match.match_id,
+                        "max_score": 1,  # Configure as needed
+                        "player_1_id": match.player_1_id,
+                        "player_1_name": f"Player {match.player_1_id}",
+                        "player_2_id": match.player_2_id,
+                        "player_2_name": f"Player {match.player_2_id}"
+                    }
+                ) as response:
+                    if response.status != 201:
+                        print(f"Failed to create game in pong-api: {await response.text()}")
+                        return False
+                    return True
+            except Exception as e:
+                print(f"Error creating game in pong-api: {e}")
+                return False
+
     async def receive(self, text_data):
+        """
+        Called with a decoded WebSocket frame.
+        """
+        if text_data is None:
+            return
         data = json.loads(text_data)
 
-        # Create match
-        if data["type"] == "create_match":
-            if await self.is_player_in_match(data["player_1_id"]):
-                await self.send(
-                    text_data=json.dumps(
-                        {"type": "error", "message": "Player already in a match"}
-                    )
-                )
+        if data["type"] == "get_games":
+            games = await self.get_available_games()
+            await self.send(json.dumps({"type": "initial_games", "games": games}))
+            return
+
+        # TODO: delete at the end
+        elif data["type"] == "delete_all_games":
+            await self.delete_all_games()
+            available_games = await self.get_available_games()
+            await self.channel_layer.group_send(
+                "waiting_room",
+                {
+                    "type": "games_deleted",
+                    "available_games": available_games,
+                },
+            )
+
+        elif data["type"] == "create_match":
+            if await self.is_player_in_game(data["player_id"]):
+                await self.send_error("Player already in a game")
                 return
 
-            match = await self.create_match(data["player_1_id"])
-            matches = await self.get_all_matches()
+            match = await self.create_match(data["player_id"])
+            available_games = await self.get_available_games()
 
             await self.channel_layer.group_send(
                 "waiting_room",
                 {
                     "type": "match_created",
-                    "match_id": match.match_id,
-                    "player_1_id": match.player_1_id,
-                    "all_matches": matches,
+                    "id": match.match_id,
+                    "creator_id": match.player_1_id,
+                    "available_games": available_games,
                 },
             )
 
         # Join match
         elif data["type"] == "join_match":
-            if await self.is_player_in_match(data["player_2_id"]):
-                await self.send(
-                    text_data=json.dumps(
-                        {"type": "error", "message": "Player already in a match"}
-                    )
-                )
+            if await self.is_player_in_game(data["player_id"]):
+                await self.send_error("Player already in a game")
                 return
 
-            match = await self.join_match(data["match_id"], data["player_2_id"])
+            match = await self.join_match(data["match_id"], data["player_id"])
             if not match:
-                await self.send(
-                    text_data=json.dumps(
-                        {"type": "error", "message": "Match not found or already full"}
-                    )
-                )
+                await self.send_error("Match not found or already full")
                 return
 
-            # Create game in pong-api after match becomes active
-            await self.create_pong_game(match)
+            # Create game in pong-api after match is joined
+            success = await self.create_game_in_pong_api(match)
+            if not success:
+                await self.send_error("Failed to create game in pong-api")
+                return
 
-            matches = await self.get_all_matches()
+            available_games = await self.get_available_games()
             await self.channel_layer.group_send(
                 "waiting_room",
                 {
-                    "type": "match_updated",
-                    "match_id": match.match_id,
-                    "player_1_id": match.player_1_id,
-                    "player_2_id": match.player_2_id,
-                    "all_matches": matches,
+                    "type": "player_joined",
+                    "game_type": "match",
+                    "game_id": match.match_id,
+                    "player_id": data["player_id"],
+                    "available_games": available_games,
                 },
             )
 
-        # Delete all matches - For testing with test_websocket.html
-        elif data["type"] == "delete_all_matches":
-            await self.delete_all_matches()
+        elif data["type"] == "create_tournament":
+            if await self.is_player_in_game(data["player_id"]):
+                await self.send_error("Player already in a game")
+                return
+
+            tournament = await self.create_tournament(
+                data["player_id"], data["max_players"]
+            )
+            available_games = await self.get_available_games()
+
             await self.channel_layer.group_send(
-                "waiting_room", {"type": "matches_deleted", "all_matches": []}
+                "waiting_room",
+                {
+                    "type": "tournament_created",
+                    "id": tournament.tournament_id,
+                    "creator_id": tournament.creator_id,
+                    "available_games": available_games,
+                },
             )
 
-    # Broadcasts match creation event to all connections in waiting_room group
-    # Includes match details and current list of all matches
+        elif data["type"] == "join_tournament":
+            if await self.is_player_in_game(data["player_id"]):
+                await self.send_error("Player already in a game")
+                logger.debug(f"Player {data['player_id']} already in a game")
+                return
+
+            success = await self.join_tournament(data["tournament_id"], data["player_id"])
+            if not success:
+                await self.send_error("Tournament not found or already full")
+                logger.debug(f"Tournament {data['tournament_id']} not found or already full")
+                return
+
+            available_games = await self.get_available_games()
+            tournament = await self.get_tournament(data["tournament_id"])
+
+            if len(tournament.players) == tournament.max_players:
+                matches, created_matches = await self.create_tournament_matches(tournament)
+                logger.debug(f"Tournament {tournament.tournament_id} is full. Matches created: {matches}")
+                # Create games in pong-api
+                await self.create_tournament_matches_in_pong_api(created_matches)
+                await self.channel_layer.group_send(
+                    "waiting_room",
+                    {
+                    "type": "tournament_started",
+                    "tournament_id": tournament.tournament_id,
+                    "matches": matches,
+                    "available_games": available_games,
+                    },
+                )
+            else:
+                logger.debug(f"Player {data['player_id']} joined tournament {tournament.tournament_id}")
+                await self.channel_layer.group_send(
+                    "waiting_room",
+                    {
+                    "type": "player_joined",
+                    "game_type": "tournament",
+                    "game_id": tournament.tournament_id,
+                    "player_id": data["player_id"],
+                    "available_games": available_games,
+                    },
+                )
+
+    async def games_deleted(self, event):
+        await self.send(text_data=json.dumps(event))
+
     async def match_created(self, event):
-        await self.send(
-            text_data=json.dumps(
-                {
-                    "type": "match_created",
-                    "match_id": event["match_id"],
-                    "player_1_id": event["player_1_id"],
-                    "all_matches": event["all_matches"],
-                }
-            )
-        )
+        await self.send(text_data=json.dumps(event))
 
-    # Broadcasts match update event when a player joins a match
-    # Includes updated match details and current list of all matches
-    async def match_updated(self, event):
-        await self.send(
-            text_data=json.dumps(
-                {
-                    "type": "match_updated",
-                    "match_id": event["match_id"],
-                    "player_1_id": event["player_1_id"],
-                    "player_2_id": event["player_2_id"],
-                    "all_matches": event["all_matches"],
-                }
-            )
-        )
+    async def player_joined(self, event):
+        await self.send(text_data=json.dumps(event))
 
-    # Broadcasts match deletion event to all connections in waiting_room group
-    # Sends empty match list to indicate all matches were deleted
-    async def matches_deleted(self, event):
-        await self.send(
-            text_data=json.dumps(
-                {
-                    "type": "all matches deleted",
-                    "all_matches": event["all_matches"],
-                }
-            )
-        )
+    async def tournament_created(self, event):
+        await self.send(text_data=json.dumps(event))
 
-    # Checks if a player is already in any match (as player 1 or 2)
-    # Args: player_id (int)
-    # Returns: bool indicating if player is in a match
+    async def tournament_started(self, event):
+        await self.send(text_data=json.dumps(event))
+
+    async def send_error(self, message):
+        await self.send(text_data=json.dumps({"type": "error", "message": message}))
+
     @database_sync_to_async
-    def is_player_in_match(self, player_id):
-        return Match.objects.filter(
-            models.Q(player_1_id=player_id) | models.Q(player_2_id=player_id)
-        ).exists()
-
-    # Creates a new match with the given player as player 1
-    # Args: player_1_id (int)
-    # Returns: newly created Match object with PENDING status
-    @database_sync_to_async
-    def create_match(self, player_1_id):
-        return Match.objects.create(
-            match_id=Match.objects.count() + 1,
-            player_1_id=player_1_id,
-            status=Match.PENDING,
+    def create_match(self, player_id):
+        match = Match.objects.create(
+            player_1_id=player_id,
         )
+        return match
 
-    # Adds player 2 to an existing match if available
-    # Args: match_id (int), player_2_id (int)
-    # Returns: updated Match object or None if match not found/unavailable
     @database_sync_to_async
-    def join_match(self, match_id, player_2_id):
+    def join_match(self, match_id, player_id):
         try:
-            match = Match.objects.get(
-                match_id=match_id, player_2_id__isnull=True, status=Match.PENDING
-            )
-            match.player_2_id = player_2_id
+            match = Match.objects.get(match_id=match_id, player_2_id__isnull=True)
+            match.player_2_id = player_id
             match.status = Match.ACTIVE
             match.save()
             return match
         except Match.DoesNotExist:
+            return False
+
+    @database_sync_to_async
+    def create_tournament(self, creator_id, max_players):
+        return Tournament.objects.create(
+            creator_id=creator_id,
+            max_players=max_players,
+            players=[creator_id],
+            status=Tournament.PENDING,
+        )
+
+    @database_sync_to_async
+    def join_tournament(self, tournament_id, player_id):
+        try:
+            tournament = Tournament.objects.get(
+                tournament_id=tournament_id, status=Tournament.PENDING
+            )
+            if len(tournament.players) < tournament.max_players:
+                tournament.players.append(player_id)
+                tournament.save()
+                return tournament
+            return None
+        except Tournament.DoesNotExist:
             return None
 
-    # Creates new Pong game via API when match becomes active
-    # Args: match (Match) - the active match to create a game for
-    # Posts game data to pong-api and logs result
-    async def create_pong_game(self, match):
-        """Creates a new game in pong-api when a match becomes active"""
-        pong_api_base_url = "http://pong-api:8000/game"
+    @database_sync_to_async
+    def get_tournament(self, tournament_id):
+        return Tournament.objects.get(tournament_id=tournament_id)
 
-        # 1. Create game
-        game_data = {
-            "id": match.match_id,
-            "max_score": 1,
-            "player_1_id": match.player_1_id,
-            "player_1_name": f"Player {match.player_1_id}",
-            "player_2_id": match.player_2_id,
-            "player_2_name": f"Player {match.player_2_id}",
+    @database_sync_to_async
+    def create_tournament_matches(self, tournament):
+        matches = []
+        players = tournament.players
+        created_matches = []
+
+        if tournament.max_players == 4:
+            # Create 2 semi-final matches
+            semi1 = Match.objects.create(
+                player_1_id=players[0],
+                player_2_id=players[1],
+                tournament_id=tournament.tournament_id,
+                round=1,
+                status=Match.ACTIVE,
+            )
+            semi2 = Match.objects.create(
+                player_1_id=players[2],
+                player_2_id=players[3],
+                tournament_id=tournament.tournament_id,
+                round=1,
+                status=Match.ACTIVE,
+            )
+            created_matches.extend([semi1, semi2])
+            matches = [
+                {"round": 1, "matches": [semi1.match_id, semi2.match_id]},
+                {"round": 2, "matches": ["final"]},
+            ]
+
+        elif tournament.max_players == 8:
+            quarters = []
+            created_quarter_matches = []  # Store Match objects
+            for i in range(0, 8, 2):
+                match = Match.objects.create(
+                    player_1_id=players[i],
+                    player_2_id=players[i + 1],
+                    tournament_id=tournament.tournament_id,
+                    round=1,
+                    status=Match.ACTIVE,
+                )
+                quarters.append(match.match_id)
+                created_quarter_matches.append(match)  # Store the Match object
+
+            created_matches.extend(created_quarter_matches)  # Add all quarter matches to created_matches
+
+            matches = [
+                {"round": 1, "matches": quarters},
+                {"round": 2, "matches": ["semi1", "semi2"]},  # Two semi-finals
+                {"round": 3, "matches": ["final"]},
+            ]
+
+        tournament.status = Tournament.ACTIVE
+        tournament.matches = matches
+        tournament.save()
+        return matches, created_matches
+
+    @database_sync_to_async
+    def is_player_in_game(self, player_id):
+        # Check if player is in a match (either pending or active)
+        in_match = (
+            Match.objects.filter(status__in=[Match.PENDING, Match.ACTIVE])
+            .filter(player_1_id=player_id)
+            .exists()
+            or Match.objects.filter(status__in=[Match.PENDING, Match.ACTIVE])
+            .filter(player_2_id=player_id)
+            .exists()
+        )
+
+        # Check if player is in a tournament (either pending or active)
+        in_tournament = (
+            Tournament.objects.filter(
+                status__in=[Tournament.PENDING, Tournament.ACTIVE]
+            )
+            .filter(players__contains=[player_id])
+            .exists()
+        )
+
+        return in_match or in_tournament
+
+    @database_sync_to_async
+    def get_available_games(self):
+        matches = list(
+            Match.objects.filter(status__in=[Match.PENDING, Match.ACTIVE]).values()
+        )
+
+        tournaments = list(
+            Tournament.objects.filter(
+                status__in=[Tournament.PENDING, Tournament.ACTIVE]
+            ).values()
+        )
+        return {"matches": matches, "tournaments": tournaments}
+
+    @database_sync_to_async
+    def delete_all_games(self):
+        """Deletes all matches and tournaments"""
+        Match.objects.all().delete()
+        Tournament.objects.all().delete()
+
+    @database_sync_to_async
+    def get_full_game_data(self):
+        """Gets all matches and tournaments with complete data"""
+        matches = list(Match.objects.all().values())
+        tournaments = list(Tournament.objects.all().values())
+        return {
+            "matches": matches,
+            "tournaments": tournaments,
+            "available_games": {
+                "matches": list(
+                    Match.objects.filter(player_2_id__isnull=True).values()
+                ),
+                "tournaments": list(
+                    Tournament.objects.filter(status=Tournament.PENDING).values()
+                ),
+            },
         }
 
-        try:
-            async with aiohttp.ClientSession() as session:
-                # Create game
-                async with session.post(
-                    f"{pong_api_base_url}/create_game/", json=game_data
-                ) as response:
-                    if response.status == 201:
-                        logger.info(
-                            f"Game created in pong-api for match {match.match_id}"
-                        )
+    async def create_tournament_matches_in_pong_api(self, created_matches):
+        """Creates all tournament matches in pong-api"""
+        for match in created_matches:
+            try:
+                # Ensure we have a Match object, not just an ID
+                if isinstance(match, str):
+                    match = await database_sync_to_async(Match.objects.get)(match_id=match)
 
-                        # 2. Start game by toggling it on - TODO: to be deleted as only for testing, to be done by frontend
-                        async with session.put(
-                            f"{pong_api_base_url}/toggle_game/{match.match_id}/"
-                        ) as toggle_response:
-                            if toggle_response.status == 200:
-                                logger.info(
-                                    f"Game {match.match_id} started successfully"
-                                )
-                            else:
-                                error_text = await toggle_response.text()
-                                logger.error(f"Failed to start game: {error_text}")
-                    else:
-                        error_text = await response.text()
-                        logger.error(f"Failed to create game in pong-api: {error_text}")
-        except Exception as e:
-            logger.error(f"Error creating/starting game in pong-api: {str(e)}")
-
-    # Retrieves all matches from database with their current state
-    # Returns: list of dicts containing match details
-    @database_sync_to_async
-    def get_all_matches(self):
-        matches = Match.objects.all()
-        return [
-            {
-                "match_id": m.match_id,
-                "player_1_id": m.player_1_id,
-                "player_2_id": m.player_2_id,
-                "status": m.status,
-            }
-            for m in matches
-        ]
-
-    # Deletes all matches from database
-    # Used for testing/cleanup purposes
-    @database_sync_to_async
-    def delete_all_matches(self):
-        Match.objects.all().delete()
+                success = await self.create_game_in_pong_api(match)
+                if not success:
+                    logger.error(f"Failed to create game in pong-api for match {match.match_id}")
+            except Exception as e:
+                logger.error(f"Error creating game in pong-api: {str(e)}")

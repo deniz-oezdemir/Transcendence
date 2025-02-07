@@ -3,23 +3,125 @@
 Info: match and game are used synonymously.
 
 ## Table of Contents
-
+- [REST Endpoint for Game Engine Service](#rest-endpoint-for-game-engine-service)
+- [WebSocket Endpoint for Front End Service](#websocket-endpoint-for-front-end-service)
 - [Goals](#goals)
 - [Subject Requirements](#subject-requirements)
 - [User Stories](#user-stories)
 - [Development Steps](#development-steps)
 - [Tables](#tables)
 - [TODO](#todo)
-- [Testing](#testing)
-- [Notes](#notes)
-	- [Django Admin](#django-admin)
+- [Is Redis not sufficient as a database? Why also use PostgreSQL?](#is-redis-not-sufficient-as-a-database-why-also-use-postgresql)
 - [Sources](#sources)
 
 
-## Goals
-First version: support only matches - work in progress
+## REST Endpoint for Game Engine Service
 
-Second version: support also tournmanets - TODO
+**Create and Join Games/Tournaments**: Use [test_websocket.html](matchmaking/test_websocket.html) to create and join games or tournaments.
+
+**Post Match Results**: Post match results using the following endpoint:
+```bash
+curl -X POST \
+-H "Content-Type: application/json" \
+-d '{
+    "winner_id": <player_id>,
+    "player_1_score": <score>,
+    "player_2_score": <score>,
+    "start_time": "<ISO8601_timestamp>",
+    "end_time": "<ISO8601_timestamp>"
+}' \
+http://localhost:8001/api/match/<match_id>/result/
+```
+
+**View Results**: Refresh [test_websocket.html](matchmaking/test_websocket.html) to see the updated results.
+
+**Check Match Data**: Access the Django admin interface at [http://localhost:8001/admin/waitingRoom/](http://localhost:8001/admin/waitingRoom/) with the username `admin` and password `admin` to view match data, including finished matches.
+
+## WebSocket Endpoint for Front End Service
+
+**Connect to:** `ws://localhost:8001/ws/waiting-room/`
+
+**Get Available Games**
+
+- **Send:** `{"type": "get_games"}`
+- **Receive:**
+	```json
+	{
+		"type": "initial_games",
+		"games": {
+			"matches": [],
+			"tournaments": []
+		}
+	}
+	```
+
+**Create Match**
+
+- **Send:** `{"type": "create_match", "player_id": int}`
+- **Receive:**
+	```json
+	{
+		"type": "match_created",
+		"id": int,
+		"creator_id": int,
+		"available_games": []
+	}
+	```
+
+**Join Match**
+
+- **Send:** `{"type": "join_match", "match_id": int, "player_id": int}`
+- **Receive:**
+	```json
+	{
+		"type": "player_joined",
+		"game_type": "match",
+		"game_id": int,
+		"player_id": int,
+		"available_games": []
+	}
+	```
+
+**Create Tournament**
+
+- **Send:** `{"type": "create_tournament", "player_id": int, "max_players": int}`
+- **Receive:**
+	```json
+	{
+		"type": "tournament_created",
+		"id": int,
+		"creator_id": int,
+		"available_games": []
+	}
+	```
+
+**Join Tournament**
+
+- **Send:** `{"type": "join_tournament", "tournament_id": int, "player_id": int}`
+- **Receive when not full:**
+	```json
+	{
+		"type": "player_joined",
+		"game_type": "tournament",
+		"game_id": int,
+		"player_id": int,
+		"available_games": []
+	}
+	```
+- **Receive when full:**
+	```json
+	{
+		"type": "tournament_started",
+		"tournament_id": int,
+		"matches": [],
+		"available_games": []
+	}
+	```
+
+## Goals
+First version: support only matches - done
+
+Second version: support also tournmanets - work in progress
 
 ## Subject Requirements
 
@@ -81,109 +183,21 @@ Second version: support also tournmanets - TODO
 - to create game: use game engine's rest api (done by game engine service) write logic to create game when active - done and to be tested with pong api and to be integrated with pong API: update pong api so it can be run in docker so the services can be on the same network - done
 - to consume game result: expose a rest api for post requests - done and to be integrated with pong API - done
 
-6. Integrate Frontend with matchmaking - TODO
-- create minimal frontend
-- dockerize frontend
-- connect frontend with matchmaking
-- test
+6. Integrate Frontend with matchmaking
+- create minimal frontend - done
+- test - done
 
-## Testing
+7. Introduce tournaments
+- write new data tables for matches and tournaments - done
+- write complete matchmaking logic (without postgres data deletion) - done
+- connect to frontend and game engine - done
 
-1. **Start Services**:
-	```bash
-	cd matchmaking/docker
-	docker compose up --build
-	```
+8. Integrate with game history
+- copy all data over to game history after a match or a tournament is finished
+- maybe delete data from matchmaking - although duplicate data is good for security?
 
-2. **Monitor Databases**:
 
-	- **PostgreSQL**:
-		```bash
-		# Connect to PostgreSQL container
-		docker exec -it docker-postgres-1 psql -U deniz matchmaking_db
-
-		# List all tables
-		\dt
-
-		# View matches
-		SELECT * FROM "waitingRoom_match";
-
-		# Exit PostgreSQL
-		\q
-		```
-
-	- **Redis**:
-		```bash
-		# Connect to Redis container
-		docker exec -it docker-redis-1 redis-cli
-
-		# List all keys
-		KEYS *
-
-		# Monitor real-time updates
-		MONITOR
-
-		# Exit Redis
-		exit
-		```
-
-3. **WebSocket API**:
-	- Open `test_websocket.html` in your browser.
-	- Create or join games.
-
-4. **REST API**:
-	- Use the following `curl` command to post match results:
-	```bash
-	curl -X POST http://localhost:8000/api/match/1/result/ \
-	-H "Content-Type: application/json" \
-	-d '{
-		"winner_id": 1,
-		"player1_score": 5,
-		"player2_score": 3,
-		"start_time": "2025-01-17T13:00:00Z",
-		"end_time": "2025-01-17T13:15:00Z"
-	}'
-	```
-	- `match_id` is inferred from the URL.
-
-5. **Check Logs**:
-	```bash
-	# View all container logs
-	docker compose logs -f
-
-	# View specific service logs
-	docker compose logs -f matchmaking
-	docker compose logs -f postgres
-	docker compose logs -f redis
-	```
-
-6. **Clean Up Matches**:
-	- Uncomment the following line in `matchmaking/waitingRoom/consumers.py` to delete all matches for testing purposes:
-	```python
-	# Delete all matches for testing purposes
-	# await self.delete_all_matches()
-	```
-
-7. **Clean Up Docker**:
-	```bash
-	# Stop and remove containers, networks, volumes
-	docker compose down -v
-
-	# Remove all unused containers, networks, images
-	docker system prune -a
-
-	# Remove all volumes
-	docker volume prune
-	```
-
-## Notes
-
-### Django Admin
-user:	deniz
-
-pw:		admin
-
-### Is Redis not sufficient as a database? Why also use PostgreSQL?
+## Is Redis not sufficient as a database? Why also use PostgreSQL?
 
 Both PostgreSQL and Redis serve different purposes in the matchmaking service:
 
