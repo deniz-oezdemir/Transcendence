@@ -12,7 +12,7 @@ services:
     volumes:
       - ..:/app
     env_file:
-      - path: ./.env
+      - path: ./.env.example #TODO: change
         required: true
     environment:
       - DJANGO_SETTINGS_MODULE=gameHistory.settings
@@ -32,7 +32,7 @@ services:
     image: postgres:16.6
     container_name: game-history-postgres
     env_file:
-      - path: ./.env
+      - path: ./.env.example #TODO: change
         required: true
     volumes:
       - game-history-postgres-data:/var/lib/postgresql/data
