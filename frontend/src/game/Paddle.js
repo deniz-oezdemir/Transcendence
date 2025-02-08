@@ -6,20 +6,25 @@ import {
 } from 'three';
 
 const GEOMETRY = new CapsuleGeometry(0.5, 5, 20, 20);
-const HELPER_GEOMETRY = new CapsuleGeometry(0.5 + 0.5, 5, 24, 8);
+const HELPER_GEOMETRY = new CapsuleGeometry(1.0, 5, 20, 8);
 HELPER_GEOMETRY.rotateZ(Math.PI * 0.5);
 HELPER_GEOMETRY.rotateX(Math.PI * 0.125);
 GEOMETRY.rotateZ(Math.PI * 0.5);
-const MATERIAL = new MeshStandardMaterial({ color: 0xaa00ff });
 
 export default class Paddle {
-  constructor(scene, boundaries, position) {
+  constructor(scene, dimensions, position, color) {
     this.scene = scene;
-    this.boundaries = boundaries;
+    this.boundaries = dimensions.boundaries;
 
     this.geometry = GEOMETRY;
-    this.material = MATERIAL;
-    this.mesh = new Mesh(GEOMETRY, MATERIAL);
+    if (this.geometry.length !== dimensions.paddle.y)
+      this.geometry.length = dimensions.paddle.y;
+    if (this.geometry.radius !== dimensions.paddle.x * 0.5)
+      this.geometry.radius = dimensions.paddle.x * 0.5;
+    this.halfLength = this.geometry.length * 0.5;
+
+    this.material = new MeshStandardMaterial({ color });
+    this.mesh = new Mesh(GEOMETRY, this.material);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;
 
@@ -39,10 +44,12 @@ export default class Paddle {
   }
 
   setX(x) {
-    if (x > this.boundaries.x - 3) {
-      x = this.boundaries.x - 3;
-    } else if (x < -this.boundaries.x + 3) {
-      x = -this.boundaries.x + 3;
+    const maxX = this.boundaries.x - this.halfLength;
+
+    if (x > maxX) {
+      x = maxX;
+    } else if (x < -maxX) {
+      x = -maxX;
     }
 
     this.mesh.position.x = x;
