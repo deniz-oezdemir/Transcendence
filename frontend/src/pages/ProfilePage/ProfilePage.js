@@ -2,40 +2,13 @@ import { createComponent, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './ProfilePage.module.css';
 
-// function dynamicData(user_data) {
-//   return createComponent('div', {
-//     className: 'user-info',
-//     children: [
-//       createComponent('img', {
-//         className: 'avatar',
-//         attributes: {
-//           src: user_data.avatar_url || '/avatars/default.png',
-//           alt: `${user_data.username}'s avatar`,
-//         }
-//       }),
-//       createComponent('h1', {
-//         className: 'username',
-//         content: user_data.username,
-//       }),
-//       // createComponent('div', {
-//       //   className: 'friends-list',
-//       //   children: [
-//       //     createComponent('h2', { content: 'Friends' }),
-//       //     createComponent('ul', {
-//       //       children: user_data.friends.map((friend) =>
-//       //         createComponent('li', {
-//       //           className: `friend ${friend.online ? 'online' : 'offline'}`,
-//       //           content: `${friend.username} (${friend.online ? 'Online' : 'Offline'})`,
-//       //         })
-//       //       ),
-//       //     }),
-//       //   ],
-//       // }),
-//     ],
-//   });
-// }
-
 function dynamicData(user_data) {
+  if (!user_data) {
+    return createComponent('div', {
+      className: styles.profileContainer,
+      content: 'Error loading profile data',
+    });
+  }
   return createComponent('div', {
     className: styles.profileContainer,
     children: [
@@ -46,7 +19,7 @@ function dynamicData(user_data) {
           createComponent('img', {
             className: styles.avatar,
             attributes: {
-              src: user_data.avatar_url || '/avatars/default.png',
+              src: user_data.avatar_url,
               alt: `${user_data.username}'s avatar`,
             }
           }),
@@ -64,65 +37,89 @@ function dynamicData(user_data) {
           createComponent('button', {
             className: styles.actionButton,
             content: 'Change Avatar',
+            events: {
+              click : (event) => {
+                console.log('Change Avatar button clicked');
+                handleChangeAvatar(event);
+              }
+            }
           }),
           createComponent('button', {
             className: styles.actionButton,
             content: 'Change Username',
+            events: {
+              click : (event) => {
+                console.log('Change Username button clicked');
+                handleChangeUsername(event);
+              }
+            }
           }),
           createComponent('button', {
             className: styles.actionButton,
             content: 'Change Password',
+            events: {
+              click : (event) => {
+                console.log('Change Password button clicked');
+                handleChangePassword(event);
+              }
+            }
           }),
           createComponent('button', {
             className: styles.deleteButton,
             content: 'Delete Account',
+            events: {
+              click : (event) => {
+                console.log('Delete Account button clicked');
+                handleDeleteAccount(event);
+              }
+            }
           }),
         ],
       }),
 
-      // Stats Section
-      // createComponent('div', {
-      //   className: styles.statsBox,
-      //   children: [
-      //     createComponent('h2', { content: 'Game Stats' }),
-      //     createComponent('ul', {
-      //       children: user_data.stats.length > 0
-      //         ? user_data.stats.map((stat) =>
-      //             createComponent('li', { content: `${stat.name}: ${stat.value}` })
-      //           )
-      //         : createComponent('p', { content: 'No games played yet' }),
-      //     }),
-      //   ],
-      // }),
+      // // Stats Section
+      // // createComponent('div', {
+      // //   className: styles.statsBox,
+      // //   children: [
+      // //     createComponent('h2', { content: 'Game Stats' }),
+      // //     createComponent('ul', {
+      // //       children: user_data.stats.length > 0
+      // //         ? user_data.stats.map((stat) =>
+      // //             createComponent('li', { content: `${stat.name}: ${stat.value}` })
+      // //           )
+      // //         : createComponent('p', { content: 'No games played yet' }),
+      // //     }),
+      // //   ],
+      // // }),
 
-      // Friends List Section
-      // createComponent('div', {
-      //   className: styles.friendsBox,
-      //   children: user_data.friends,
-      // }),
-      // createComponent('div', {
-      //   className: styles.friendsBox,
-      //   children: user_data.friends.length > 0
-      //     ? user_data.friends.map((friend) =>
-      //         createComponent('div', {
-      //           className: styles.friend,
-      //           children: [
-      //             createComponent('img', {
-      //               className: styles.friendAvatar,
-      //               attributes: { src: friend.avatar_url, alt: friend.username },
-      //             }),
-      //             createComponent('span', {
-      //               className: styles.friendName,
-      //               content: friend.username,
-      //             }),
-      //             createComponent('span', {
-      //               className: `${styles.status} ${friend.online ? styles.online : styles.offline}`,
-      //             }),
-      //           ],
-      //         })
-      //       )
-      //     : createComponent('p', { content: 'No friends added yet' }),
-      // }),
+      // // Friends List Section
+      // // createComponent('div', {
+      // //   className: styles.friendsBox,
+      // //   children: user_data.friends,
+      // // }),
+      // // createComponent('div', {
+      // //   className: styles.friendsBox,
+      // //   children: user_data.friends.length > 0
+      // //     ? user_data.friends.map((friend) =>
+      // //         createComponent('div', {
+      // //           className: styles.friend,
+      // //           children: [
+      // //             createComponent('img', {
+      // //               className: styles.friendAvatar,
+      // //               attributes: { src: friend.avatar_url, alt: friend.username },
+      // //             }),
+      // //             createComponent('span', {
+      // //               className: styles.friendName,
+      // //               content: friend.username,
+      // //             }),
+      // //             createComponent('span', {
+      // //               className: `${styles.status} ${friend.online ? styles.online : styles.offline}`,
+      // //             }),
+      // //           ],
+      // //         })
+      // //       )
+      // //     : createComponent('p', { content: 'No friends added yet' }),
+      // // }),
     ],
   });
 }
@@ -156,7 +153,7 @@ export default function ProfilePage({ params, query }) {
   }
   
   createEffect(() => {
-    fetchUserData()
+    fetchUserData().catch(err => console.error('Failed to load profile:', err));
   });
 
   // //example code for fetching stats and achievements
@@ -184,7 +181,8 @@ export default function ProfilePage({ params, query }) {
 
   const wrapper = createComponent('div', {
     className: styles.container,
-    content: content,
+    content: () => content() || 'Loading...',
+    // content: content,
     cleanup,
   });
 

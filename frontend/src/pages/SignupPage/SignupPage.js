@@ -16,14 +16,14 @@ export default function SignupPage() {
   const [isSigningUp, setIsSigningUp] = createSignal(false);
 
   function validateUsername(value) {
-    const isValid = 
-      value.length >= 3 && 
-      value.length <= 20 && 
+    const isValid =
+      value.length >= 3 &&
+      value.length <= 20 &&
       /^[a-zA-Z0-9]+$/.test(value);
 
     setUsernameError(
-      isValid 
-        ? '' 
+      isValid
+        ? ''
         : 'Username must be 3-20 alphanumeric characters and/or underscores'
     );
 
@@ -121,18 +121,18 @@ export default function SignupPage() {
   return createComponent('div', {
     className: styles.container,
     children: [
-      createComponent('h2', { 
-        className: styles.formTitle, 
-        content: 'Signup' 
+      createComponent('h2', {
+        className: styles.formTitle,
+        content: 'Signup'
       }),
       createComponent('form', {
         children: [
           createComponent('div', {
             className: styles.formGroup,
             children: [
-              createComponent('label', { 
-                content: 'User Name', 
-                htmlFor: 'username' 
+              createComponent('label', {
+                content: 'User Name',
+                htmlFor: 'username'
               }),
               createComponent('input', {
                 className: styles.formGroupInput,
@@ -157,9 +157,9 @@ export default function SignupPage() {
           createComponent('div', {
             className: styles.formGroup,
             children: [
-              createComponent('label', { 
-                content: 'Email', 
-                htmlFor: 'email' 
+              createComponent('label', {
+                content: 'Email',
+                htmlFor: 'email'
               }),
               createComponent('input', {
                 className: styles.formGroupInput,
@@ -184,9 +184,9 @@ export default function SignupPage() {
           createComponent('div', {
             className: styles.formGroup,
             children: [
-              createComponent('label', { 
-                content: 'Password', 
-                htmlFor: 'password' 
+              createComponent('label', {
+                content: 'Password',
+                htmlFor: 'password'
               }),
               createComponent('input', {
                 className: styles.formGroupInput,

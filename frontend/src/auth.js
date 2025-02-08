@@ -23,7 +23,7 @@ async function login(username, password) {
     })
   });
   const data = await response.json();
-  console.log('Response received:', response)
+  console.log('Response received:', response, data)
   if (!response.ok) {
     throw new Error(data.message || 'Login failed');
   }
@@ -31,6 +31,7 @@ async function login(username, password) {
   localStorage.setItem('username', data.username);
   localStorage.setItem('userId', data.userId);
   setIsAuthenticated(true);
+
   return { success: true };
 }
 
