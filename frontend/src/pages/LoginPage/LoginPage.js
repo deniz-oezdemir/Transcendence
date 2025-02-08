@@ -43,7 +43,7 @@ export default function LoginPage() {
     return isValid;
   }
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
     setSubmitError('');
     setSubmitSuccess('');
@@ -57,12 +57,16 @@ export default function LoginPage() {
       return;
     }
     try {
-      login(username(), password());
-      setSubmitSuccess('User logged in successfully! Redirecting to home page...');
-      setTimeout(() => {
-        setIsLoggingIn(false);
-        window.router.navigate('/');
-      }, 2000);
+      const response = await login(username(), password());
+      if (response.success) {
+        setSubmitSuccess('User logged in successfully! Redirecting to home page...');
+        setTimeout(() => {
+          setIsLoggingIn(false);
+          router.navigate('/');
+        }, 2000);
+      } else {
+        throw new Error(response.message);
+      }
     } catch (error) {
       setIsLoggingIn(false);
       setSubmitError(error.message);

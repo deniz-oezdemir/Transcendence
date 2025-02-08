@@ -138,3 +138,112 @@
     font-size: 1rem;
     color: #ccc;
   }
+
+  /* .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .profileContainer {
+    width: 80%;
+    max-width: 600px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .userBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid #333;
+  }
+  
+  .username {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .actionButton {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+  }
+  
+  .deleteButton {
+    background: red;
+    color: white;
+  }
+  
+  .statsBox, .friendsBox {
+    width: 80%;
+    max-width: 500px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .statsBox h2 {
+    margin-bottom: 10px;
+  }
+  
+  .friendsBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .friend {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 5px 0;
+  }
+  
+  .friendAvatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
+  .friendName {
+    flex: 1;
+  }
+  
+  .status {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  
+  .online {
+    background: green;
+  }
+  
+  .offline {
+    background: red;
+  } */
+  

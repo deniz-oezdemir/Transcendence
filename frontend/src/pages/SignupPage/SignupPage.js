@@ -109,7 +109,7 @@ export default function SignupPage() {
       setSubmitSuccess('User created successfully! Redirecting to login page...');
       setTimeout(() => {
         setIsSigningUp(false);
-        window.router.navigate('/login');
+        router.navigate('/login');
       }, 2000);
     } catch (error) {
       setIsSigningUp(false);
