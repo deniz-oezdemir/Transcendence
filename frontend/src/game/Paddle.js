@@ -3,8 +3,11 @@ import {
   Mesh,
   MeshNormalMaterial,
   MeshStandardMaterial,
+  MeshBasicNodeMaterial,
+  NormalBlending,
 } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import HolographicMaterial from '@/game/HolographicMaterial.js';
 
 // const GEOMETRY = new CapsuleGeometry(0.5, 5, 20, 20);
 const GEOMETRY = new RoundedBoxGeometry(5, 2, 1, 8, 0.5);
@@ -27,7 +30,8 @@ export default class Paddle {
 
     this.halfLength = this.geometry.width * 0.5;
 
-    this.material = new MeshStandardMaterial({ color });
+    this.material = new MeshBasicNodeMaterial({ color });
+
     this.mesh = new Mesh(GEOMETRY, this.material);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;

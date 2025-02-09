@@ -2,6 +2,7 @@ import {
   Mesh,
   MeshStandardMaterial,
   MeshNormalMaterial,
+  MeshBasicNodeMaterial,
   MeshBasicMaterial,
   SphereGeometry,
   Vector3,
@@ -13,7 +14,7 @@ export default class Ball extends EventDispatcher {
   speed = 15;
   velocity = new Vector3(1, 0, 1);
 
-  constructor(scene, boundaries, paddles) {
+  constructor(scene, boundaries, paddles, color) {
     super();
 
     this.scene = scene;
@@ -21,7 +22,7 @@ export default class Ball extends EventDispatcher {
     this.paddles = paddles;
     this.radius = 0.5;
     this.geometry = new SphereGeometry(this.radius);
-    this.material = new MeshStandardMaterial({ color: 0xffaa00 });
+    this.material = new MeshBasicNodeMaterial({ color });
     this.mesh = new Mesh(this.geometry, this.material);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;

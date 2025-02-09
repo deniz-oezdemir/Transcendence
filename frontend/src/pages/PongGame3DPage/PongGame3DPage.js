@@ -44,6 +44,17 @@ import {
   CylinderGeometry,
   MeshPhysicalMaterial,
   FrontSide,
+  PostProcessing,
+  NormalBlending,
+  AdditiveBlending,
+  MeshBasicMaterial,
+  NearestMipmapNearestFilter,
+  ColorManagement,
+  LinearMipmapLinearFilter,
+  NearestFilter,
+  SpriteMaterial,
+  TextureLoader,
+  Sprite,
 } from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -57,6 +68,8 @@ import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
+import { pass, mrt, output, emissive, uniform, float } from 'three/tsl';
+import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
@@ -66,6 +79,7 @@ import Paddle from '@/game/Paddle.js';
 import AIController from '@/game/AIController.js';
 import lights from '@/game/lights.js';
 import Firework from '@/game/Firework.js';
+import HolographicMaterial from '@/game/HolographicMaterial.js';
 
 import styles from './PongGame3DPage.module.css';
 
@@ -98,11 +112,11 @@ export default function PongGame3DPage({ navigate }) {
     },
     colors: {
       plane: 0xb994ff, //0x9b71ea, //0x6966ff,
-      paddleP1: 0x3633ff, //0x3633ff,
-      paddleP2: 0x363300, //0x3633ff,
-      scoreP1: 0x3633ff, //0x3633ff,
-      scoreP2: 0x363300, //0x3633ff,
-      ball: 0xce47ff, //0xe63d05,
+      paddleP1: 0x14d9c5, // 0x3633ff, //0x3633ff,
+      paddleP2: 0xd90da2, // 0x363300, //0x3633ff,
+      scoreP1: 0x14d9c5, // 0x3633ff, //0x3633ff,
+      scoreP2: 0xd90da2, // 0x363300, //0x3633ff,
+      ball: 0xffcc00, // 0xce47ff, //0xe63d05,
     },
     dimensions: {
       boundaries: new Vector2(20, 30),
@@ -124,13 +138,18 @@ export default function PongGame3DPage({ navigate }) {
         p2: { id: -1, name: 'Player Two' },
       },
     },
+    bloom: {
+      threshold: 0.0,
+      strength: 1.0,
+      radius: 0.0,
+    },
   };
 
   // Font Loader
 
-  let player2ScoreMesh, player1ScoreMesh, loadedFont;
+  let player2ScoreMesh, player1ScoreMesh, loadedFont, bloomPass;
   const TEXT_PARAMS = {
-    size: 4,
+    size: 5,
     depth: 0.5,
     curveSegments: 16,
     bevelEnabled: true,
@@ -147,6 +166,18 @@ export default function PongGame3DPage({ navigate }) {
     color: params.colors.scoreP2,
   });
 
+  const holographicMaterial = new HolographicMaterial({
+    hologramColor: new Color('#00d5ff'),
+    fresnelAmount: 0.7,
+    blendMode: NormalBlending,
+    scanlineSize: 30,
+    signalSpeed: 1.0,
+    hologramOpacity: 0.5,
+    blinkFresnelOnly: true,
+    hologramBrightness: 2,
+    depthTest: false,
+  });
+
   const fontLoader = new FontLoader();
   fontLoader.load(
     'assets/fonts/helvetiker_bold.typeface.json',
@@ -159,10 +190,10 @@ export default function PongGame3DPage({ navigate }) {
 
       geometry.center();
 
-      player1ScoreMesh = new Mesh(geometry, scoreP1Material);
-      player2ScoreMesh = new Mesh(geometry, scoreP2Material);
-      player1ScoreMesh.position.set(0, 4, params.dimensions.boundaries.y + 2);
-      player2ScoreMesh.position.set(0, 4, -params.dimensions.boundaries.y - 2);
+      player1ScoreMesh = new Mesh(geometry, holographicMaterial);
+      player2ScoreMesh = new Mesh(geometry, holographicMaterial);
+      player1ScoreMesh.position.set(0, 16, params.dimensions.boundaries.y);
+      player2ScoreMesh.position.set(0, 16, -params.dimensions.boundaries.y);
 
       player1ScoreMesh.castShadow = true;
       player2ScoreMesh.castShadow = true;
@@ -181,7 +212,7 @@ export default function PongGame3DPage({ navigate }) {
     return geometry;
   }
 
-  let camera, renderer, gameRef, controls;
+  let camera, renderer, gameRef, controls, postProcessing;
 
   // Scene Setup
   const scene = new Scene();
@@ -203,75 +234,143 @@ export default function PongGame3DPage({ navigate }) {
   const stats = new Stats();
 
   const gui = new GUI();
-  gui
+
+  const sceneFolder = gui.addFolder('Scene').close();
+  sceneFolder
     .addColor(params.colors, 'paddleP1')
     .name('Player 1 Paddle Color')
     .onChange((val) => {
       player1Paddle.material.color.set(val);
     });
-
-  gui
+  sceneFolder
     .addColor(params.colors, 'scoreP1')
     .name('Player 1 Score Color')
     .onChange((val) => {
       player1ScoreMesh.material.color.set(val);
     });
-
-  gui
+  sceneFolder
     .addColor(params.colors, 'paddleP2')
     .name('Player 2 Paddle Color')
     .onChange((val) => {
       player2Paddle.material.color.set(val);
     });
-
-  gui
+  sceneFolder
     .addColor(params.colors, 'scoreP2')
     .name('Player 2 Score Color')
     .onChange((val) => {
       player2ScoreMesh.material.color.set(val);
     });
-
-  gui
+  sceneFolder
     .addColor(params.colors, 'ball')
     .name('Ball Color')
     .onChange((val) => {
       ball.material.color.set(val);
     });
-
-  gui
+  sceneFolder
     .addColor(params.colors, 'plane')
     .name('Plane Color')
     .onChange((val) => {
       planeMaterial.color.set(val);
     });
-
-  gui
+  sceneFolder
     .add(params.environment.fog, 'near', 0, 100, 1)
     .name('Near')
     .onChange((val) => {
       scene.fog.near = val;
     });
-
-  gui
+  sceneFolder
     .add(params.environment.fog, 'far', 50, 1000, 1)
     .name('Far')
     .onChange((val) => {
       scene.fog.far = val;
     });
-
-  gui
+  sceneFolder
     .addColor(params.environment, 'backgroundColor')
     .name('Background Color')
     .onChange((val) => {
       scene.background.set(val);
     });
-
-  gui
+  sceneFolder
     .addColor(params.environment.fog, 'color')
     .name('Fog Color')
     .onChange((val) => {
       scene.fog.color.set(val);
     });
+
+  const bloomFolder = gui.addFolder('Bloom').close();
+  bloomFolder
+    .add(params.bloom, 'threshold', 0, 1, 1)
+    .name('Bloom Threshold')
+    .onChange((value) => {
+      bloomPass.threshold.value = value;
+    });
+  bloomFolder
+    .add(params.bloom, 'strength', 0.0, 10.0)
+    .name('Bloom Strength')
+    .onChange((value) => {
+      bloomPass.strength.value = value;
+    });
+  bloomFolder
+    .add(params.bloom, 'radius', 0.0, 1.0, 0.01)
+    .name('Bloom Radius')
+    .onChange((value) => {
+      bloomPass.radius.value = value;
+    });
+
+  const holoFolder = gui.addFolder('Holographic Material').close();
+  holoFolder
+    .add(holographicMaterial.fresnelOpacityNode, 'value')
+    .min(0)
+    .max(1)
+    .step(0.01)
+    .name('Fresnel Opacity');
+  holoFolder
+    .add(holographicMaterial.fresnelAmountNode, 'value')
+    .min(0)
+    .max(2)
+    .step(0.01)
+    .name('Fresnel Amount');
+  holoFolder
+    .add(holographicMaterial.scanlineSizeNode, 'value')
+    .min(0)
+    .max(20)
+    .step(0.01)
+    .name('Scanline Size');
+  holoFolder
+    .add(holographicMaterial.hologramBrightnessNode, 'value')
+    .min(0)
+    .max(2)
+    .step(0.01)
+    .name('Hologram Brightness');
+  holoFolder
+    .add(holographicMaterial.signalSpeedNode, 'value')
+    .min(0)
+    .max(2)
+    .step(0.01)
+    .name('Signal Speed');
+  holoFolder
+    .addColor(
+      {
+        HologramColor: holographicMaterial.hologramColorNode.value.getStyle(),
+      },
+      'HologramColor'
+    )
+    .onChange((color) => {
+      holographicMaterial.hologramColorNode.value.setStyle(color);
+      holographicMaterial.needsUpdate = true;
+    });
+  holoFolder
+    .add(holographicMaterial.enableBlinkingNode, 'value')
+    .name('Enable Blinking');
+  holoFolder
+    .add(holographicMaterial.blinkFresnelOnlyNode, 'value')
+    .name('Blink Fresnel Only');
+  holoFolder
+    .add(holographicMaterial.hologramOpacityNode, 'value')
+    .min(0)
+    .max(1)
+    .step(0.01)
+    .name('Hologram Opacity');
 
   // Cursor
   const cursor = new Vector2(0, 0);
@@ -336,7 +435,7 @@ export default function PongGame3DPage({ navigate }) {
     2,
     params.dimensions.boundaries.y * 4,
     8,
-    1.5
+    3
   );
   platformGeometry.translate(0, -0.5, 0);
 
@@ -381,23 +480,54 @@ export default function PongGame3DPage({ navigate }) {
   // scene.add(leftBound);
   // scene.add(rightBound);
 
+  const map = new TextureLoader().load('assets/images/test.webp');
+  const material = new MeshBasicMaterial({
+    map: map,
+    color: 0xffffff,
+    transparent: true,
+    // side: DoubleSide,
+    depthWrite: false,
+    depthTest: false,
+    blending: AdditiveBlending,
+  });
+
+  const sprite = new Mesh(new PlaneGeometry(1, 1), material);
+  sprite.scale.set(60, 40, 1);
+  sprite.rotateX(-Math.PI * 0.5);
+  sprite.rotateZ(Math.PI * 0.5);
+  sprite.position.set(0, -1, 0);
+  scene.add(sprite);
+
   const player1Paddle = new Paddle(
     scene,
     params.dimensions,
     params.positions.paddleP1,
     params.colors.paddleP1
   );
+  const bloomIntensity = 1;
+  player1Paddle.material.mrtNode = mrt({
+    bloomIntensity: uniform(bloomIntensity),
+  });
+
   const player2Paddle = new Paddle(
     scene,
     params.dimensions,
     params.positions.paddleP2,
     params.colors.paddleP2
   );
-  const ball = new Ball(scene, params.dimensions.boundaries, [
-    player1Paddle,
-    player2Paddle,
-  ]);
-  ball.material.color.set(params.colors.ball);
+  player2Paddle.material.mrtNode = mrt({
+    bloomIntensity: uniform(bloomIntensity),
+  });
+
+  const ball = new Ball(
+    scene,
+    params.dimensions.boundaries,
+    [player1Paddle, player2Paddle],
+    params.colors.ball
+  );
+  ball.material.mrtNode = mrt({
+    bloomIntensity: uniform(bloomIntensity),
+  });
 
   // Pong Model
   // new GLTFLoader().load('assets/models/pong-v1.glb', (gltf) => {
@@ -489,6 +619,7 @@ export default function PongGame3DPage({ navigate }) {
         // format: form,
         // logarithmicDepthBuffer: true,
       });
+      renderer.init();
       renderer.toneMapping = ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1;
       renderer.shadowMap.enabled = true;
@@ -573,6 +704,7 @@ export default function PongGame3DPage({ navigate }) {
         params.score[e.message] += 1;
         const mesh = e.message === 'p2' ? player2ScoreMesh : player1ScoreMesh;
         const geometry = getScoreGeometry(params.score[e.message]);
+        mesh.geometry.dispose();
         mesh.geometry = geometry;
 
         const firework = new Firework(
@@ -597,6 +729,32 @@ export default function PongGame3DPage({ navigate }) {
 
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
+
+      // /**
+      //  **/
+
+      const scenePass = pass(scene, camera);
+      scenePass.setMRT(
+        mrt({
+          output,
+          bloomIntensity: float(0), // default bloom intensity
+        })
+      );
+
+      const outputPass = scenePass.getTextureNode();
+      const bloomIntensityPass = scenePass.getTextureNode('bloomIntensity');
+
+      bloomPass = bloom(outputPass.mul(bloomIntensityPass));
+      bloomPass.threshold.value = params.bloom.threshold;
+      bloomPass.strength.value = params.bloom.strength;
+      bloomPass.radius.value = params.bloom.radius;
+
+      postProcessing = new PostProcessing(renderer);
+      postProcessing.outputColorTransform = false;
+      postProcessing.outputNode = outputPass.add(bloomPass).renderOutput();
+      /**
+       **/
+
       renderer.setAnimationLoop(animate);
     } catch (error) {
       console.error('WebGPU setup failed:', error);
@@ -635,7 +793,10 @@ export default function PongGame3DPage({ navigate }) {
     });
 
     controls.update();
-    renderer.render(scene, camera);
+
+    holographicMaterial.update();
+    postProcessing.render();
+    // renderer.render(scene, camera);
     stats.update();
   }
 
