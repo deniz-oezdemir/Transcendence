@@ -40,6 +40,7 @@ import {
   SRGBColorSpace,
   ClampToEdgeWrapping,
   DoubleSide,
+  BackSide,
   CylinderGeometry,
   MeshPhysicalMaterial,
   FrontSide,
@@ -55,6 +56,7 @@ import { UltraHDRLoader } from 'three/addons/loaders/UltraHDRLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
+import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
@@ -104,7 +106,7 @@ export default function PongGame3DPage({ navigate }) {
     },
     dimensions: {
       boundaries: new Vector2(20, 30),
-      paddle: new Vector2(1, 5),
+      paddle: new Vector2(5, 1),
       ballRadius: 1,
     },
     positions: {
@@ -301,19 +303,22 @@ export default function PongGame3DPage({ navigate }) {
   plane.position.y = -1.5;
   scene.add(plane);
 
-  /**/
+  /**
+   *
+   **/
   const coliseumGeometry = new RoundedBoxGeometry(
-    params.dimensions.boundaries.x * 2,
-    4,
-    params.dimensions.boundaries.y * 2,
+    params.dimensions.boundaries.x * 2 + 1,
+    3.5,
+    params.dimensions.boundaries.y * 2 + 1,
     8,
     1.5
   );
 
   const coliseumMaterial = new MeshPhysicalMaterial({
-    roughness: 0.25,
+    transparent: true,
+    roughness: 0.15,
     transmission: 1.0,
-    ior: 1.25,
+    ior: 1.15,
     envMapIntensity: 25,
     transparent: true,
     opacity: 1.0,
@@ -321,53 +326,60 @@ export default function PongGame3DPage({ navigate }) {
     thickness: 2.0,
     clearcoat: 0.1,
     clearcoatRoughness: 0,
-    side: FrontSide,
+    // side: BackSide,
   });
 
   const coliseum = new Mesh(coliseumGeometry, coliseumMaterial);
-  scene.add(coliseum);
-  /**/
 
-  /**/
   const platformGeometry = new RoundedBoxGeometry(
     params.dimensions.boundaries.x * 4,
-    3,
+    2,
     params.dimensions.boundaries.y * 4,
     8,
-    0.6
+    1.5
   );
+  platformGeometry.translate(0, -0.5, 0);
 
   const platformMaterial = new MeshStandardMaterial({
-    color: 0x000000,
-    metalness: 1,
-    roughness: 0.1,
+    metalness: 1.5,
+    roughness: 0.25,
+    flatShading: true,
+    side: FrontSide,
   });
 
-  const platform = new Mesh(platformGeometry, platformMaterial);
+  const platformBrush = new Brush(platformGeometry, platformMaterial);
+  const coliseumBrush = new Brush(coliseumGeometry, coliseumMaterial);
 
-  scene.add(platform);
-  //
-
-  const boundGeometry = new RoundedBoxGeometry(
-    1,
-    2,
-    params.dimensions.boundaries.y * 2,
-    5,
-    0.5
+  const finalPlatform = new Evaluator().evaluate(
+    platformBrush,
+    coliseumBrush,
+    SUBTRACTION
   );
-  const boundMaterial = new MeshStandardMaterial({ color: 0xdddddd });
-  const rightBound = new Mesh(boundGeometry, boundMaterial);
-  rightBound.position.x = params.dimensions.boundaries.x + 1;
-  const leftBound = rightBound.clone();
-  leftBound.position.x *= -1;
 
-  leftBound.castShadow = true;
-  // leftBound.receiveShadow = true;
-  rightBound.castShadow = true;
-  rightBound.receiveShadow = true;
+  scene.add(coliseum);
+  scene.add(finalPlatform);
+  /**/
 
-  scene.add(leftBound);
-  scene.add(rightBound);
+  // const boundGeometry = new RoundedBoxGeometry(
+  //   1,
+  //   2,
+  //   params.dimensions.boundaries.y * 2,
+  //   5,
+  //   0.5
+  // );
+  // const boundMaterial = new MeshStandardMaterial({ color: 0xdddddd });
+  // const rightBound = new Mesh(boundGeometry, boundMaterial);
+  // rightBound.position.x = params.dimensions.boundaries.x + 1;
+  // const leftBound = rightBound.clone();
+  // leftBound.position.x *= -1;
+
+  // leftBound.castShadow = true;
+  // // leftBound.receiveShadow = true;
+  // rightBound.castShadow = true;
+  // rightBound.receiveShadow = true;
+
+  // scene.add(leftBound);
+  // scene.add(rightBound);
 
   const player1Paddle = new Paddle(
     scene,
