@@ -21,6 +21,9 @@ class CreateGame(generics.CreateAPIView):
 
         # Check if the game exists in Redis
         if cache.get(cache_key):
+            logger.warning(
+                f"Attempting to create game with ID: {cache_key} impossible, game with same ID already in REDIS."
+            )
             raise serializers.ValidationError(
                 f"Game with ID {game_id} already exists in cache."
             )
