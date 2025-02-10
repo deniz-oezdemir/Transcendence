@@ -9,6 +9,10 @@ function dynamicData(user_data) {
       content: 'Error loading profile data',
     });
   }
+  if (!user_data.friends) {
+    return createComponent('p', { content: 'Loading friends list...' });
+  }
+  
   return createComponent('div', {
     className: styles.profileContainer,
     children: [
@@ -92,34 +96,34 @@ function dynamicData(user_data) {
       // //   ],
       // // }),
 
-      // // Friends List Section
-      // // createComponent('div', {
-      // //   className: styles.friendsBox,
-      // //   children: user_data.friends,
-      // // }),
-      // // createComponent('div', {
-      // //   className: styles.friendsBox,
-      // //   children: user_data.friends.length > 0
-      // //     ? user_data.friends.map((friend) =>
-      // //         createComponent('div', {
-      // //           className: styles.friend,
-      // //           children: [
-      // //             createComponent('img', {
-      // //               className: styles.friendAvatar,
-      // //               attributes: { src: friend.avatar_url, alt: friend.username },
-      // //             }),
-      // //             createComponent('span', {
-      // //               className: styles.friendName,
-      // //               content: friend.username,
-      // //             }),
-      // //             createComponent('span', {
-      // //               className: `${styles.status} ${friend.online ? styles.online : styles.offline}`,
-      // //             }),
-      // //           ],
-      // //         })
-      // //       )
-      // //     : createComponent('p', { content: 'No friends added yet' }),
-      // // }),
+      // Friends List Section
+      createComponent('div', {
+        className: styles.friendsBox,
+        children: user_data.friends,
+      }),
+      createComponent('div', {
+        className: styles.friendsBox,
+        children: user_data.friends.length > 0
+          ? user_data.friends.map((friend) =>
+              createComponent('div', {
+                className: styles.friend,
+                children: [
+                  createComponent('img', {
+                    className: styles.friendAvatar,
+                    attributes: { src: friend.avatar_url, alt: friend.username },
+                  }),
+                  createComponent('span', {
+                    className: styles.friendName,
+                    content: friend.username,
+                  }),
+                  createComponent('span', {
+                    className: `${styles.status} ${friend.online ? styles.online : styles.offline}`,
+                  }),
+                ],
+              })
+            )
+          : [createComponent('p', { content: 'No friends added yet' })],
+      }),
     ],
   });
 }
@@ -145,6 +149,7 @@ export default function ProfilePage({ params, query }) {
       }
       const data = await response.json();
       setContent(dynamicData(data));
+      console.log("Friends List Data:", data.friends);
     } catch (error) {
       console.error(error);
       setError(error.message);
