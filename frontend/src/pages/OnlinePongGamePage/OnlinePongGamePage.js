@@ -11,6 +11,11 @@ const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // 
 const port = 8002;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
+const protocolWR = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
+const portWR = 8001;
+const wsUrl = `${protocolWR}//${hostname}:${portWR}/ws/waiting-room/`;
+const ws = new WebSocket(wsUrl);
+
 export default function OnlinePongGamePage({ navigate }) {
   const cleanup = createCleanupContext();
 
@@ -213,16 +218,19 @@ export default function OnlinePongGamePage({ navigate }) {
    * @returns {Promise<boolean>} Success status of game deletion
    */
   async function endGame(id) {
+    if (id < 0) return false;
     try {
-      const response = await fetch(
-        `${apiUrl}/game/delete_game/${id}/`,
-        {
-          method: 'DELETE',
-        }
-      );
+      console.log('Ending Game:', id);
+      const response = await fetch(`${apiUrl}/game/delete_game/${id}/`, {
+        method: 'DELETE',
+      });
+      console.log('Delete Game Response:', response);
       if (response.ok) {
         console.log('Delete Game: Success:', response);
-      } else {
+        console.log('Is Waiting Room:', isWaitingRoom());
+        if (!isWaitingRoom()) {
+          setWaitingRoom(true);
+        }
         throw new Error(
           `Failure to delete game: ${response.status} ${response.statusText}`
         );

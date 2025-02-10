@@ -16,7 +16,6 @@ export default function WaitingRoom({ onStartGame }) {
 
   createEffect(() => {
     const ws = new WebSocket(wsUrl);
-    //const ws = new WebSocket('ws://matchmaking:8001/ws/waiting-room/');
   
     ws.onopen = () => {
       console.log('Connected to matchmaking service');
