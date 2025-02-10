@@ -15,11 +15,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 8004
+COPY . .
 
-# Create non-root user for security
-RUN adduser --disabled-password --gecos '' appuser
-USER appuser
+EXPOSE 8004
 
 ENTRYPOINT ["/entrypoint.sh"]
 

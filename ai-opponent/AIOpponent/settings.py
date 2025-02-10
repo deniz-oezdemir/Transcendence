@@ -51,7 +51,7 @@ LOGGING = {
             "formatter": "simple",
         },
         "file": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.FileHandler",
             "filename": os.path.join(BASE_DIR, "debug.log"),
             "formatter": "verbose",
@@ -60,12 +60,12 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console", "file"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         },
         "AIOpponent": {
             "handlers": ["console", "file"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         },
     },
@@ -73,6 +73,7 @@ LOGGING = {
 
 INSTALLED_APPS = [
     "daphne",
+    "channels",
     "rest_framework",
     "player",
     "corsheaders",
