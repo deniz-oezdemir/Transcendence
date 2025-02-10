@@ -126,6 +126,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
                 logger.debug(f"Game state: {game_state_data}")
 
+                # TODO: check only send if game is running
                 await self.send(
                     text_data=json.dumps(
                         {"type": "game_state_update", "state": game_state_data}
@@ -163,9 +164,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.game_state = engine.update_game_state()
                 logger.debug("game updated on engine")
 
-                if self.game_state.is_game_ended:
-                    self.save_game_state(self.game_state)
-                    logger.debug("game saved")
+                # TODO: check save only if game ended
+                self.save_game_state(self.game_state)
+                logger.debug("game saved")
 
             except GameState.DoesNotExist:
                 return {"error": "Game not found"}
@@ -200,6 +201,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                         logger.debug(
                             f"Game {self.game_id} result successfully sent to matchmaking. Response: {response_text}"
                         )
+                        try:
+                            self.game_state.delete()
+                            logger.info(
+                                "Game succesfully deleted from REDIS after ended"
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Game could not be deleted after finished: {str(e)}"
+                            )
                     else:
                         logger.error(
                             f"Failed to send game result. Status: {response.status}, Error: {response_text}"

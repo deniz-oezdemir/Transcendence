@@ -41,50 +41,47 @@ class GameState(models.Model):
     objects = GameStateManager()
 
     def save(self, *args, **kwargs):
-        if settings.USE_REDIS:
-            cache_key = f"game_state_{self.id}"
-            game_state_data = {
-                "id": self.id,
-                "max_score": self.max_score,
-                "is_game_running": self.is_game_running,
-                "is_game_ended": self.is_game_ended,
-                "player_1_id": self.player_1_id,
-                "player_2_id": self.player_2_id,
-                "player_1_name": self.player_1_name,
-                "player_2_name": self.player_2_name,
-                "player_1_score": self.player_1_score,
-                "player_2_score": self.player_2_score,
-                "player_1_position": self.player_1_position,
-                "player_2_position": self.player_2_position,
-                "ball_x_position": self.ball_x_position,
-                "ball_y_position": self.ball_y_position,
-                "ball_speed": self.ball_speed,
-                "ball_x_direction": self.ball_x_direction,
-                "ball_y_direction": self.ball_y_direction,
-                "ball_radius": self.ball_radius,
-                "game_height": self.game_height,
-                "game_width": self.game_width,
-                "paddle_height": self.paddle_height,
-                "paddle_width": self.paddle_width,
-                "paddle_offset": self.paddle_offset,
-                "move_step": self.move_step,
-            }
-            cache.set(cache_key, json.dumps(game_state_data), timeout=None)
-            logger.debug(f"Saved game state to cache with key {cache_key}")
-        else:
-            super().save(*args, **kwargs)
-            logger.debug(f"Saved game state to database with id {self.id}")
+        if not self.id:
+            logger.warning("Attempting to save model with no id!")
+        cache_key = f"{self.id}"
+        game_state_data = {
+            "id": self.id,
+            "max_score": self.max_score,
+            "is_game_running": self.is_game_running,
+            "is_game_ended": self.is_game_ended,
+            "player_1_id": self.player_1_id,
+            "player_2_id": self.player_2_id,
+            "player_1_name": self.player_1_name,
+            "player_2_name": self.player_2_name,
+            "player_1_score": self.player_1_score,
+            "player_2_score": self.player_2_score,
+            "player_1_position": self.player_1_position,
+            "player_2_position": self.player_2_position,
+            "ball_x_position": self.ball_x_position,
+            "ball_y_position": self.ball_y_position,
+            "ball_speed": self.ball_speed,
+            "ball_x_direction": self.ball_x_direction,
+            "ball_y_direction": self.ball_y_direction,
+            "ball_radius": self.ball_radius,
+            "game_height": self.game_height,
+            "game_width": self.game_width,
+            "paddle_height": self.paddle_height,
+            "paddle_width": self.paddle_width,
+            "paddle_offset": self.paddle_offset,
+            "move_step": self.move_step,
+        }
+        cache.set(cache_key, json.dumps(game_state_data), timeout=None)
+        logger.info(f"Saved game state to cache with key {cache_key}")
 
     def delete(self, *args, **kwargs):
         if settings.USE_REDIS:
-            cache_key = f"game_state_{self.id}"
+            cache_key = f"{self.id}"
             cache.delete(cache_key)
-            logger.debug(f"Deleted game state from cache with key {cache_key}")
-        super().delete(*args, **kwargs)
+            logger.info(f"Deleted game state from cache with key {cache_key}")
 
     @classmethod
     def from_cache(cls, game_id):
-        cache_key = f"game_state_{game_id}"
+        cache_key = f"{game_id}"
         game_state_data = cache.get(cache_key)
         if game_state_data:
             if isinstance(game_state_data, str):

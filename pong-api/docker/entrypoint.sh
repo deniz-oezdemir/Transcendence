@@ -4,6 +4,9 @@ set -e
 # Start Redis server in background
 redis-server --daemonize yes
 
+# Flush all Redis data
+redis-cli FLUSHALL
+
 # Wait for Redis to be ready
 while ! redis-cli ping; do
   sleep 1
