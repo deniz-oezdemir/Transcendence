@@ -73,7 +73,25 @@ class ProfileView(APIView):
         pass
 
     def delete(self, request):
-        pass
+        user = request.user
+        user.delete()
+        return Response({"message": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        # try:
+        #     # Remove user from all friends' lists before deleting
+        #     user.friends.clear()
+
+        #     # Delete the user's avatar file if it's not the default one
+        #     if user.avatar_url and user.avatar_url.name != 'avatars/default.png':
+        #         if default_storage.exists(user.avatar_url.name):  # Check if file exists
+        #             default_storage.delete(user.avatar_url.name)  # Delete file
+
+        #     # Delete the user account
+        #     user.delete()
+
+        #     return Response({"message": "Account deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+        # except Exception as e:
+        #     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class FriendRequestView(APIView):
     #make sure the token received is valid else returns 401

@@ -2,6 +2,33 @@ import { createComponent, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './ProfilePage.module.css';
 
+async function handleDeleteAccount() {
+  if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:8006/profile/", {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Token ${localStorage.getItem("authToken")}`,
+      },
+    });
+
+    if (response.ok) {
+      alert("Your account has been deleted.");
+      localStorage.removeItem("authToken");
+      window.location.href = "/";
+    } else {
+      const data = await response.json();
+      alert("Error: " + (data.error || "Failed to delete account."));
+    }
+  } catch (error) {
+    console.error("Delete account error:", error);
+    alert("Something went wrong.");
+  }
+}
+
 function FriendRequestForm() {
   const [username, setUsername] = createSignal("");
 
