@@ -2,7 +2,7 @@ import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
 import styles from './WaitingRoom.module.css';
 
-export default function WaitingRoom({ onStartGame }) {
+export default function WaitingRoom({ onStartGame}) {
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
   const [hasGames, setHasGames] = createSignal(false);
@@ -49,7 +49,7 @@ export default function WaitingRoom({ onStartGame }) {
                   switch (data.available_games.matches[0].status) {
                     case 'active':
                       console.log('Match Started');
-                      onStartGame(data.game);
+                      onStartGame(data.game, data.available_games.matches[0].match_id);
                       break;
                     case 'pending':
                       console.log('Match Pending');
@@ -65,7 +65,7 @@ export default function WaitingRoom({ onStartGame }) {
                   switch (data.available_games.tournaments[0].status) {
                     case 'active':
                       console.log('Tournament Started');
-                      onStartGame(data.game);
+                      onStartGame(data.game, data.available_games.tournaments[0].tournament_id);
                       break;
                     case 'pending':
                       console.log('Tournament Pending');

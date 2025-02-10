@@ -46,6 +46,7 @@ export default function OnlinePongGamePage({ navigate }) {
     },
   });
   const [websocket, setWebsocket] = createSignal(null);
+  const [wrsocket, setwrSocket] = createSignal(null);
   const [pageContent, setPageContent] = createSignal(null);
 
   /**
@@ -92,6 +93,7 @@ export default function OnlinePongGamePage({ navigate }) {
    * Sets up initial game state and dimensions
    */
   async function initializeGame() {
+    console.log('Initializing Game...');
     try {
       const response = await fetch(`${apiUrl}/game/create_game/`, {
         method: 'POST',
@@ -201,11 +203,13 @@ export default function OnlinePongGamePage({ navigate }) {
       }
 
       const updatedGameState = await response.json();
+      console.log('Updated Game State:', updatedGameState);
       setIsGameRunning(updatedGameState.is_game_running);
       console.log('Toggle Game: Success:', updatedGameState);
 
       if (updatedGameState.is_game_running) {
         if (websocket() === null) connectWebSocket();
+        if (wrsocket() === null) connectwrSocket();
       }
     } catch (error) {
       console.error('Toggle game failed:', error);
@@ -304,11 +308,43 @@ export default function OnlinePongGamePage({ navigate }) {
     });
   }
 
+  //connect to waiting room websocket
+  function connectwrSocket() {
+    const ws = new WebSocket(wsUrl);
+    ws.onopen = () => {
+      console.log('Waiting Room WebSocket connected.');
+      setwrSocket(ws);
+    };
+
+    ws.onmessage = function (event) {
+      const data = JSON.parse(event.data);
+      console.log('Data from Wating Room:', data);
+      /*if (data.type === 'game_s') {
+      }*/
+    };
+        
+
+    ws.onclose = async () => {
+      console.log('WebSocket Disconnected.');
+      setwrSocket(null);
+      await endGame(gameId());
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setwrSocket(null);
+    };
+
+    onCleanup(() => {
+      ws.close();
+    });
+  }
+
   // Game Initialization Effect
   createEffect(() => {
     if (gameId() >= 0) return;
     setIsLoading(true);
-    initializeGame();
+    //initializeGame();
     setIsLoading(false);
   });
 
@@ -406,8 +442,9 @@ export default function OnlinePongGamePage({ navigate }) {
       const waitingroom = WaitingRoom({
         onStartGame: () => {
           setWaitingRoom(false);
+          // initializeGame();
           toogleGame();
-        },
+        }, setGameId
       });
       content.element.appendChild(waitingroom.element);
     } else {
