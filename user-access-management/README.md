@@ -117,9 +117,11 @@ Endpoint: POST /logout/
 
 #### **See Profile**
 Endpoint: GET /profile/
-or using query params to get specific fields: GET /profile/?fields=username,avatar_url,status
+or using query params to get specific fields: GET /profile/
 - Headers:
   - Authorization: Token USER_TOKEN_HERE
+  
+--> Returns JSON Response containing: 'id', 'username', 'avatar_url', 'status', 'friends'
 
 #### **Update Profile**
 Endpoint: PUT /profile/update/
@@ -145,9 +147,9 @@ Endpoint: DELETE /profile/delete/
   - Authorization: Token USER_TOKEN_HERE
 
 ## TO DO:
-- Implement remaining endpoints (login, logout etc with Authorization token)
+- Integrate remaining endpoints (change avatar, username & password)
 - Switch to PostgeSQL
 - For deployment:
     - Use a production server like Gunicorn or uWSGI.
-    - Use nginx for reverse proxying.
+    - Use nginx for reverse proxying and save avatars
     - Set DEBUG = False in settings.py and configure ALLOWED_HOSTS.
