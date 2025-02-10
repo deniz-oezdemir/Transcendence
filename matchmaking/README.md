@@ -193,9 +193,16 @@ Second version: support also tournmanets - work in progress
 - connect to frontend and game engine - done
 
 8. Integrate with game history
-- copy all data over to game history after a match or a tournament is finished
-- maybe delete data from matchmaking - although duplicate data is good for security?
+- copy all data over to game history after a match or a tournament is finished - done
+- maybe delete data from matchmaking - although duplicate data is good for security - do not delete
 
+9. Integrate with AI opponent (only for matches not tournaments)
+- integrate AI player initialization -> see gameengine readme -> done
+- delays in communication with other services necessary: - done, but needs testing
+	1. matchmaking first create game in gameengine
+	2. then wait for success response from gameengine
+	3. send created game to frontend via websocket and initiate ai player
+- if waiting too complicated tell gameengine to just retry a second after instead of error in gameengine
 
 ## Is Redis not sufficient as a database? Why also use PostgreSQL?
 

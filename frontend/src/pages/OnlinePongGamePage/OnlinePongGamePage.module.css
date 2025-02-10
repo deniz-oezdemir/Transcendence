@@ -3,6 +3,7 @@
   width: 600px;
   height: 400px;
   margin: 0 auto;
+  align-items: center;
   background-color: #000;
   overflow: hidden;
   border: 2px solid #fff;
