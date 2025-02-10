@@ -2,6 +2,60 @@ import { createComponent, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './ProfilePage.module.css';
 
+function FriendRequestForm() {
+  const [username, setUsername] = createSignal("");
+
+  async function sendFriendRequest() {
+    if (!username()) return alert("Please enter a username!");
+
+    try {
+      console.log("Sending friend request to", username());
+      const response = await fetch("http://localhost:8006/friend-request/", {
+        method: "POST",
+        headers: {
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friend_username: username() }),
+      });
+
+      const data = await response.json();
+      alert(data.message); // Show success or error message
+      if (response.ok) setUsername(""); // Reset input on success
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      alert("Failed to send request.");
+    }
+  }
+
+  return createComponent("div", {
+    className: styles.friendRequestBox,
+    children: [
+      createComponent("input", {
+        className: styles.friendInput,
+        attributes: {
+          type: "text",
+          placeholder: "Enter username...",
+          value: username(),
+        },
+        events: {
+          input: (event) => setUsername(event.target.value),
+        },
+      }),
+      createComponent("button", {
+        className: styles.friendButton,
+        content: "Add Friend",
+        events: {
+          click : (event) => {
+            console.log('Sending friend request...');
+            sendFriendRequest(event);
+          }
+        }
+      }),
+    ],
+  });
+}
+
 function dynamicData(user_data) {
   if (!user_data) {
     return createComponent('div', {
@@ -124,6 +178,7 @@ function dynamicData(user_data) {
             )
           : [createComponent('p', { content: 'No friends added yet' })],
       }),
+      FriendRequestForm(),
     ],
   });
 }
