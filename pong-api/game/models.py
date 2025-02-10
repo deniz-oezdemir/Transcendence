@@ -43,7 +43,7 @@ class GameState(models.Model):
     def save(self, *args, **kwargs):
         if not self.id:
             logger.warning("Attempting to save model with no id!")
-        cache_key = f"game_state_{self.id}"
+        cache_key = f"{self.id}"
         game_state_data = {
             "id": self.id,
             "max_score": self.max_score,
@@ -75,13 +75,13 @@ class GameState(models.Model):
 
     def delete(self, *args, **kwargs):
         if settings.USE_REDIS:
-            cache_key = f"game_state_{self.id}"
+            cache_key = f"{self.id}"
             cache.delete(cache_key)
             logger.info(f"Deleted game state from cache with key {cache_key}")
 
     @classmethod
     def from_cache(cls, game_id):
-        cache_key = f"game_state_{game_id}"
+        cache_key = f"{game_id}"
         game_state_data = cache.get(cache_key)
         if game_state_data:
             if isinstance(game_state_data, str):
