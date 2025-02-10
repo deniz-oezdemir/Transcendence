@@ -197,7 +197,7 @@ Second version: support also tournmanets - work in progress
 - maybe delete data from matchmaking - although duplicate data is good for security - do not delete
 
 9. Integrate with AI opponent (only for matches not tournaments)
-- integrate AI player initialization -> see gameengine readme -> done but needs testing
+- integrate AI player initialization -> see gameengine readme -> done but needs testing (working only on personal machine as ai opponent has permission error on school machine - maybe fixed -> PULL MAIN INTO MY BRANCH, also to update main docker-compose)
 - delays in communication with other services necessary:
 	1. matchmaking first create game in gameengine
 	2. then wait for success response from gameengine
