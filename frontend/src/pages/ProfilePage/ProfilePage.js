@@ -56,15 +56,119 @@ function FriendRequestForm() {
   });
 }
 
+async function unfollowFriend(friend_username) {
+  try {
+    console.log("Sending unfollow request to", friend_username);
+
+    // Send DELETE request to the backend
+    const response = await fetch("http://localhost:8006/friend-request/", {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Token ${localStorage.getItem("authToken")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ friend_username }), // Sending the friend's username to be removed
+    });
+
+    const data = await response.json();
+    alert(data.message); // Show success or error message
+
+    // if (response.ok) {
+    //   // After successful removal, fetch user data again to refresh the friend list
+    //   await fetchUserData();
+    // }
+  } catch (error) {
+    console.error("Error unfollowing friend:", error);
+    alert("Failed to unfollow friend.");
+  }
+}
+
+// function createFriendsComponent(user_data) {
+
+//   let friendsComponents = [];
+//   if (user_data.friends && user_data.friends.length > 0) {
+//     friendsComponents = user_data.friends.map((friend, index) => {
+//       if (friend.avatar_url && friend.username) {
+//         return createComponent('div', {
+//           key: `friend-${index}`,
+//           className: styles.friend,
+//           children: [
+//             createComponent('img', {
+//               className: styles.friendAvatar,
+//               attributes: { src: friend.avatar_url, alt: friend.username },
+//             }),
+//             createComponent('span', {
+//               className: styles.friendName,
+//               content: friend.username,
+//             }),
+//             createComponent('span', {
+//               className: `${styles.status} ${friend.online ? styles.online : styles.offline}`,
+//             }),
+//           ],
+//         });
+//       }
+//       return createComponent('p', { content: 'Invalid friend data' });
+//     });
+//   } else {
+//     friendsComponents = [createComponent('p', { content: 'No friends added yet' })];
+//   }
+
+//   return createComponent('div', {
+//     className: styles.friendsBox,
+//     children: friendsComponents,
+//   });
+// }
+function createFriendsComponent(user_data, fetchUserData) {
+  let friendsComponents = [];
+  if (user_data.friends && user_data.friends.length > 0) {
+    friendsComponents = user_data.friends.map((friend, index) => {
+      if (friend.avatar_url && friend.username) {
+        return createComponent('div', {
+          key: `friend-${index}`,
+          className: styles.friend,
+          children: [
+            createComponent('img', {
+              className: styles.friendAvatar,
+              attributes: { src: friend.avatar_url, alt: friend.username },
+            }),
+            createComponent('span', {
+              className: styles.friendName,
+              content: friend.username,
+            }),
+            createComponent('span', {
+              className: `${styles.status} ${friend.online ? styles.online : styles.offline}`,
+            }),
+            createComponent('button', {
+              className: styles.unfollowButton,
+              content: 'Unfollow',
+              events: {
+                click: (event) => {
+                  console.log("Unfollow button clicked for:", friend.username);
+                  unfollowFriend(friend.username);
+                }
+              },
+            }),
+          ],
+        });
+      }
+      return createComponent('p', { content: 'Invalid friend data' });
+    });
+  } else {
+    friendsComponents = [createComponent('p', { content: 'No friends added yet' })];
+  }
+
+  return createComponent('div', {
+    className: styles.friendsBox,
+    children: friendsComponents,
+  });
+}
+
 function dynamicData(user_data) {
   if (!user_data) {
     return createComponent('div', {
       className: styles.profileContainer,
       content: 'Error loading profile data',
     });
-  }
-  if (!user_data.friends) {
-    return createComponent('p', { content: 'Loading friends list...' });
   }
   
   return createComponent('div', {
@@ -136,48 +240,22 @@ function dynamicData(user_data) {
       }),
 
       // // Stats Section
-      // // createComponent('div', {
-      // //   className: styles.statsBox,
-      // //   children: [
-      // //     createComponent('h2', { content: 'Game Stats' }),
-      // //     createComponent('ul', {
-      // //       children: user_data.stats.length > 0
-      // //         ? user_data.stats.map((stat) =>
-      // //             createComponent('li', { content: `${stat.name}: ${stat.value}` })
-      // //           )
-      // //         : createComponent('p', { content: 'No games played yet' }),
-      // //     }),
-      // //   ],
-      // // }),
+      // createComponent('div', {
+      //   className: styles.statsBox,
+      //   children: [
+      //     createComponent('h2', { content: 'Game Stats' }),
+      //     createComponent('ul', {
+      //       children: user_data.stats.length > 0
+      //         ? user_data.stats.map((stat) =>
+      //             createComponent('li', { content: `${stat.name}: ${stat.value}` })
+      //           )
+      //         : createComponent('p', { content: 'No games played yet' }),
+      //     }),
+      //   ],
+      // }),
 
       // Friends List Section
-      createComponent('div', {
-        className: styles.friendsBox,
-        children: user_data.friends,
-      }),
-      createComponent('div', {
-        className: styles.friendsBox,
-        children: user_data.friends.length > 0
-          ? user_data.friends.map((friend) =>
-              createComponent('div', {
-                className: styles.friend,
-                children: [
-                  createComponent('img', {
-                    className: styles.friendAvatar,
-                    attributes: { src: friend.avatar_url, alt: friend.username },
-                  }),
-                  createComponent('span', {
-                    className: styles.friendName,
-                    content: friend.username,
-                  }),
-                  createComponent('span', {
-                    className: `${styles.status} ${friend.online ? styles.online : styles.offline}`,
-                  }),
-                ],
-              })
-            )
-          : [createComponent('p', { content: 'No friends added yet' })],
-      }),
+      createFriendsComponent(user_data),
       FriendRequestForm(),
     ],
   });
@@ -242,7 +320,6 @@ export default function ProfilePage({ params, query }) {
   const wrapper = createComponent('div', {
     className: styles.container,
     content: () => content() || 'Loading...',
-    // content: content,
     cleanup,
   });
 
