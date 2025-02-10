@@ -236,7 +236,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     def save_game_state(self, game_state):
         if settings.USE_REDIS:
-            cache_key = f"game_state_{self.game_id}"
+            cache_key = f"{self.game_id}"
             game_state_data = {
                 "id": game_state.id,
                 "max_score": game_state.max_score,

@@ -17,7 +17,7 @@ class CreateGame(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         game_id = serializer.validated_data.get("id")
-        cache_key = f"game_state_{game_id}"
+        cache_key = f"{game_id}"
 
         # Check if the game exists in Redis
         if cache.get(cache_key):
@@ -92,7 +92,7 @@ class GetGameState(generics.RetrieveAPIView):
 
     def get_object(self):
         if settings.USE_REDIS:
-            cache_key = f"game_state_{self.kwargs[self.lookup_field]}"
+            cache_key = f"{self.kwargs[self.lookup_field]}"
             game_state = cache.get(cache_key)
             if game_state is None:
                 raise serializers.ValidationError("Game state not found in Redis.")
