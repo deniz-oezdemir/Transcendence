@@ -4,7 +4,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     ports:
-      - "8006:8000"
+      - "8007:8000"
     volumes:
       - ..:/app
     # environment:
@@ -13,7 +13,7 @@ services:
     networks:
       - transcendence
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8006/health/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8007/health/"]
       interval: 10s
       timeout: 5s
       retries: 3

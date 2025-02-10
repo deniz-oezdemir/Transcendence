@@ -8,7 +8,7 @@ async function handleDeleteAccount() {
   }
 
   try {
-    const response = await fetch("http://localhost:8006/profile/", {
+    const response = await fetch("http://localhost:8007/profile/", {
       method: "DELETE",
       headers: {
         "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -29,7 +29,7 @@ async function handleDeleteAccount() {
   }
 }
 
-function FriendRequestForm() {
+function FriendRequestForm({setReload}) {
   const [username, setUsername] = createSignal("");
 
   async function sendFriendRequest() {
@@ -37,7 +37,7 @@ function FriendRequestForm() {
 
     try {
       console.log("Sending friend request to", username());
-      const response = await fetch("http://localhost:8006/friend-request/", {
+      const response = await fetch("http://localhost:8007/friend-request/", {
         method: "POST",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -48,7 +48,10 @@ function FriendRequestForm() {
 
       const data = await response.json();
       alert(data.message); // Show success or error message
-      if (response.ok) setUsername(""); // Reset input on success
+      if (response.ok) {
+        setUsername(""); // Reset input on success
+        setReload(true);
+      }
     } catch (error) {
       console.error("Error sending friend request:", error);
       alert("Failed to send request.");
@@ -88,7 +91,7 @@ async function unfollowFriend(friend_username) {
     console.log("Sending unfollow request to", friend_username);
 
     // Send DELETE request to the backend
-    const response = await fetch("http://localhost:8006/friend-request/", {
+    const response = await fetch("http://localhost:8007/friend-request/", {
       method: "DELETE",
       headers: {
         "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -190,7 +193,7 @@ function createFriendsComponent(user_data, fetchUserData) {
   });
 }
 
-function dynamicData(user_data) {
+function dynamicData(user_data, setReload) {
   if (!user_data) {
     return createComponent('div', {
       className: styles.profileContainer,
@@ -283,7 +286,7 @@ function dynamicData(user_data) {
 
       // Friends List Section
       createFriendsComponent(user_data),
-      FriendRequestForm(),
+      FriendRequestForm({setReload}),
     ],
   });
 }
@@ -293,11 +296,12 @@ export default function ProfilePage({ params, query }) {
 
   const[content, setContent] = createSignal(null);
   const[error, setError] = createSignal(null);
+  const[reload, setReload] = createSignal(true);
 
   async function fetchUserData() {
     try {
       console.log('Fetching user data...');
-      const response = await fetch(`http://localhost:8006/profile/`, {
+      const response = await fetch(`http://localhost:8007/profile/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${localStorage.getItem('authToken')}`,
@@ -308,7 +312,7 @@ export default function ProfilePage({ params, query }) {
         throw new Error('Failed to fetch user data');
       }
       const data = await response.json();
-      setContent(dynamicData(data));
+      setContent(dynamicData(data, setReload));
       console.log("Friends List Data:", data.friends);
     } catch (error) {
       console.error(error);
@@ -318,7 +322,10 @@ export default function ProfilePage({ params, query }) {
   }
   
   createEffect(() => {
+    if (reload()) {
     fetchUserData().catch(err => console.error('Failed to load profile:', err));
+    setReload(false);
+    }
   });
 
   // //example code for fetching stats and achievements

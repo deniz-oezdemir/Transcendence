@@ -11,7 +11,7 @@ function checkAuth() {
 }
 
 async function login(username, password) {
-  const response = await fetch(`http://localhost:8006/login/`, {
+  const response = await fetch(`http://localhost:8007/login/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ async function login(username, password) {
 }
 
 async function logout() {
-  const response = await fetch(`http://localhost:8006/logout/`, {
+  const response = await fetch(`http://localhost:8007/logout/`, {
     method: 'POST',
     headers: {
       'Authorization': `Token ${localStorage.getItem('authToken')}`,

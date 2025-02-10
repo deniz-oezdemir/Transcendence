@@ -88,7 +88,7 @@ export default function SignupPage() {
     // }
 
     try {
-      const response = await fetch(`http://localhost:8006/register/`, {
+      const response = await fetch(`http://localhost:8007/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
