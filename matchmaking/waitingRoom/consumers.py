@@ -23,27 +23,29 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard("waiting_room", self.channel_name)
 
     async def create_game_in_pong_api(self, match):
-        """Creates a game in the pong-api service"""
+        """Creates a game in the pong-api service and returns success status and game data"""
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
                     'http://pong-api:8000/game/create_game/',
                     json={
                         "id": match.match_id,
-                        "max_score": 1,  # Configure as needed
+                        "max_score": 1,
                         "player_1_id": match.player_1_id,
                         "player_1_name": f"Player {match.player_1_id}",
                         "player_2_id": match.player_2_id,
                         "player_2_name": f"Player {match.player_2_id}"
                     }
                 ) as response:
+                    response_data = await response.json()
                     if response.status != 201:
-                        print(f"Failed to create game in pong-api: {await response.text()}")
-                        return False
-                    return True
+                        logger.error(f"Failed to create game in pong-api: {response_data}")
+                        return False, None
+                    logger.debug(f"Successfully created game {match.match_id} in pong-api")
+                    return True, response_data
             except Exception as e:
-                print(f"Error creating game in pong-api: {e}")
-                return False
+                logger.error(f"Error creating game in pong-api: {e}")
+                return False, None
 
     async def create_ai_player(self, match):
         """Creates an AI player in the ai-opponent service"""
@@ -120,12 +122,16 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 await self.send_error("Match not found or already full")
                 return
 
-            # Create game in pong-api after match is joined
-            success = await self.create_game_in_pong_api(match)
+            # First create game in pong-api and wait for response
+            logger.info(f"Creating game in pong-api for match {match.match_id}")
+            success, game_data = await self.create_game_in_pong_api(match)
             if not success:
+                logger.error(f"Failed to create game in pong-api for match {match.match_id}")
                 await self.send_error("Failed to create game in pong-api")
                 return
 
+            # Only send available games if game is confirmed created
+            logger.info(f"Sending available games")
             available_games = await self.get_available_games()
             await self.channel_layer.group_send(
                 "waiting_room",
@@ -176,15 +182,22 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             if len(tournament.players) == tournament.max_players:
                 matches, created_matches = await self.create_tournament_matches(tournament)
                 logger.debug(f"Tournament {tournament.tournament_id} is full. Matches created: {matches}")
-                # Create games in pong-api
-                await self.create_tournament_matches_in_pong_api(created_matches)
+
+                # Create games in pong-api and wait for response
+                success, match_data = await self.create_tournament_matches_in_pong_api(created_matches)
+                if not success:
+                    logger.error(f"Failed to create all tournament matches in pong-api for tournament {tournament.tournament_id}")
+                    await self.send_error("Failed to create tournament matches")
+                    return
+
+                logger.info(f"Successfully created all matches for tournament {tournament.tournament_id}")
                 await self.channel_layer.group_send(
                     "waiting_room",
                     {
-                    "type": "tournament_started",
-                    "tournament_id": tournament.tournament_id,
-                    "matches": matches,
-                    "available_games": available_games,
+                        "type": "tournament_started",
+                        "tournament_id": tournament.tournament_id,
+                        "matches": matches,
+                        "available_games": available_games,
                     },
                 )
             else:
@@ -200,45 +213,46 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     },
                 )
 
-        elif data["type"] == "create_AI_match":
+        if data["type"] == "create_AI_match":
+            logger.info(f"Received create_AI_match request from player {data['player_id']}")
             if await self.is_player_in_game(data["player_id"]):
-                logger.debug(f"Player {data['player_id']} already in a game")
+                logger.warning(f"Player {data['player_id']} already in a game - rejecting AI match creation")
                 await self.send_error("Player already in a game")
                 return
 
+            logger.info(f"Creating AI match for player {data['player_id']}")
             match = await self.create_match(data["player_id"], is_ai_opponent=True)
             logger.debug(f"Created AI match {match.match_id} for player {data['player_id']}")
 
-            # Create AI player in ai-opponent service
-            logger.debug(f"Creating AI player for match {match.match_id}")
+            # First create game in pong-api and wait for response
+            logger.info(f"Creating game in pong-api for match {match.match_id}")
+            success, game_data = await self.create_game_in_pong_api(match)
+            if not success:
+                logger.error(f"Failed to create game in pong-api for match {match.match_id}")
+                await self.send_error("Failed to create game in pong-api")
+                return
+
+            # Only create AI player after game is confirmed created
+            logger.info(f"Creating AI player for match {match.match_id}")
             ai_success = await self.create_ai_player(match)
-            logger.debug(f"AI player creation {'succeeded' if ai_success else 'failed'} for match {match.match_id}")
             if not ai_success:
                 logger.error(f"Failed to create AI player for match {match.match_id}")
                 await self.send_error("Failed to create AI player")
                 return
 
-            # Create game in pong-api after AI player is created
-            logger.debug(f"Creating game in pong-api for AI match {match.match_id}")
-            success = await self.create_game_in_pong_api(match)
-            logger.debug(f"Game creation in pong-api {'succeeded' if success else 'failed'} for AI match {match.match_id}")
-            if not success:
-                logger.error(f"Failed to create AI game in pong-api for match {match.match_id}")
-                await self.send_error("Failed to create AI game in pong-api")
-                return
-
-            logger.debug(f"Broadcasting AI match creation: match_id={match.match_id}, player={match.player_1_id}, ai={match.player_2_id}")
+            # Broadcast success only after both operations complete
+            logger.info(f"Successfully created AI match {match.match_id} - broadcasting to waiting room")
             available_games = await self.get_available_games()
             await self.channel_layer.group_send(
-                "waiting_room",
-                {
-                    "type": "match_created",
-                    "id": match.match_id,
-                    "creator_id": match.player_1_id,
-                    "is_ai_match": True,
-                    "ai_id": match.player_2_id,
-                    "available_games": available_games,
-                },
+            "waiting_room",
+            {
+                "type": "match_created",
+                "id": match.match_id,
+                "creator_id": match.player_1_id,
+                "is_ai_match": True,
+                "ai_id": match.player_2_id,
+                "available_games": available_games,
+            }
             )
 
     async def games_deleted(self, event):
@@ -433,15 +447,32 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         }
 
     async def create_tournament_matches_in_pong_api(self, created_matches):
-        """Creates all tournament matches in pong-api"""
+        """Creates all tournament matches in pong-api and returns success status"""
+        all_matches_created = True
+        created_match_data = []
+
         for match in created_matches:
             try:
                 # Ensure we have a Match object, not just an ID
                 if isinstance(match, str):
                     match = await database_sync_to_async(Match.objects.get)(match_id=match)
 
-                success = await self.create_game_in_pong_api(match)
+                logger.info(f"Creating game in pong-api for tournament match {match.match_id}")
+                success, game_data = await self.create_game_in_pong_api(match)
+
                 if not success:
                     logger.error(f"Failed to create game in pong-api for match {match.match_id}")
+                    all_matches_created = False
+                    continue
+
+                created_match_data.append({
+                    'match_id': match.match_id,
+                    'game_data': game_data
+                })
+                logger.info(f"Successfully created game for match {match.match_id}")
+
             except Exception as e:
-                logger.error(f"Error creating game in pong-api: {str(e)}")
+                logger.error(f"Error creating game in pong-api for match {match.match_id}: {str(e)}")
+                all_matches_created = False
+
+        return all_matches_created, created_match_data
