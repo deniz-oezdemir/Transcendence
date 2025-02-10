@@ -17,9 +17,10 @@ import {
   div,
   smoothstep,
   max,
+  texture,
 } from 'three/tsl';
 import { AdditiveBlending, FrontSide } from 'three';
-import { Clock, Color, MeshBasicNodeMaterial } from 'three';
+import { Clock, Color, MeshBasicNodeMaterial, Texture } from 'three';
 
 /**
  * HolographicMaterial base in TSL for WebGPU.
@@ -87,10 +88,18 @@ class HolographicMaterial extends MeshBasicNodeMaterial {
         ? parameters.hologramColor
         : new Color('#00d5ff')
     );
+    this.useMapNode = uniform(parameters.useMap ? 1.0 : 0.0);
+    this.mapValue = parameters.map instanceof Texture ? parameters.map : null;
 
     /**/
     // Coordinates for the fragment shader
     const uvNode = uv(); // vec2
+
+    let texColor = vec4(float(1.0));
+    if (this.mapValue) {
+      texColor = texture(this.mapValue, uvNode);
+    }
+
     // Base color for the hologram
     // We mix the hologram color with the brightness based on the UV Y coordinate
     const baseAlpha = mix(this.hologramBrightnessNode, uvNode.y, float(0.5));
@@ -149,11 +158,10 @@ class HolographicMaterial extends MeshBasicNodeMaterial {
     // TSL doesn't offer a transformed viewDirection or normal node,
     // so we simulate the fresnel with a constant value based on fresnelAmount.
     const fresnelEffect = clamp(
-      sub(this.fresnelAmountNode, float(0.2)),
+      sub(this.fresnelAmountNode, float(0.3)),
       float(0.0),
       this.fresnelOpacityNode
     );
-
     // Flicker effect
     // blinkValue = enableBlinking ? (0.6 - signalSpeed) : 1.0
     const blinkValue = mix(
@@ -181,8 +189,12 @@ class HolographicMaterial extends MeshBasicNodeMaterial {
       add(mul(scanlineMix.rgb, flickerValue), fresnelEffect),
       this.blinkFresnelOnlyNode
     );
-    // We set the final color with the hologram opacity
-    this.colorNode = vec4(finalRGB, this.hologramOpacityNode);
+    let finalColor = vec4(finalRGB, this.hologramOpacityNode);
+
+    // If we have a texture, we mix the final color with the texture color
+    // If not, we just use the final color
+    finalColor = mix(finalColor, mul(finalColor, texColor), this.useMapNode);
+    this.colorNode = finalColor;
 
     // Material configuration
     this.blending =
@@ -197,7 +209,7 @@ class HolographicMaterial extends MeshBasicNodeMaterial {
   }
 
   update() {
-    // Actualizamos el nodo de tiempo con el tiempo transcurrido
+    // Update the time node with the elapsed time
     this.timeNode.value = this._clock.getElapsedTime();
   }
 }

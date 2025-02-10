@@ -166,10 +166,15 @@ export default function PongGame3DPage({ navigate }) {
     color: params.colors.scoreP2,
   });
 
+  let scoreP1MessageMaterial;
+  let scoreP2MessageMaterial;
+
+  const scoreMessageGeometry = new PlaneGeometry(1, 1);
+
   const holographicMaterial = new HolographicMaterial({
     hologramColor: new Color('#00d5ff'),
     fresnelAmount: 0.7,
-    blendMode: NormalBlending,
+    blendMode: AdditiveBlending,
     scanlineSize: 30,
     signalSpeed: 1.0,
     hologramOpacity: 0.5,
@@ -480,24 +485,6 @@ export default function PongGame3DPage({ navigate }) {
   // scene.add(leftBound);
   // scene.add(rightBound);
 
-  const map = new TextureLoader().load('assets/images/test.webp');
-  const material = new MeshBasicMaterial({
-    map: map,
-    color: 0xffffff,
-    transparent: true,
-    // side: DoubleSide,
-    depthWrite: false,
-    depthTest: false,
-    blending: AdditiveBlending,
-  });
-
-  const sprite = new Mesh(new PlaneGeometry(1, 1), material);
-  sprite.scale.set(60, 40, 1);
-  sprite.rotateX(-Math.PI * 0.5);
-  sprite.rotateZ(Math.PI * 0.5);
-  sprite.position.set(0, -1, 0);
-  scene.add(sprite);
-
   const player1Paddle = new Paddle(
     scene,
     params.dimensions,
@@ -700,12 +687,96 @@ export default function PongGame3DPage({ navigate }) {
       camera.position.set(0, 25, 50);
       camera.lookAt(new Vector3(0, 5, 0));
 
+      /**
+       **/
+      const pingTexture = await new TextureLoader().loadAsync(
+        'assets/images/ping.webp'
+      );
+      const pongTexture = await new TextureLoader().loadAsync(
+        'assets/images/pong.webp'
+      );
+
+      scoreP1MessageMaterial = new HolographicMaterial({
+        useMap: true,
+        map: pongTexture,
+        hologramColor: new Color(params.colors.paddleP1),
+        fresnelAmount: 0.7,
+        blendMode: AdditiveBlending,
+        scanlineSize: 3.7,
+        signalSpeed: 4.0,
+        hologramOpacity: 0.0,
+        hologramBrightness: 2.0,
+        blinkFresnelOnly: false,
+        enableBlinking: true,
+      });
+      scoreP2MessageMaterial = new HolographicMaterial({
+        useMap: true,
+        map: pingTexture,
+        hologramColor: new Color(params.colors.paddleP2),
+        fresnelAmount: 0.7,
+        blendMode: AdditiveBlending,
+        scanlineSize: 3.7,
+        signalSpeed: 4.0,
+        hologramOpacity: 0.0,
+        hologramBrightness: 2.0,
+        blinkFresnelOnly: false,
+        enableBlinking: true,
+      });
+
+      const scoreMessageP1 = new Mesh(
+        scoreMessageGeometry,
+        scoreP1MessageMaterial
+      );
+      scoreMessageP1.scale.set(
+        params.dimensions.boundaries.y * 2,
+        params.dimensions.boundaries.x * 2,
+        1
+      );
+      scoreMessageP1.rotateX(-Math.PI * 0.5);
+      scoreMessageP1.rotateZ(Math.PI * 0.5);
+      scoreMessageP1.position.set(0, -1, 0);
+
+      const scoreMessageP2 = new Mesh(
+        scoreMessageGeometry,
+        scoreP2MessageMaterial
+      );
+      scoreMessageP2.scale.set(
+        params.dimensions.boundaries.y * 2,
+        params.dimensions.boundaries.x * 2,
+        1
+      );
+      scoreMessageP2.rotateX(-Math.PI * 0.5);
+      scoreMessageP2.rotateZ(Math.PI * 0.5);
+      scoreMessageP2.position.set(0, -1, 0);
+      scene.add(scoreMessageP1);
+      scene.add(scoreMessageP2);
+      /**
+       **/
+      function triggerScoreEffect(player) {
+        let mesh;
+        if (player === 'p1') {
+          mesh = scoreMessageP1;
+        } else {
+          mesh = scoreMessageP2;
+        }
+        mesh.visible = true;
+        mesh.material.hologramOpacityNode.value = 1.0;
+        mesh.material.hologramBrightnessNode.value = 3.0;
+
+        setTimeout(() => {
+          mesh.visible = false;
+          mesh.material.hologramOpacityNode.value = 0.0;
+        }, 800);
+      }
+
       ball.addEventListener('onGoal', (e) => {
         params.score[e.message] += 1;
         const mesh = e.message === 'p2' ? player2ScoreMesh : player1ScoreMesh;
         const geometry = getScoreGeometry(params.score[e.message]);
         mesh.geometry.dispose();
         mesh.geometry = geometry;
+
+        triggerScoreEffect(e.message);
 
         const firework = new Firework(
           20,
@@ -730,9 +801,8 @@ export default function PongGame3DPage({ navigate }) {
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
 
-      // /**
-      //  **/
-
+      /**
+       **/
       const scenePass = pass(scene, camera);
       scenePass.setMRT(
         mrt({
@@ -795,6 +865,9 @@ export default function PongGame3DPage({ navigate }) {
     controls.update();
 
     holographicMaterial.update();
+    scoreP1MessageMaterial.update();
+    scoreP2MessageMaterial.update();
+
     postProcessing.render();
     // renderer.render(scene, camera);
     stats.update();
