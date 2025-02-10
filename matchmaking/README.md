@@ -19,13 +19,19 @@ Info: match and game are used synonymously.
 
 **Create and Join Games/Tournaments**: Use [test_websocket.html](matchmaking/test_websocket.html) to create and join games or tournaments.
 
-**Post Match Results**: Modify the IDs and use the following curl command to post match results:
-	```bash
-	curl -X POST \
-	-H "Content-Type: application/json" \
-	-d '{"winner_id": id}' \
-	http://localhost:8001/api/match/id/result/
-	```
+**Post Match Results**: Post match results using the following endpoint:
+```bash
+curl -X POST \
+-H "Content-Type: application/json" \
+-d '{
+    "winner_id": <player_id>,
+    "player_1_score": <score>,
+    "player_2_score": <score>,
+    "start_time": "<ISO8601_timestamp>",
+    "end_time": "<ISO8601_timestamp>"
+}' \
+http://localhost:8001/api/match/<match_id>/result/
+```
 
 **View Results**: Refresh [test_websocket.html](matchmaking/test_websocket.html) to see the updated results.
 
@@ -181,12 +187,15 @@ Second version: support also tournmanets - work in progress
 - create minimal frontend - done
 - test - done
 
-6. Introduce tournaments
+7. Introduce tournaments
 - write new data tables for matches and tournaments - done
 - write complete matchmaking logic (without postgres data deletion) - done
 - connect to frontend and game engine - done
-- spin up game history service and copy all data over after a match or a tournament is finished
-- add more data collection to matchmaking and game history services depending on what frontend wants to display in stats
+
+8. Integrate with game history
+- copy all data over to game history after a match or a tournament is finished
+- maybe delete data from matchmaking - although duplicate data is good for security?
+
 
 ## Is Redis not sufficient as a database? Why also use PostgreSQL?
 

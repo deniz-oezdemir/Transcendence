@@ -183,8 +183,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         game_result = {
             "winner_id": winner_id,
-            "player1_score": player1_score,
-            "player2_score": player2_score,
+            "player_1_score": player1_score,
+            "player_2_score": player2_score,
             "start_time": self.game_start_time.isoformat(),
             "end_time": timezone.now().isoformat(),
         }

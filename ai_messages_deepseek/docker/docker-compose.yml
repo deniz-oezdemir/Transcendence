@@ -1,19 +1,18 @@
 services:
-  ai-opponent:
-    container_name: ai-opponent
+  ai-messages-deepseek:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     ports:
-      - "8004:8000"
+      - "8008:8000"
     volumes:
       - ..:/app
     environment:
-      - DJANGO_SETTINGS_MODULE=AIOpponent.settings
+      - MODEL_PATH=/app/models/DeepSeek-R1-Distill-Qwen-1.5B
     networks:
       - transcendence
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -21,4 +20,3 @@ services:
 networks:
   transcendence:
     external: true
-
