@@ -39,6 +39,8 @@ class CreateGame(generics.CreateAPIView):
         )
 
 
+# WARNING: Depracated for actual WebSocket play. Will not work as expected
+# if websocket being used. Use instead the websocket version
 class ToggleGame(generics.UpdateAPIView):
     serializer_class = GameStateSerializer
     lookup_field = "id"
