@@ -7,6 +7,7 @@ import AppLayout from './Layout';
 import HomePage from './pages/HomePage/HomePage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
+import SignupPage from './pages/SignupPage/SignupPage';
 import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
 import OnlinePongGamePage from './pages/OnlinePongGamePage/OnlinePongGamePage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
@@ -26,7 +27,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 
 import '@styles/global.css';
-import SignupPage from './pages/SignupPage/SignupPage';
 import { checkAuth } from './auth';
 
 // Authentication Middleware
@@ -39,7 +39,6 @@ const authentication = async (path, context) => {
   if (!isAuthenticated) {
     console.log('Unauthorized access. Redirecting to login page...');
     router.navigate('/login');
-    // history.pushState(null, '', '/login'); //doesn't redirect to login page, just changes the url
     return false;
   }
   return true;
@@ -140,9 +139,6 @@ const initialPath = window.location.pathname;
     if (!allowed) {
       router.navigate('/login');
     }
-    // } else {
-    //   history.pushState(null, '', initialPath);
-    // }
 });
 
 // Expose router to the window object
