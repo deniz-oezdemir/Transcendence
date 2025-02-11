@@ -41,8 +41,5 @@ frontend/node_modules/
 # PongApi
 dump.rdb
 
-# PongApi
-dump.rdb
-
 # LLM
 .safetensors
