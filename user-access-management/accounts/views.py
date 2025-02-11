@@ -103,6 +103,28 @@ class ChangeUsernameView(APIView):
         user.save(update_fields=['username'])
         return Response({"message": "Username changed successfully."}, status=status.HTTP_200_OK)
 
+class ChangePasswordView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        pass
+        # user = request.user
+        # user.username = request.data['username']
+        # user.save(update_fields=['username'])
+
+        #return Response({"message": "Username changed successfully."}, status=status.HTTP_200_OK)
+
+class ChangeAvatarView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        user = request.user
+        user.avatar = request.data['avatar']
+        user.save(update_fields=['avatar'])
+        return Response({"message": "avatar changed successfully."}, status=status.HTTP_200_OK)
+
 class FriendRequestView(APIView):
     #make sure the token received is valid else returns 401
     authentication_classes = [TokenAuthentication]
