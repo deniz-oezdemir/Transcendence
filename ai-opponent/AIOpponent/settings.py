@@ -26,7 +26,11 @@ SECRET_KEY = "django-insecure-f5$8bw6tz#39))c@bw@$0g#k7ly)-ik)9w4d2abwd8-zrhxhm!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    'ai-opponent',
+    '127.0.0.1'
+]
 
 
 # Application definition
@@ -51,7 +55,7 @@ LOGGING = {
             "formatter": "simple",
         },
         "file": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.FileHandler",
             "filename": os.path.join(BASE_DIR, "debug.log"),
             "formatter": "verbose",
@@ -60,12 +64,12 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console", "file"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         },
         "AIOpponent": {
             "handlers": ["console", "file"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         },
     },
@@ -73,6 +77,7 @@ LOGGING = {
 
 INSTALLED_APPS = [
     "daphne",
+    "channels",
     "rest_framework",
     "player",
     "corsheaders",

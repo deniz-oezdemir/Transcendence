@@ -20,10 +20,10 @@ services:
       - accounts
       - pong-api
       - matchmaking
-      - ai-messages
+      # - ai-messages
     restart: on-failure
 
-  # Pong-api service
+  # pong-api service
   pong-api:
     extends:
       file: ./pong-api/docker/docker-compose.yml
@@ -34,6 +34,38 @@ services:
       - matchmaking
     restart: on-failure
 
+  # AI Opponent
+  ai-opponent:
+    extends:
+      file: ./ai-opponent/docker/docker-compose.yml
+      service: ai-opponent
+    networks:
+      - transcendence
+    depends_on:
+      - matchmaking
+      - pong-api
+    restart: on-failure
+
+  # game-history service
+  game-history:
+    extends:
+      file: ./game-history/docker/docker-compose.yml
+      service: game-history
+    depends_on:
+      - game-history-postgres
+    networks:
+      - transcendence
+      - game-history-internal
+    restart: on-failure
+
+  game-history-postgres:
+    extends:
+      file: ./game-history/docker/docker-compose.yml
+      service: game-history-postgres
+    networks:
+      - game-history-internal
+    restart: on-failure
+
   # Matchmaking service
   matchmaking:
     extends:
@@ -42,6 +74,7 @@ services:
     depends_on:
       - matchmaking-postgres
       - matchmaking-redis
+      - game-history
     networks:
       - transcendence
       - matchmaking_internal
@@ -63,21 +96,40 @@ services:
       - matchmaking_internal
     restart: on-failure
 
-  # AI messages service
-  ai-messages:
-    extends:
-      file: ./ai_messages/docker/docker-compose.yml
-      service: ai-messages
-    networks:
-      - transcendence
-    restart: on-failure
+  # AI messages service (DistilGPT2)
+  # ai-messages:
+  #   extends:
+  #     file: ./ai_messages/docker/docker-compose.yml
+  #     service: ai-messages
+  #   networks:
+  #     - transcendence
+  #   restart: on-failure
+
+  # AI messages service (Deepseek)
+  # ai-messages-deepseek:
+  #   extends:
+  #     file: ./ai_messages_deepseek/docker/docker-compose.yml
+  #     service: ai-messages-deepseek
+  #   networks:
+  #     - transcendence
+  #   restart: on-failure
+  #   volumes:
+  #     - ai_messages_models:/app/models
 
 networks:
   transcendence:
     driver: bridge
+    name: transcendence
   matchmaking_internal:
     driver: bridge
+    name: matchmaking_internal
+  game-history-internal:
+    driver: bridge
+    name: game-history-internal
 
 volumes:
   matchmaking_postgres_data:
     driver: local
+  game-history-postgres-data:
+    driver: local
+  # ai_messages_models:

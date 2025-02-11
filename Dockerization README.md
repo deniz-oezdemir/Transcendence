@@ -104,12 +104,13 @@ make clean   # Clean up Docker resources
 
 ## Current Port Usage
 
-| Service      | Port |
-| ------------ | ---- |
-| Frontend     | 8005 |
-| Matchmaking  | 8001 |
-| Game engine  | 8002 |
-| Game history | tbd  |
-| UAM          | 8006 |
-| AI messages  | 8003 |
-| AI player    | 8004 |
+| Service                | Port |
+| ---------------------- | ---- |
+| Matchmaking            | 8001 |
+| Game engine            | 8002 |
+| AI messages DistilGPT2 | 8003 |
+| AI player              | 8004 |
+| Frontend               | 8005 |
+| Game history           | 8006 |
+| UAM                    | 8007 |
+| AI messages Deepseek   | 8008 |

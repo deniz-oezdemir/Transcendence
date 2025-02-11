@@ -1,5 +1,6 @@
 services:
   matchmaking:
+    container_name: "matchmaking"
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -10,10 +11,9 @@ services:
         condition: service_healthy
       matchmaking-redis:
         condition: service_healthy
-    environment:
-      - DJANGO_SETTINGS_MODULE=matchmaking.settings
-      - DATABASE_URL=postgres://deniz:your_password@matchmaking-postgres:5432/matchmaking_db
-      - REDIS_URL=redis://matchmaking-redis:6379/0
+    env_file:
+      - path: ./.env.example #TODO: change
+        required: true
     volumes:
       - ../:/app
     networks:
@@ -21,15 +21,15 @@ services:
       - matchmaking_internal
 
   matchmaking-postgres:
+    container_name: "matchmaking-postgres"
     image: postgres:16.6
-    environment:
-      POSTGRES_DB: matchmaking_db
-      POSTGRES_USER: deniz
-      POSTGRES_PASSWORD: your_password
+    env_file:
+      - path: ./.env.example #TODO: change
+        required: true
     volumes:
       - matchmaking_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U deniz -d matchmaking_db"]
+      test: pg_isready -U postgres -d matchmaking_db
       interval: 5s
       timeout: 5s
       retries: 5
@@ -37,6 +37,7 @@ services:
       - matchmaking_internal
 
   matchmaking-redis:
+    container_name: matchmaking-redis
     image: redis:latest
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
