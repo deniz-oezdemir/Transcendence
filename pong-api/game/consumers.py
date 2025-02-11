@@ -20,6 +20,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         self.game_start_time = timezone.now()  # Store start time
 
         await self.channel_layer.group_add(self.game_group_name, self.channel_name)
+        logger.info(
+            f"Connection added to group: {self.game_group_name} and channel: {self.channel_name}"
+        )
         self.game_state = await database_sync_to_async(self.get_game_state)()
         await self.accept()
         logger.info(
@@ -48,26 +51,17 @@ class GameConsumer(AsyncWebsocketConsumer):
         if action == "toggle":
             await self.toggle_game()
 
-        await self.channel_layer.group_send(
-            self.game_group_name, {"type": "game_update", "message": text_data_json}
-        )
-
-    async def game_update(self, event):
-        message = event["message"]
-        logger.debug(f"Game update: {message}")
-
-        await self.send(text_data=json.dumps(message))
+        # await self.channel_layer.group_send(
+        #     self.game_group_name, {"type": "game_update", "message": text_data_json}
+        # )
 
     async def game_state_update(self, event):
-        state = event["state"]
-        logger.debug(f"Game state update: {state}")
-
-        if not self.game_state.is_game_running:
-            self.send_updates = False
-        if self.send_updates:
-            await self.send(
-                text_data=json.dumps({"type": "game_state_update", "state": state})
+        game_state_data = event["state"]
+        await self.send(
+            text_data=json.dumps(
+                {"type": "game_state_update", "state": game_state_data}
             )
+        )
 
     @database_sync_to_async
     def move_player(self, player_id, direction):
@@ -104,7 +98,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                     break
 
                 await database_sync_to_async(self.update_game_state)()
-                # game_state = await database_sync_to_async(self.get_game_state)()
                 game_state = self.game_state
                 game_state_data = {
                     "id": game_state.id,
@@ -136,10 +129,14 @@ class GameConsumer(AsyncWebsocketConsumer):
                 if not self.game_state.is_game_running:
                     self.send_updates = False
                 if self.send_updates:
-                    await self.send(
-                        text_data=json.dumps(
-                            {"type": "game_state_update", "state": game_state_data}
-                        )
+                    # await self.send(
+                    #     text_data=json.dumps(
+                    #         {"type": "game_state_update", "state": game_state_data}
+                    #     )
+                    # )
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {"type": "game_state_update", "state": game_state_data},
                     )
                 await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
@@ -173,7 +170,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.game_state = engine.update_game_state()
                 logger.debug("game updated on engine")
 
-                # TODO: check save only if game ended
+                # TODO: check save only if game ended if there is lag
                 self.save_game_state(self.game_state)
                 logger.debug("game saved")
 

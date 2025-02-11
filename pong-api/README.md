@@ -152,7 +152,7 @@
 
 ### Connect to Game
 
-- **WebSocket URL:** `ws://localhost:8000/ws/game/<game_id>/`
+- **WebSocket URL:** `ws://localhost:8002/ws/game/<game_id>/`
 
 ### Move Player
 
@@ -222,7 +222,7 @@ Here is a simple diagram for reference:
 ### Creating a Game
 
 ```bash
-curl -X POST http://localhost:8000/game/create_game/ -H "Content-Type: application/json" -d '{
+curl -X POST http://localhost:8002/game/create_game/ -H "Content-Type: application/json" -d '{
   "id": 1,
   "max_score": 3,
   "player_1_id": 1,
@@ -238,24 +238,24 @@ This endpoint will not result in an inmediate stop for websocket matches. Use a 
 with "toggle" action within the websocket for better results.
 
 ```bash
-curl -X PUT http://localhost:8000/game/toggle_game/1/
+curl -X PUT http://localhost:8002/game/toggle_game/1/
 ```
 
 ### Retrieving Game State
 
 ```bash
-curl http://localhost:8000/game/get_game_state/1/
+curl http://localhost:8002/game/get_game_state/1/
 ```
 
 ### Deleting a Game
 
 ```bash
-curl -X DELETE http://localhost:8000/game/delete_game/1/
+curl -X DELETE http://localhost:8002/game/delete_game/1/
 ```
 
 ### WebSocket Connection
 
-- **WebSocket URL:** `ws://localhost:8000/ws/game/<game_id>/`
+- **WebSocket URL:** `ws://localhost:8002/ws/game/<game_id>/`
 
 ### Messages Clients Can Send
 

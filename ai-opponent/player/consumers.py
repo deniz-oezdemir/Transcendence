@@ -27,6 +27,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
     async def connect(self):
         try:
             async with websockets.connect(self.uri) as websocket:
+                logger.info("WebSocket connection success")
                 self.websocket = websocket
                 await self.listen()
         except (
@@ -41,12 +42,15 @@ class WebSocketClient(AsyncWebsocketConsumer):
             raise WebSocketConnectionError(f"WebSocket connection error: {e}")
 
     async def listen(self):
+        print("hola")
         try:
             while True:
+                print("gonna recv")
                 message = await self.websocket.recv()
+                print("after recv")
                 data = json.loads(message)
                 current_time = time.time()
-                if current_time - self.last_update_time >= 1:
+                if current_time - self.last_update_time >= 1:  # Only once per second
                     logger.info(f"Received message: {data}")
                     self.handle_game_update(data)
                     self.last_update_time = current_time
