@@ -19,6 +19,10 @@ export default function OnlinePongGamePage({ navigate }) {
   const [isLoading, setIsLoading] = createSignal(true);
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameId, setGameId] = createSignal(-1);
+  const [CreatorId, setCreatorId] = createSignal(-1);
+  const [player2Id, setPlayer2Id] = createSignal(-1);
+  const [CreatorName, setCreatorName] = createSignal('');
+  const [player2Name, setPlayer2Name] = createSignal('');
   const [gameDimensions, setGameDimensions] = createSignal({
     game: { width: 600, height: 400 },
     paddle: { width: 15, height: 80, offset: 20 },
@@ -88,94 +92,16 @@ export default function OnlinePongGamePage({ navigate }) {
    */
   async function initializeGame() {
     console.log('Initializing Game...');
-    try {
-      const response = await fetch(`${apiUrl}/game/create_game/`, {
-        method: 'POST',
-        headers: {
-          // 'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: 1,
-          max_score: 3,
-          player_1_id: 1,
-          player_1_name: 'Player One',
-          player_2_id: 2,
-          player_2_name: 'Player Two',
-        }),
-      });
-
-      if (!response.ok) {
-        await endGame(1);
-        throw new Error(
-          `Failure to create game: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const gameData = await response.json();
-
-      // Calculate Responsive Dimensions
-      const responsiveDimensions = calculateResponsiveDimensions({
-        game: {
-          width: gameData.game_width,
-          height: gameData.game_height,
-        },
-        paddle: {
-          width: gameData.paddle_width,
-          height: gameData.paddle_height,
-          offset: gameData.paddle_width,
-        },
-        ball: {
-          radius: gameData.ball_radius,
-        },
-        scaleFactor: 1,
-      });
-
-      // Update Game State
-      setGameId(gameData.id);
-      setGameDimensions(responsiveDimensions);
-
-      setGamePositions({
-        ball: {
-          x: Math.floor(
-            gameData.ball_x_position * responsiveDimensions.scaleFactor
-          ),
-          y: Math.floor(
-            gameData.ball_y_position * responsiveDimensions.scaleFactor
-          ),
-        },
-        ballDirection: {
-          x: gameData.ball_x_direction,
-          y: gameData.ball_y_direction,
-        },
-        player1Position: Math.floor(
-          gameData.player_1_position * responsiveDimensions.scaleFactor
-        ),
-        player2Position: Math.floor(
-          gameData.player_2_position * responsiveDimensions.scaleFactor
-        ),
-      });
-
-      setGameScore({
-        player1: { score: 0 },
-        player2: { score: 0 },
-        maxScore: gameData.max_score,
-        players: {
-          player1: {
-            id: gameData.player_1_id,
-            name: gameData.player_1_name,
-          },
-          player2: {
-            id: gameData.player_2_id,
-            name: gameData.player_2_name,
-          },
-        },
-      });
-      console.log('Create Game: Success:', gameData);
-    } catch (error) {
-      console.error('Game initialization failed:', error);
-      navigate('/');
-    }
+    setGameScore({
+      player1: { score: 0 },
+      player2: { score: 0 },
+      maxScore: 3,
+      players: {
+        player1: { id: parseInt(CreatorId()), name: CreatorName() },
+        player2: { id: -1, name: 'Player Two' },
+      },
+    });
+    console.log('Game Initialized:', gameId(), CreatorId(), CreatorName());
   }
 
   /**
@@ -389,8 +315,9 @@ export default function OnlinePongGamePage({ navigate }) {
       const waitingroom = WaitingRoom({
         onStartGame: () => {
           setWaitingRoom(false);
+          initializeGame();
           toogleGame();
-        }, setGameId
+        }, setGameId, setCreatorId, setCreatorName
       });
       content.element.appendChild(waitingroom.element);
     } else {

@@ -2,10 +2,9 @@ import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
 import styles from './WaitingRoom.module.css';
 
-export default function WaitingRoom({ onStartGame, setGameId}) {
+export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setCreatorName/*, setJoinId, setJoinName*/ }) {
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
-  const [hasGames, setHasGames] = createSignal(false);
   const [socket, setSocket] = createSignal(null);
   
   const hostname = window.location.hostname;
@@ -19,6 +18,8 @@ export default function WaitingRoom({ onStartGame, setGameId}) {
   
     ws.onopen = () => {
       console.log('Connected to matchmaking service');
+      console.log('username:', localStorage.getItem('username'));
+      console.log('userId:', localStorage.getItem('userId'));
       setSocket(ws);
     };
   
@@ -50,6 +51,8 @@ export default function WaitingRoom({ onStartGame, setGameId}) {
                     case 'active':
                       console.log('Match Started');
                       setGameId(data.available_games.matches[0].match_id);
+                      setCreatorId(localStorage.getItem('userId'));
+                      setCreatorName(localStorage.getItem('username'));
                       onStartGame(data.game, data.available_games.matches[0].match_id);
 
                       break;
@@ -125,7 +128,7 @@ export default function WaitingRoom({ onStartGame, setGameId}) {
     socket().send(JSON.stringify({
       gameType: 'match',
       type: 'create_match',
-      player_id: 1
+      player_id: localStorage.getItem('userId')
     }));
   };
 
