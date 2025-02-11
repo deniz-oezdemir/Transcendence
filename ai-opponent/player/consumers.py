@@ -3,10 +3,8 @@ import time
 import websockets
 import json
 import logging
-from threading import Thread
 from channels.generic.websocket import AsyncWebsocketConsumer
 from websockets.exceptions import ConnectionClosedError, InvalidURI, InvalidHandshake
-from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
@@ -42,23 +40,20 @@ class WebSocketClient(AsyncWebsocketConsumer):
             raise WebSocketConnectionError(f"WebSocket connection error: {e}")
 
     async def listen(self):
-        print("hola")
         try:
             while True:
-                print("gonna recv")
                 message = await self.websocket.recv()
-                print("after recv")
                 data = json.loads(message)
                 current_time = time.time()
                 if current_time - self.last_update_time >= 1:  # Only once per second
-                    logger.info(f"Received message: {data}")
-                    self.handle_game_update(data)
+                    logger.debug(f"Received message: {data}")
+                    await self.handle_game_update(data)
                     self.last_update_time = current_time
         except websockets.ConnectionClosed:
             logger.warning("Connection closed")
             self.delete_ai_player()
 
-    def handle_game_update(self, data):
+    async def handle_game_update(self, data):
         if data.get("type") == "game_state_update":
             state = data.get("state", {})
             ball_x_position = state.get("ball_x_position")
@@ -75,18 +70,26 @@ class WebSocketClient(AsyncWebsocketConsumer):
             ai_player_position = None
 
             # Find the AI player's position
-            if self.ai_player == player_1_id:
+            if self.ai_player.ai_player_id == player_1_id:
                 ai_player_position = player_1_position
-            elif self.ai_player == player_2_id:
+            elif self.ai_player.ai_player_id == player_2_id:
                 ai_player_position = player_2_position
+
+            if ai_player_position is None:
+                logger.error(
+                    f"ai_player_position is None. AI-Player ID: {self.ai_player.ai_player_id}. ai-opponent will not move"
+                )
+                return
 
             if (
                 ai_player_position is not None
                 and ball_x_position is not None
                 and ball_y_position is not None
             ):
-                if (self.ai_player == player_1_id and ball_x_direction < 0) or (
-                    self.ai_player == player_2_id and ball_x_direction > 0
+                if (
+                    self.ai_player.ai_player_id == player_1_id and ball_x_direction < 0
+                ) or (
+                    self.ai_player.ai_player_id == player_2_id and ball_x_direction > 0
                 ):
                     # Ball is moving towards the AI player
                     predicted_y = self.predict_ball_y(
@@ -101,7 +104,11 @@ class WebSocketClient(AsyncWebsocketConsumer):
                     # Ball is moving away from the AI player, move towards the center
                     predicted_y = game_height / 2
 
-                self.move_towards_ball(ai_player_position, predicted_y)
+                await self.move_towards_ball(ai_player_position, predicted_y)
+            else:
+                logger.error(
+                    f"ai-player cannot move because one of these is null:\nai_player_position: {ai_player_position}\nball_x_position: {ball_x_position}\nball_y_position: {ball_y_position}"
+                )
 
     def predict_ball_y(
         self,
@@ -112,6 +119,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
         game_width,
         game_height,
     ):
+        logger.debug("Predicting ball Y position")
         # Predict the Y position of the ball when it reaches the AI player's goal line
         while ball_x < game_width:
             ball_x += ball_x_direction
@@ -123,27 +131,29 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
         return ball_y
 
-    def move_towards_ball(self, ai_player_position, predicted_y):
+    async def move_towards_ball(self, ai_player_position, predicted_y):
         # Move towards the predicted Y position of the ball
+        logger.debug("Moving towards ball")
         if ai_player_position < predicted_y:
-            self.send_move_command(1)  # Move down
+            await self.send_move_command(1)  # Move down
         elif ai_player_position > predicted_y:
-            self.send_move_command(-1)  # Move up
+            await self.send_move_command(-1)  # Move up
 
-    def send_move_command(self, direction):
+    async def send_move_command(self, direction):
         move_command = {
             "action": "move",
             "player_id": self.ai_player.ai_player_id,
             "direction": direction,
         }
-        asyncio.run_coroutine_threadsafe(
-            self.websocket.send(json.dumps(move_command)), asyncio.get_event_loop()
-        )
+        logger.debug("Sending move command")
+        await self.websocket.send(json.dumps(move_command))
         logger.info(f"Sent move command: {move_command}")
 
     def delete_ai_player(self):
         self.ai_player.delete()
-        logger.info(f"AI player {self.ai_player.id} deleted from database and Redis")
+        logger.info(
+            f"AI player {self.ai_player.ai_player_id} deleted from database and Redis"
+        )
 
     def run(self):
         self.connection_error = False

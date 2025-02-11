@@ -46,6 +46,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         if action == "move":
             player_id = text_data_json["player_id"]
             direction = text_data_json["direction"]
+            logger.info(
+                f"Move action received: player_id={player_id}, direction={direction}"
+            )
             await self.move_player(player_id, direction)
 
         if action == "toggle":
@@ -65,26 +68,57 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def move_player(self, player_id, direction):
-        if self.game_state.is_game_running:
-            try:
-                engine = PongGameEngine(self.game_state)
-                self.game_state = engine.move_player(player_id, direction)
-                logger.debug(f"Player {player_id} moved to direction {direction}")
+        try:
+            logger.info("move player is game running ok")
+            engine = PongGameEngine(self.game_state)
+            self.game_state = engine.move_player(player_id, direction)
+            logger.info(f"Player {player_id} moved to direction {direction}")
 
-                if self.game_state.is_game_ended:
-                    self.save_game_state(self.game_state)
-                    logger.debug("game saved")
-            except Exception as e:
-                logger.error(f"Unexpected error occurred while moving player: {e}")
-        else:
-            logger.debug("Move player exception, game not running")
+            if self.game_state.is_game_ended:
+                self.save_game_state(self.game_state)
+                logger.debug("game saved")
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while moving player: {e}")
 
-    @database_sync_to_async
-    def toggle_game(self):
+    async def toggle_game(self):
+        await database_sync_to_async(self._toggle_game_state)()
+        game_state_data = {
+            "id": self.game_state.id,
+            "max_score": self.game_state.max_score,
+            "is_game_running": self.game_state.is_game_running,
+            "is_game_ended": self.game_state.is_game_ended,
+            "player_1_id": self.game_state.player_1_id,
+            "player_2_id": self.game_state.player_2_id,
+            "player_1_name": self.game_state.player_1_name,
+            "player_2_name": self.game_state.player_2_name,
+            "player_1_score": self.game_state.player_1_score,
+            "player_2_score": self.game_state.player_2_score,
+            "player_1_position": self.game_state.player_1_position,
+            "player_2_position": self.game_state.player_2_position,
+            "ball_x_position": self.game_state.ball_x_position,
+            "ball_y_position": self.game_state.ball_y_position,
+            "ball_speed": self.game_state.ball_speed,
+            "ball_x_direction": self.game_state.ball_x_direction,
+            "ball_y_direction": self.game_state.ball_y_direction,
+            "ball_radius": self.game_state.ball_radius,
+            "game_height": self.game_state.game_height,
+            "game_width": self.game_state.game_width,
+            "paddle_height": self.game_state.paddle_height,
+            "paddle_width": self.game_state.paddle_width,
+            "paddle_offset": self.game_state.paddle_offset,
+        }
+        await self.channel_layer.group_send(
+            self.game_group_name,
+            {"type": "game_state_update", "state": game_state_data},
+        )
+
+    def _toggle_game_state(self):
         self.game_state.is_game_running = not self.game_state.is_game_running
         self.send_updates = True
         self.save_game_state(self.game_state)
-        logger.info("toggle: game saved")
+        logger.info(
+            f"Toggled game state for game_id {self.game_id}. New state: {self.game_state.is_game_running}"
+        )
 
     async def send_periodic_updates(self):
         try:
