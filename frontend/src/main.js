@@ -1,4 +1,5 @@
 import { Router } from '@router';
+import { createMemo } from '@reactivity';
 import { createComponent, Link, NestedLayoutContent } from '@component';
 import { applyInitialTheme, addSystemThemeListener } from '@themeManager';
 
@@ -6,6 +7,7 @@ import AppLayout from './Layout';
 import HomePage from './pages/HomePage/HomePage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
+import SignupPage from './pages/SignupPage/SignupPage';
 import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
 import OnlinePongGamePage from './pages/OnlinePongGamePage/OnlinePongGamePage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
@@ -25,12 +27,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 
 import '@styles/global.css';
-import SignupPage from './pages/SignupPage.js/SignupPage';
+import { checkAuth } from './auth';
 
 // Authentication Middleware
-const isAuthenticated = async (path, context) => {
+const authentication = async (path, context) => {
   const isAuthenticated = checkAuth();
-  if (path === '/' || path === '/login' || path === '/signup') {
+  console.log('isAuthenticated in middleware:', isAuthenticated);
+  if (context.nextPath === '/' || context.nextPath === '/login' || context.nextPath === '/signup') {
     return true;
   }
   if (!isAuthenticated) {
@@ -47,16 +50,28 @@ library.add(faCircleUp, faCircleDown, faW, faS, faKeyboard);
 // Replace i tags with SVG automatically
 dom.watch();
 
-// Check if the user is authenticated
-function checkAuth() {
-  //const token = localStorage.getItem('authToken');
-  //return !!token;
-  return true;
+// --- EXAMPLES ----
+// Example: Middlewares are functions that run before a navigation, when you
+// add this to the the router config.
+const test = async () => {
+  const isAuth = createMemo(checkAuth);
+  console.log('isAuth:', isAuth());
+  if (!isAuth()) {
+      window.router.navigate('/login');
+  }
 }
+const middlewares = [
+  authentication,
+  async (path, context) => {
+    console.log(`Navigating to: ${path}`);
+    return true;
+  },
+];
 
 // Nested Layout for Admin Section: With nested layout you can define a layout
 // for a specific section of your app, in this case the admin section.
 function AdminLayout() {
+
   const layout = createComponent('div', {
     className: 'admin-layout',
     content: `
@@ -114,17 +129,16 @@ const router = new Router({
   routes,
   rootElement: root,
   layoutComponent: AppLayout,
-  middlewares: [isAuthenticated],
-  //middlewares,
+  middlewares: [authentication],
   errorComponent: ErrorPage,
 });
 
-// Run the middleware on initial page load
+// // Run the middleware on initial page load
 const initialPath = window.location.pathname;
-isAuthenticated(initialPath, {}).then((allowed) => {
-  if (!allowed) {
-    router.navigate('/login');
-  }
+  authentication(initialPath, {}).then((allowed) => {
+    if (!allowed) {
+      router.navigate('/login');
+    }
 });
 
 // Expose router to the window object

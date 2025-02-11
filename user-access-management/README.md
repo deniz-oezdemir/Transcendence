@@ -19,21 +19,31 @@ Make sure the following are installed on your system:
 ## Setup Instructions
 
 1. Clone the Repository
+```sh
 git clone <repository_url>
-cd <repository_folder>
+cd Transcendence/user-access-management
+```
 
 2. Create & activate a Virtual Environment
+```sh
 python -m venv .venv
+virtualenv -p python3 .venv # if no sudo permissions
 source .venv/bin/activate  # On Linux/Mac
 venv\Scripts\activate     # On Windows
+```
 
 3. Install Dependencies
+```sh
 pip install -r requirements.txt
+```
 
 4. ~~Configure the Database~~
 - Install PostgreSQL and create a database:
+```sh
 createdb users_db
+```
 - Update settings.py with your database credentials:
+```js
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -44,6 +54,7 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+```
 
 5. Apply Migrations
 Run the migrations to create the database schema:
@@ -97,7 +108,7 @@ Endpoint: POST /login/
 #### **Logout a User**
 Endpoint: POST /logout/
 - Headers:
-  - Authorization: (session token)
+  - Authorization: Token USER_TOKEN_HERE
 
 - Body:
 ```json
@@ -106,13 +117,16 @@ Endpoint: POST /logout/
 
 #### **See Profile**
 Endpoint: GET /profile/
+or using query params to get specific fields: GET /profile/
 - Headers:
-  - Authorization: (session token)
+  - Authorization: Token USER_TOKEN_HERE
+  
+--> Returns JSON Response containing: 'id', 'username', 'avatar_url', 'status', 'friends'
 
 #### **Update Profile**
 Endpoint: PUT /profile/update/
 - Headers:
-  - Authorization: (session token)
+  - Authorization: Token USER_TOKEN_HERE
 - Body:
 ```json
 {
@@ -130,12 +144,12 @@ Endpoint: PUT /profile/update/
 #### **Delete Account**
 Endpoint: DELETE /profile/delete/
 - Headers:
-  - Authorization: (session token)
+  - Authorization: Token USER_TOKEN_HERE
 
 ## TO DO:
-- Implement remaining endpoints (login, logout etc with Authorization token)
+- Integrate remaining endpoints (change avatar, username & password)
 - Switch to PostgeSQL
 - For deployment:
     - Use a production server like Gunicorn or uWSGI.
-    - Use nginx for reverse proxying.
+    - Use nginx for reverse proxying and save avatars
     - Set DEBUG = False in settings.py and configure ALLOWED_HOSTS.

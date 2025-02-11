@@ -1,6 +1,7 @@
 import { createComponent, Link } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import { setTheme, getPreferredTheme } from '@themeManager';
+import { isAuthenticated, login, logout } from '../../auth.js';
 
 export default function Navbar({ location, navigate }) {
   const path = location();
@@ -12,17 +13,18 @@ export default function Navbar({ location, navigate }) {
     setThemeState(newTheme);
   };
 
-  const updateNavLinks = () => {
-    const currentPath = location();
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach((link) => {
-      const href = link.getAttribute('href');
-      if (href === currentPath) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
+  const handleAuthButtonClick = () => {
+    if (isAuthenticated()) {
+      try {
+        logout();
+        router.navigate('/login');
+      } catch (error) {
+        console.error('Error logging out:', error);
+        navigate('/profile');
       }
-    });
+    } else {
+      navigate('/login');
+    }
   };
 
   const themeButton = createComponent('button', {
@@ -34,8 +36,17 @@ export default function Navbar({ location, navigate }) {
     },
   });
 
+  const authButton = createComponent('button', {
+    className: 'btn btn-outline-success',
+    attributes: { type: 'button', role: 'button' },
+    content: isAuthenticated() ? 'Logout' : 'Login',
+    events: {
+      click: handleAuthButtonClick,
+    },
+  });
+
   createEffect(() => {
-    updateNavLinks();
+    authButton.element.textContent = isAuthenticated() ? 'Logout' : 'Login';
   });
 
   createEffect(() => {
@@ -113,29 +124,24 @@ export default function Navbar({ location, navigate }) {
                       }),
                     ],
                   }),
-                  createComponent('li', {
-                    className: 'nav-item',
-                    children: [
-                      Link({
-                        href: '/admin',
-                        content: 'Admin',
-                        className: `nav-link ${path === '/admin' ? 'active' : ''}`,
-                        attributes: { 'aria-current': 'page' },
-                      }),
-                    ],
-                  }),
+                  // createComponent('li', {
+                  //   className: 'nav-item',
+                  //   children: [
+                  //     Link({
+                  //       href: '/admin',
+                  //       content: 'Admin',
+                  //       className: `nav-link ${path === '/admin' ? 'active' : ''}`,
+                  //       attributes: { 'aria-current': 'page' },
+                  //     }),
+                  //   ],
+                  // }),
                 ],
               }),
               createComponent('div', {
                 className: 'd-flex align-items-center',
                 children: [
                   themeButton,
-                  Link({
-                    href: '/login',
-                    className: 'btn btn-outline-success',
-                    attributes: { type: 'button', role: 'button' },
-                    content: 'Login',
-                  }),
+                  authButton,
                 ],
               }),
             ],
