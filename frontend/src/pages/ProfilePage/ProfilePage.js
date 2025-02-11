@@ -2,13 +2,18 @@ import { createComponent, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './ProfilePage.module.css';
 
+const hostname = window.location.hostname;
+const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+const port = 8007;
+const apiUrl = `${protocol}//${hostname}:${port}`;
+
 async function handleDeleteAccount() {
   if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
     return;
   }
 
   try {
-    const response = await fetch("http://localhost:8007/profile/", {
+    const response = await fetch(`${apiUrl}/profile/`, {
       method: "DELETE",
       headers: {
         "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -29,7 +34,28 @@ async function handleDeleteAccount() {
   }
 }
 
-function FriendRequestForm({setReload}) {
+async function handleChangeUsername(new_username, setReload) {
+  try {
+    const response = await fetch(`${apiUrl}/username/`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Token ${localStorage.getItem("authToken")}`,
+      },
+      body: JSON.stringify({ username: new_username }),
+    });
+
+    if (response.ok) {
+      setReload(true);
+    } else {
+      const data = await response.json();
+      alert("Error: " + (data.error || "Failed to change username."));
+    }
+  } catch (error) {
+    console.error("Change username error:", error);
+  }
+}
+
+function friendRequestForm(setReload) {
   const [username, setUsername] = createSignal("");
 
   async function sendFriendRequest() {
@@ -37,7 +63,7 @@ function FriendRequestForm({setReload}) {
 
     try {
       console.log("Sending friend request to", username());
-      const response = await fetch("http://localhost:8007/friend-request/", {
+      const response = await fetch(`${apiUrl}/friend-request/`, {
         method: "POST",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -86,73 +112,37 @@ function FriendRequestForm({setReload}) {
   });
 }
 
-async function unfollowFriend(friend_username) {
-  try {
-    console.log("Sending unfollow request to", friend_username);
-
-    // Send DELETE request to the backend
-    const response = await fetch("http://localhost:8007/friend-request/", {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Token ${localStorage.getItem("authToken")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ friend_username }), // Sending the friend's username to be removed
-    });
-
-    const data = await response.json();
-    alert(data.message); // Show success or error message
-
-    // if (response.ok) {
-    //   // After successful removal, fetch user data again to refresh the friend list
-    //   await fetchUserData();
-    // }
-  } catch (error) {
-    console.error("Error unfollowing friend:", error);
-    alert("Failed to unfollow friend.");
+function friendListComponent(user_data, setReload) {
+  async function unfollowFriend(friend_username) {
+    try {
+      console.log("Sending unfollow request to", friend_username);
+  
+      const response = await fetch(`${apiUrl}/friend-request/`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friend_username }),
+      });
+  
+      const data = await response.json();
+      alert(data.message); // Show success or error message
+  
+      if (response.ok) {
+        setReload(true);
+      }
+    } catch (error) {
+      console.error("Error unfollowing friend:", error);
+      alert("Failed to unfollow friend.");
+    }
   }
-}
 
-// function createFriendsComponent(user_data) {
-
-//   let friendsComponents = [];
-//   if (user_data.friends && user_data.friends.length > 0) {
-//     friendsComponents = user_data.friends.map((friend, index) => {
-//       if (friend.avatar_url && friend.username) {
-//         return createComponent('div', {
-//           key: `friend-${index}`,
-//           className: styles.friend,
-//           children: [
-//             createComponent('img', {
-//               className: styles.friendAvatar,
-//               attributes: { src: friend.avatar_url, alt: friend.username },
-//             }),
-//             createComponent('span', {
-//               className: styles.friendName,
-//               content: friend.username,
-//             }),
-//             createComponent('span', {
-//               className: `${styles.status} ${friend.online ? styles.online : styles.offline}`,
-//             }),
-//           ],
-//         });
-//       }
-//       return createComponent('p', { content: 'Invalid friend data' });
-//     });
-//   } else {
-//     friendsComponents = [createComponent('p', { content: 'No friends added yet' })];
-//   }
-
-//   return createComponent('div', {
-//     className: styles.friendsBox,
-//     children: friendsComponents,
-//   });
-// }
-function createFriendsComponent(user_data, fetchUserData) {
   let friendsComponents = [];
   if (user_data.friends && user_data.friends.length > 0) {
     friendsComponents = user_data.friends.map((friend, index) => {
       if (friend.avatar_url && friend.username) {
+        console.log("Friend status:", friend.status);
         return createComponent('div', {
           key: `friend-${index}`,
           className: styles.friend,
@@ -166,7 +156,7 @@ function createFriendsComponent(user_data, fetchUserData) {
               content: friend.username,
             }),
             createComponent('span', {
-              className: `${styles.status} ${friend.online ? styles.online : styles.offline}`,
+              className: `${styles.status} ${friend.status === 'online' ? styles.online : styles.offline}`,
             }),
             createComponent('button', {
               className: styles.unfollowButton,
@@ -232,7 +222,7 @@ function dynamicData(user_data, setReload) {
             events: {
               click : (event) => {
                 console.log('Change Avatar button clicked');
-                handleChangeAvatar(event);
+                handleChangeAvatar(event, setReload);
               }
             }
           }),
@@ -242,7 +232,7 @@ function dynamicData(user_data, setReload) {
             events: {
               click : (event) => {
                 console.log('Change Username button clicked');
-                handleChangeUsername(event);
+                handleChangeUsername(event, setReload);
               }
             }
           }),
@@ -252,7 +242,7 @@ function dynamicData(user_data, setReload) {
             events: {
               click : (event) => {
                 console.log('Change Password button clicked');
-                handleChangePassword(event);
+                handleChangePassword(event, setReload);
               }
             }
           }),
@@ -285,8 +275,8 @@ function dynamicData(user_data, setReload) {
       // }),
 
       // Friends List Section
-      createFriendsComponent(user_data),
-      FriendRequestForm({setReload}),
+      friendListComponent(user_data, setReload),
+      friendRequestForm(setReload),
     ],
   });
 }
@@ -301,7 +291,7 @@ export default function ProfilePage({ params, query }) {
   async function fetchUserData() {
     try {
       console.log('Fetching user data...');
-      const response = await fetch(`http://localhost:8007/profile/`, {
+      const response = await fetch(`${apiUrl}/profile/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${localStorage.getItem('authToken')}`,
@@ -331,7 +321,7 @@ export default function ProfilePage({ params, query }) {
   // //example code for fetching stats and achievements
   // const fetchStats = async () => {
   //   try {
-  //     const response = await fetch(`http://localhost:8007/stats/`, {
+  //     const response = await fetch(`http://localhost:8006/stats/`, {
   //       method: 'GET',
   //       headers: {
   //         'Authorization': `Token ${localStorage.getItem('authToken')}`,

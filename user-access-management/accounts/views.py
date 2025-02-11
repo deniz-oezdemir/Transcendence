@@ -93,6 +93,16 @@ class ProfileView(APIView):
         # except Exception as e:
         #     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class ChangeUsernameView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        user = request.user
+        user.username = request.data['username']
+        user.save(update_fields=['username'])
+        return Response({"message": "Username changed successfully."}, status=status.HTTP_200_OK)
+
 class FriendRequestView(APIView):
     #make sure the token received is valid else returns 401
     authentication_classes = [TokenAuthentication]

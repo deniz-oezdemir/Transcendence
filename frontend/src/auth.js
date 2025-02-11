@@ -1,5 +1,10 @@
 import { createSignal } from '@reactivity';
 
+const hostname = window.location.hostname;
+const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+const port = 8007;
+const apiUrl = `${protocol}//${hostname}:${port}`;
+
 const [isAuthenticated, setIsAuthenticated] = createSignal(checkAuth());
 // const [username, setUsername] = createSignal(localStorage.getItem('username'));
 // const [password, setPassword] = createSignal(localStorage.getItem('password'));
@@ -11,7 +16,7 @@ function checkAuth() {
 }
 
 async function login(username, password) {
-  const response = await fetch(`http://localhost:8007/login/`, {
+  const response = await fetch(`${apiUrl}/login/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -37,7 +42,7 @@ async function login(username, password) {
 }
 
 async function logout() {
-  const response = await fetch(`http://localhost:8007/logout/`, {
+  const response = await fetch(`${apiUrl}/logout/`, {
     method: 'POST',
     headers: {
       'Authorization': `Token ${localStorage.getItem('authToken')}`,
