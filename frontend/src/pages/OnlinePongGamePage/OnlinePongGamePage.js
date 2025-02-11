@@ -11,11 +11,6 @@ const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // 
 const port = 8002;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
-const protocolWR = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
-const portWR = 8001;
-const wsUrl = `${protocolWR}//${hostname}:${portWR}/ws/waiting-room/`;
-const ws = new WebSocket(wsUrl);
-
 export default function OnlinePongGamePage({ navigate }) {
   const cleanup = createCleanupContext();
 
@@ -46,7 +41,6 @@ export default function OnlinePongGamePage({ navigate }) {
     },
   });
   const [websocket, setWebsocket] = createSignal(null);
-  const [wrsocket, setwrSocket] = createSignal(null);
   const [pageContent, setPageContent] = createSignal(null);
 
   /**
@@ -189,33 +183,33 @@ export default function OnlinePongGamePage({ navigate }) {
    */
   async function toogleGame() {
     try {
-      const response = await fetch(
-        `${apiUrl}/game/toggle_game/${gameId()}/`,
-        {
-          method: 'PUT',
-        }
+      console.log('Toggling Game...', gameId());
+      if (websocket() === null) connectWebSocket();
+      const ws = websocket();
+      if (ws === null) return;
+
+      ws.send(
+        JSON.stringify({
+          action: 'toggle',
+        })
       );
+      console.log('Toggle Game: Success:', ws);
+      /*ws.onopen = () => {
+        console.log('Connected to matchmaking service');
+        connectWebSocket();
+        const updatedGameState = {
+          is_game_running: true,
+        };
+        setIsGameRunning(updatedGameState.is_game_running);
+        console.log('Toggle Game: Success:', updatedGameState);
 
-      if (!response.ok) {
-        throw new Error(
-          `Failure to toggle game: ${response.status} ${response.statusText}`
-        );
-      }
 
-      const updatedGameState = await response.json();
-      console.log('Updated Game State:', updatedGameState);
-      setIsGameRunning(updatedGameState.is_game_running);
-      console.log('Toggle Game: Success:', updatedGameState);
-
-      if (updatedGameState.is_game_running) {
-        if (websocket() === null) connectWebSocket();
-        if (wrsocket() === null) connectwrSocket();
-      }
+      };*/
     } catch (error) {
       console.error('Toggle game failed:', error);
     }
   }
-
+ 
   /**
    * Ends the game session and cleans up WebSocket connection
    * @param {number} id - Game ID to end
@@ -223,35 +217,18 @@ export default function OnlinePongGamePage({ navigate }) {
    */
   async function endGame(id) {
     if (id < 0) return false;
-    try {
-      console.log('Ending Game:', id);
-      const response = await fetch(`${apiUrl}/game/delete_game/${id}/`, {
-        method: 'DELETE',
-      });
-      console.log('Delete Game Response:', response);
-      if (response.ok) {
-        console.log('Delete Game: Success:', response);
-        console.log('Is Waiting Room:', isWaitingRoom());
-        if (!isWaitingRoom()) {
-          setWaitingRoom(true);
-        }
-        throw new Error(
-          `Failure to delete game: ${response.status} ${response.statusText}`
-        );
-      }
-
-      if (websocket()) {
-        websocket().close();
-        setWebsocket(null);
-      }
-      console.log('WebSocket closed.');
-
-      return true;
-    } catch (error) {
-      console.error('Game deletion failed:', error);
-      return false;
+    console.log('Ending Game:', id);
+    if (websocket()) {
+      websocket().close();
+      setWebsocket(null);
     }
-  }
+    console.log('End Game Is Waiting Room:', isWaitingRoom());
+    if (!isWaitingRoom()) {
+        setWaitingRoom(true);
+      }
+      return true;
+    }
+
 
   /**
    * Establishes WebSocket connection for real-time game updates
@@ -308,38 +285,6 @@ export default function OnlinePongGamePage({ navigate }) {
     });
   }
 
-  //connect to waiting room websocket
-  function connectwrSocket() {
-    const ws = new WebSocket(wsUrl);
-    ws.onopen = () => {
-      console.log('Waiting Room WebSocket connected.');
-      setwrSocket(ws);
-    };
-
-    ws.onmessage = function (event) {
-      const data = JSON.parse(event.data);
-      console.log('Data from Wating Room:', data);
-      /*if (data.type === 'game_s') {
-      }*/
-    };
-        
-
-    ws.onclose = async () => {
-      console.log('WebSocket Disconnected.');
-      setwrSocket(null);
-      await endGame(gameId());
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setwrSocket(null);
-    };
-
-    onCleanup(() => {
-      ws.close();
-    });
-  }
-
   // Game Initialization Effect
   createEffect(() => {
     if (gameId() >= 0) return;
@@ -362,6 +307,7 @@ export default function OnlinePongGamePage({ navigate }) {
     let now = performance.now();
     if (now - lastSentTime < sendRate) return;
     lastSentTime = now;
+    //const ws = websocket();
 
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();
@@ -442,7 +388,6 @@ export default function OnlinePongGamePage({ navigate }) {
       const waitingroom = WaitingRoom({
         onStartGame: () => {
           setWaitingRoom(false);
-          // initializeGame();
           toogleGame();
         }, setGameId
       });
@@ -457,18 +402,6 @@ export default function OnlinePongGamePage({ navigate }) {
       content.element.appendChild(score.element);
       content.element.appendChild(board.element);
       content.element.appendChild(controls.element);
-
-      /*const waitingroom = WaitingRoom();
-      const score = Score({ gameScore });
-      const board = GameBoard({
-        gameDimensions: gameDimensions,
-        gamePositions: gamePositions,
-      });
-      const controls = GameControls();
-      content.element.appendChild(waitingroom.element);
-      content.element.appendChild(score.element);
-      content.element.appendChild(board.element);
-      content.element.appendChild(controls.element);*/
     }
     return content;
   };
