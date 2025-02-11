@@ -137,7 +137,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 4,
-      player_id: 2
+      player_id: localStorage.getItem('userId')
     }));
   };
 
@@ -146,7 +146,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 8,
-      player_id: 1
+      player_id: localStorage.getItem('userId')
     }));
   };
 
@@ -155,7 +155,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'join_match',
       match_id: matches()[0].match_id,
-      player_id: 2
+      player_id: localStorage.getItem('userId')
     }));
   };
 
