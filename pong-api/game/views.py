@@ -17,10 +17,13 @@ class CreateGame(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         game_id = serializer.validated_data.get("id")
-        cache_key = f"game_state_{game_id}"
+        cache_key = f"{game_id}"
 
         # Check if the game exists in Redis
         if cache.get(cache_key):
+            logger.warning(
+                f"Attempting to create game with ID: {cache_key} impossible, game with same ID already in REDIS."
+            )
             raise serializers.ValidationError(
                 f"Game with ID {game_id} already exists in cache."
             )
@@ -39,6 +42,8 @@ class CreateGame(generics.CreateAPIView):
         )
 
 
+# WARNING: Depracated for actual WebSocket play. Will not work as expected
+# if websocket being used. Use instead the websocket version
 class ToggleGame(generics.UpdateAPIView):
     serializer_class = GameStateSerializer
     lookup_field = "id"
@@ -92,7 +97,7 @@ class GetGameState(generics.RetrieveAPIView):
 
     def get_object(self):
         if settings.USE_REDIS:
-            cache_key = f"game_state_{self.kwargs[self.lookup_field]}"
+            cache_key = f"{self.kwargs[self.lookup_field]}"
             game_state = cache.get(cache_key)
             if game_state is None:
                 raise serializers.ValidationError("Game state not found in Redis.")

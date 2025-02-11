@@ -23,6 +23,7 @@ from django.conf.urls.static import static #for django to serve media files duri
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("accounts.urls")),
+    # path("user/", include("accounts.urls")),
 ]
 
 if settings.DEBUG:  # Only in development
