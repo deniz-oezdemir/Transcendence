@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView, LoginView, LogoutView, ProfileView, FriendRequestView
+from .views import RegisterView, LoginView, LogoutView, ProfileView, FriendRequestView, ChangeUsernameView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
@@ -8,6 +8,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', ProfileView.as_view(), name= 'profile'), #for seeing, editing user data and deleting accout & use query params for specification?
     path('friend-request/', FriendRequestView.as_view(), name='friend-request'),
+    path('username/', ChangeUsernameView.as_view(), name='username'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     

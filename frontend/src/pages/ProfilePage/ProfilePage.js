@@ -2,13 +2,18 @@ import { createComponent, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './ProfilePage.module.css';
 
+const hostname = window.location.hostname;
+const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+const port = 8007;
+const apiUrl = `${protocol}//${hostname}:${port}`;
+
 async function handleDeleteAccount() {
   if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
     return;
   }
 
   try {
-    const response = await fetch("http://localhost:8007/profile/", {
+    const response = await fetch(`${apiUrl}/profile/`, {
       method: "DELETE",
       headers: {
         "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -29,7 +34,28 @@ async function handleDeleteAccount() {
   }
 }
 
-function friendRequestForm({setReload}) {
+async function handleChangeUsername(new_username, setReload) {
+  try {
+    const response = await fetch(`${apiUrl}/username/`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Token ${localStorage.getItem("authToken")}`,
+      },
+      body: JSON.stringify({ username: new_username }),
+    });
+
+    if (response.ok) {
+      setReload(true);
+    } else {
+      const data = await response.json();
+      alert("Error: " + (data.error || "Failed to change username."));
+    }
+  } catch (error) {
+    console.error("Change username error:", error);
+  }
+}
+
+function friendRequestForm(setReload) {
   const [username, setUsername] = createSignal("");
 
   async function sendFriendRequest() {
@@ -37,7 +63,7 @@ function friendRequestForm({setReload}) {
 
     try {
       console.log("Sending friend request to", username());
-      const response = await fetch("http://localhost:8007/friend-request/", {
+      const response = await fetch(`${apiUrl}/friend-request/`, {
         method: "POST",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -86,12 +112,12 @@ function friendRequestForm({setReload}) {
   });
 }
 
-function friendListComponent(user_data, {setReload}) {
+function friendListComponent(user_data, setReload) {
   async function unfollowFriend(friend_username) {
     try {
       console.log("Sending unfollow request to", friend_username);
   
-      const response = await fetch("http://localhost:8007/friend-request/", {
+      const response = await fetch(`${apiUrl}/friend-request/`, {
         method: "DELETE",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -196,7 +222,7 @@ function dynamicData(user_data, setReload) {
             events: {
               click : (event) => {
                 console.log('Change Avatar button clicked');
-                handleChangeAvatar(event);
+                handleChangeAvatar(event, setReload);
               }
             }
           }),
@@ -206,7 +232,7 @@ function dynamicData(user_data, setReload) {
             events: {
               click : (event) => {
                 console.log('Change Username button clicked');
-                handleChangeUsername(event);
+                handleChangeUsername(event, setReload);
               }
             }
           }),
@@ -216,7 +242,7 @@ function dynamicData(user_data, setReload) {
             events: {
               click : (event) => {
                 console.log('Change Password button clicked');
-                handleChangePassword(event);
+                handleChangePassword(event, setReload);
               }
             }
           }),
@@ -249,8 +275,8 @@ function dynamicData(user_data, setReload) {
       // }),
 
       // Friends List Section
-      friendListComponent(user_data, {setReload}),
-      friendRequestForm({setReload}),
+      friendListComponent(user_data, setReload),
+      friendRequestForm(setReload),
     ],
   });
 }
@@ -265,7 +291,7 @@ export default function ProfilePage({ params, query }) {
   async function fetchUserData() {
     try {
       console.log('Fetching user data...');
-      const response = await fetch(`http://localhost:8007/profile/`, {
+      const response = await fetch(`${apiUrl}/profile/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${localStorage.getItem('authToken')}`,
