@@ -36,7 +36,6 @@ async function login(username, password) {
   localStorage.setItem('authToken', data.token);
   localStorage.setItem('username', data.user);
   localStorage.setItem('userId', data.id);
-  localStorage.setItem('status', data.status);
   setIsAuthenticated(true);
 
   return { success: true };
