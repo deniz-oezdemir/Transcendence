@@ -27,9 +27,10 @@ async function login(username, password) {
   if (!response.ok) {
     throw new Error(data.message || 'Login failed');
   }
+
   localStorage.setItem('authToken', data.token);
-  localStorage.setItem('username', data.username);
-  localStorage.setItem('userId', data.userId);
+  localStorage.setItem('username', data.user);
+  localStorage.setItem('userId', data.id);
   setIsAuthenticated(true);
 
   return { success: true };
