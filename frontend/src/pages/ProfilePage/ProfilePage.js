@@ -7,6 +7,10 @@ const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
 const port = 8007;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
+const[usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
+
+//*********************************************************************************************//
+
 async function handleDeleteAccount() {
   if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
     return;
@@ -34,26 +38,7 @@ async function handleDeleteAccount() {
   }
 }
 
-async function handleChangeUsername(new_username, setReload) {
-  try {
-    const response = await fetch(`${apiUrl}/username/`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Token ${localStorage.getItem("authToken")}`,
-      },
-      body: JSON.stringify({ username: new_username }),
-    });
-
-    if (response.ok) {
-      setReload(true);
-    } else {
-      const data = await response.json();
-      alert("Error: " + (data.error || "Failed to change username."));
-    }
-  } catch (error) {
-    console.error("Change username error:", error);
-  }
-}
+//*********************************************************************************************//
 
 function friendRequestForm(setReload) {
   const [username, setUsername] = createSignal("");
@@ -111,6 +96,8 @@ function friendRequestForm(setReload) {
     ],
   });
 }
+
+//*********************************************************************************************//
 
 function friendListComponent(user_data, setReload) {
   async function unfollowFriend(friend_username) {
@@ -183,6 +170,89 @@ function friendListComponent(user_data, setReload) {
   });
 }
 
+//*********************************************************************************************//
+
+function changeUsernameComponent(user_data, setReload) {
+  const[username, setUsername] = createSignal("");
+
+  async function handleChangeUsername(setReload) {
+    try {
+      let new_username = username();
+      const response = await fetch(`${apiUrl}/change-username/`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ new_username }),
+      });
+  
+      if (response.ok) {
+        setUsernameButtonPressed(false);
+        setReload(true);
+      } else {
+        setUsernameButtonPressed(false);
+        setReload(true);
+        const data = await response.json();
+        alert("Error: " + (data.error || "Failed to change username."));
+      }
+    } catch (error) {
+      setUsernameButtonPressed(false);
+      console.error("Change username error:", error);
+    }
+  }
+
+  let changeUsernameComponent = [];
+  if (usernameButtonPressed()) {
+    return createComponent("div", {
+      className: styles.changeUsernameBox,
+      children: [
+        createComponent("input", {
+          className: styles.changeInput,
+          attributes: {
+            type: "text",
+            placeholder: "Enter new username...",
+            value: username(),
+          },
+          events: {
+            input: (event) => setUsername(event.target.value),
+          },
+        }),
+        createComponent("button", {
+          className: styles.changeUsernameButton,
+          content: "Change Username",
+          events: {
+            click : (event) => {
+              console.log('Changing username...');
+              handleChangeUsername(setReload);
+            }
+          }
+        }),
+      ],
+    });
+  } else {
+    changeUsernameComponent = [createComponent('button', {
+      className: styles.changeUsernameButton,
+      content: 'Change Username',
+      events: {
+        click: (event) => {
+          console.log("Change Username button clicked for:", user_data.username);
+          setUsernameButtonPressed(true);
+          setReload(true);
+        }
+      },
+    }),
+  ];
+  }
+
+  return createComponent('div', {
+    className: styles.friendsBox,
+    children: changeUsernameComponent,
+  });
+}
+
+//*********************************************************************************************//
+
 function dynamicData(user_data, setReload) {
   if (!user_data) {
     return createComponent('div', {
@@ -212,52 +282,70 @@ function dynamicData(user_data, setReload) {
         ],
       }),
 
-      // Action Buttons
-      createComponent('div', {
-        className: styles.actions,
-        children: [
-          createComponent('button', {
-            className: styles.actionButton,
-            content: 'Change Avatar',
-            events: {
-              click : (event) => {
-                console.log('Change Avatar button clicked');
-                handleChangeAvatar(event, setReload);
-              }
-            }
-          }),
-          createComponent('button', {
-            className: styles.actionButton,
-            content: 'Change Username',
-            events: {
-              click : (event) => {
-                console.log('Change Username button clicked');
-                handleChangeUsername(event, setReload);
-              }
-            }
-          }),
-          createComponent('button', {
-            className: styles.actionButton,
-            content: 'Change Password',
-            events: {
-              click : (event) => {
-                console.log('Change Password button clicked');
-                handleChangePassword(event, setReload);
-              }
-            }
-          }),
-          createComponent('button', {
-            className: styles.deleteButton,
-            content: 'Delete Account',
-            events: {
-              click : (event) => {
-                console.log('Delete Account button clicked');
-                handleDeleteAccount(event);
-              }
-            }
-          }),
-        ],
+      // Delete Account Button
+      createComponent('button', {
+        className: styles.deleteButton,
+        content: 'Delete Account',
+        events: {
+          click : (event) => {
+            console.log('Delete Account button clicked');
+            handleDeleteAccount(event);
+          }
+        }
       }),
+
+      // // Action Buttons
+      // createComponent('div', {
+      //   className: styles.actions,
+      //   children: [
+      //     createComponent('button', {
+      //       className: styles.actionButton,
+      //       content: 'Change Avatar',
+      //       events: {
+      //         click : (event) => {
+      //           console.log('Change Avatar button clicked');
+      //           handleChangeAvatar(event, setReload);
+      //         }
+      //       }
+      //     }),
+      //     createComponent('button', {
+      //       className: styles.actionButton,
+      //       content: 'Change Username',
+      //       events: {
+      //         click : (event) => {
+      //           console.log('Change Username button clicked');
+      //           handleChangeUsername(event, setReload);
+      //         }
+      //       }
+      //     }),
+      //     createComponent('button', {
+      //       className: styles.actionButton,
+      //       content: 'Change Password',
+      //       events: {
+      //         click : (event) => {
+      //           console.log('Change Password button clicked');
+      //           handleChangePassword(event, setReload);
+      //         }
+      //       }
+      //     }),
+      //     createComponent('button', {
+      //       className: styles.deleteButton,
+      //       content: 'Delete Account',
+      //       events: {
+      //         click : (event) => {
+      //           console.log('Delete Account button clicked');
+      //           handleDeleteAccount(event);
+      //         }
+      //       }
+      //     }),
+      //   ],
+      // }),
+
+      changeUsernameComponent(user_data, setReload),
+      
+      // Friends List Section
+      friendListComponent(user_data, setReload),
+      friendRequestForm(setReload),
 
       // // Stats Section
       // createComponent('div', {
@@ -273,10 +361,6 @@ function dynamicData(user_data, setReload) {
       //     }),
       //   ],
       // }),
-
-      // Friends List Section
-      friendListComponent(user_data, setReload),
-      friendRequestForm(setReload),
     ],
   });
 }
@@ -303,7 +387,6 @@ export default function ProfilePage({ params, query }) {
       }
       const data = await response.json();
       setContent(dynamicData(data, setReload));
-      console.log("Friends List Data:", data.friends);
     } catch (error) {
       console.error(error);
       setError(error.message);

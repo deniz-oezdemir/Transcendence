@@ -99,7 +99,7 @@ class ChangeUsernameView(APIView):
 
     def put(self, request):
         user = request.user
-        user.username = request.data['username']
+        user.username = request.data['new_username']
         user.save(update_fields=['username'])
         return Response({"message": "Username changed successfully."}, status=status.HTTP_200_OK)
 
