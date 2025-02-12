@@ -8,6 +8,7 @@ const port = 8007;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
 const[usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
+const[passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
 
 //*********************************************************************************************//
 
@@ -205,7 +206,7 @@ function changeUsernameComponent(user_data, setReload) {
   let changeUsernameComponent = [];
   if (usernameButtonPressed()) {
     return createComponent("div", {
-      className: styles.changeUsernameBox,
+      className: styles.changeBox,
       children: [
         createComponent("input", {
           className: styles.changeInput,
@@ -219,7 +220,7 @@ function changeUsernameComponent(user_data, setReload) {
           },
         }),
         createComponent("button", {
-          className: styles.changeUsernameButton,
+          className: styles.changeButton,
           content: "Change Username",
           events: {
             click : (event) => {
@@ -232,7 +233,7 @@ function changeUsernameComponent(user_data, setReload) {
     });
   } else {
     changeUsernameComponent = [createComponent('button', {
-      className: styles.changeUsernameButton,
+      className: styles.changeButton,
       content: 'Change Username',
       events: {
         click: (event) => {
@@ -246,8 +247,105 @@ function changeUsernameComponent(user_data, setReload) {
   }
 
   return createComponent('div', {
-    className: styles.friendsBox,
+    className: styles.changeBox, // create own style!!
     children: changeUsernameComponent,
+  });
+}
+
+//*********************************************************************************************//
+
+function changePasswordComponent(user_data, setReload) {
+  const[password, setPassword] = createSignal("");
+  const[passwordRepeat, setPasswordRepeat] = createSignal("");
+
+  async function handleChangePassword(setReload) {
+    try {
+      if (password() !== passwordRepeat()) {
+        alert("Passwords do not match.");
+        return;
+      }
+      let new_password = password();
+      const response = await fetch(`${apiUrl}/change-password/`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ new_password }),
+      });
+  
+      if (response.ok) {
+        setPasswordButtonPressed(false);
+        setReload(true);
+      } else {
+        setPasswordButtonPressed(false);
+        setReload(true);
+        const data = await response.json();
+        alert("Error: " + (data.error || "Failed to change password."));
+      }
+    } catch (error) {
+      setPasswordButtonPressed(false);
+      console.error("Change password error:", error);
+    }
+  }
+
+  let changePasswordComponent = [];
+  if (passwordButtonPressed()) {
+    return createComponent("div", {
+      className: styles.changeBox,
+      children: [
+        createComponent("input", {
+          className: styles.changeInput,
+          attributes: {
+            type: "password",
+            placeholder: "Enter new password...",
+            value: password(),
+          },
+          events: {
+            input: (event) => setPassword(event.target.value),
+          },
+        }),
+        createComponent("input", {
+          className: styles.changeInput,
+          attributes: {
+            type: "password",
+            placeholder: "Repeat new password...",
+            value: passwordRepeat(),
+          },
+          events: {
+            input: (event) => setPasswordRepeat(event.target.value),
+          },
+        }),
+        createComponent("button", {
+          className: styles.changeButton,
+          content: "Change Password",
+          events: {
+            click : (event) => {
+              console.log('Changing password...');
+              handleChangePassword(setReload);
+            }
+          }
+        }),
+      ],
+    });
+  } else {
+    changePasswordComponent = [createComponent('button', {
+      className: styles.changeButton,
+      content: 'Change Password',
+      events: {
+        click: (event) => {
+          console.log("Change password button clicked for:", user_data.username);
+          setPasswordButtonPressed(true);
+          setReload(true);
+        }
+      },
+    }),
+  ];
+  }
+
+  return createComponent('div', {
+    className: styles.changeBox,
+    children: changePasswordComponent,
   });
 }
 
@@ -342,6 +440,7 @@ function dynamicData(user_data, setReload) {
       // }),
 
       changeUsernameComponent(user_data, setReload),
+      changePasswordComponent(user_data, setReload),
       
       // Friends List Section
       friendListComponent(user_data, setReload),

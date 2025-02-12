@@ -118,10 +118,11 @@ export default function LoginPage() {
               }),
               createComponent('input', {
                 className: styles.formGroupInput,
-                type: 'password',
-                id: 'password',
-                name: 'password',
-                required: true,
+                attributes: {
+                  type: "password",
+                  // placeholder: "Password...",
+                  required: true,
+                },
                 events: {
                   input: (event) => {
                     const value = event.target.value;

@@ -13,6 +13,7 @@ export default function SignupPage() {
   const [username, setUsername] = createSignal('');
   const [email, setEmail] = createSignal('');
   const [password, setPassword] = createSignal('');
+  const [passwordRepeat, setPasswordRepeat] = createSignal('');
   const [usernameError, setUsernameError] = createSignal('');
   const [emailError, setEmailError] = createSignal('');
   const [passwordError, setPasswordError] = createSignal('');
@@ -62,6 +63,16 @@ export default function SignupPage() {
     return isValid;
   }
 
+  function matchPasswords() {
+    const isValid = password() === passwordRepeat();
+    setPasswordError(
+      isValid
+        ? ''
+        : 'Passwords do not match'
+    );
+    return isValid;
+  }
+
   async function handleRegistration(event) {
     event.preventDefault();
     setSubmitError('');
@@ -71,7 +82,7 @@ export default function SignupPage() {
 
     setIsSigningUp(true);
 
-    if (!validateUsername(username()) || !validateEmail(email()) || !validatePassword(password())) {
+    if (!validateUsername(username()) || !validateEmail(email()) || !validatePassword(password()) || !matchPasswords()) {
       setIsSigningUp(false);
       return;
     }
@@ -195,15 +206,31 @@ export default function SignupPage() {
               }),
               createComponent('input', {
                 className: styles.formGroupInput,
-                type: 'password',
-                id: 'password',
-                name: 'password',
-                required: true,
+                attributes: {
+                  type: "password",
+                  // placeholder: "Password...",
+                  required: true,
+                },
                 events: {
                   input: (event) => {
                     const value = event.target.value;
                     setPassword(value);
                     validatePassword(value);
+                  }
+                }
+              }),
+              createComponent('input', {
+                className: styles.formGroupInput,
+                attributes: {
+                  type: "password",
+                  // placeholder: "Repeat password...",
+                  required: true,
+                },
+                events: {
+                  input: (event) => {
+                    const value = event.target.value;
+                    setPasswordRepeat(value);
+                    matchPasswords();
                   }
                 }
               }),

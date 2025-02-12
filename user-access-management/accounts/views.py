@@ -108,12 +108,12 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request):
-        pass
-        # user = request.user
-        # user.username = request.data['username']
-        # user.save(update_fields=['username'])
+        # pass
+        user = request.user
+        user.password = request.data['new_password']
+        user.save(update_fields=['password'])
 
-        #return Response({"message": "Username changed successfully."}, status=status.HTTP_200_OK)
+        return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
 
 class ChangeAvatarView(APIView):
     authentication_classes = [TokenAuthentication]
