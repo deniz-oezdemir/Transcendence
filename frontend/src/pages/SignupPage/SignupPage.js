@@ -1,6 +1,7 @@
 import { createComponent, Link, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './SignupPage.module.css';
+import { validateUsername, validatePassword, matchPasswords, validateEmail } from '../../core/utils';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
@@ -21,58 +22,6 @@ export default function SignupPage() {
   const [submitSuccess, setSubmitSuccess] = createSignal('');
   const [isSigningUp, setIsSigningUp] = createSignal(false);
 
-  function validateUsername(value) {
-    const isValid =
-      value.length >= 3 &&
-      value.length <= 20 &&
-      /^[a-zA-Z0-9]+$/.test(value);
-
-    setUsernameError(
-      isValid
-        ? ''
-        : 'Username must be 3-20 alphanumeric characters and/or underscores'
-    );
-
-    return isValid;
-  }
-
-  function validateEmail(value) {
-    const isValid =
-      value.length >= 8 &&
-      value.length <= 50 &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-
-    setEmailError(
-      isValid
-        ? ''
-        : 'Invalid email address'
-    );
-    return isValid;
-  }
-
-  function validatePassword(value) {
-    const isValid =
-      value.length >= 8 &&
-      value.length <= 50;
-
-    setPasswordError(
-      isValid
-        ? ''
-        : 'Password must be 8-50 characters'
-    );
-    return isValid;
-  }
-
-  function matchPasswords() {
-    const isValid = password() === passwordRepeat();
-    setPasswordError(
-      isValid
-        ? ''
-        : 'Passwords do not match'
-    );
-    return isValid;
-  }
-
   async function handleRegistration(event) {
     event.preventDefault();
     setSubmitError('');
@@ -82,7 +31,7 @@ export default function SignupPage() {
 
     setIsSigningUp(true);
 
-    if (!validateUsername(username()) || !validateEmail(email()) || !validatePassword(password()) || !matchPasswords()) {
+    if (!validateUsername(username(), setUsernameError) || !validateEmail(email(), setEmailError) || !validatePassword(password(), setPasswordError) || !matchPasswords(password(), passwordRepeat(), setPasswordError)) {
       setIsSigningUp(false);
       return;
     }
@@ -160,7 +109,7 @@ export default function SignupPage() {
                   input: (event) => {
                     const value = event.target.value;
                     setUsername(value);
-                    validateUsername(value);
+                    validateUsername(value, setUsernameError);
                   }
                 }
               }),
@@ -187,7 +136,7 @@ export default function SignupPage() {
                   input: (event) => {
                     const value = event.target.value;
                     setEmail(value);
-                    validateEmail(value);
+                    validateEmail(value, setEmailError);
                   }
                 }
               }),
@@ -215,7 +164,7 @@ export default function SignupPage() {
                   input: (event) => {
                     const value = event.target.value;
                     setPassword(value);
-                    validatePassword(value);
+                    validatePassword(password(), setPasswordError);
                   }
                 }
               }),
@@ -230,7 +179,7 @@ export default function SignupPage() {
                   input: (event) => {
                     const value = event.target.value;
                     setPasswordRepeat(value);
-                    matchPasswords();
+                    matchPasswords(password(), passwordRepeat(), setPasswordError);
                   }
                 }
               }),

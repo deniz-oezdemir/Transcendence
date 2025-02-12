@@ -1,6 +1,7 @@
 import { createComponent, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './ProfilePage.module.css';
+import { validateUsername, validatePassword, matchPasswords } from '../../core/utils';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
@@ -43,9 +44,12 @@ async function handleDeleteAccount() {
 
 function friendRequestForm(setReload) {
   const [username, setUsername] = createSignal("");
+  const [usernameError, setUsernameError] = createSignal("");
 
   async function sendFriendRequest() {
-    if (!username()) return alert("Please enter a username!");
+    if (!username() || !validateUsername(username(), setUsernameError)) {
+      return alert("Please enter a valid username!");
+    }
 
     try {
       console.log("Sending friend request to", username());
@@ -89,7 +93,7 @@ function friendRequestForm(setReload) {
         content: "Add Friend",
         events: {
           click : (event) => {
-            console.log('Sending friend request...');
+            console.log('Calling send friend request...');
             sendFriendRequest(event);
           }
         }
@@ -175,9 +179,16 @@ function friendListComponent(user_data, setReload) {
 
 function changeUsernameComponent(user_data, setReload) {
   const[username, setUsername] = createSignal("");
+  const[usernameError, setUsernameError] = createSignal("");
 
   async function handleChangeUsername(setReload) {
+    if (!username() || !validateUsername(username(), setUsernameError)) {
+      setUsernameButtonPressed(false);
+      setReload(true);
+      return alert("Please enter a valid username!");
+    }
     try {
+      console.log("Sending change username request");
       let new_username = username();
       const response = await fetch(`${apiUrl}/change-username/`, {
         method: "PUT",
@@ -257,12 +268,14 @@ function changeUsernameComponent(user_data, setReload) {
 function changePasswordComponent(user_data, setReload) {
   const[password, setPassword] = createSignal("");
   const[passwordRepeat, setPasswordRepeat] = createSignal("");
+  const[passwordError, setPasswordError] = createSignal("");
 
   async function handleChangePassword(setReload) {
     try {
-      if (password() !== passwordRepeat()) {
-        alert("Passwords do not match.");
-        return;
+      if (!validatePassword(password(), setPasswordError) || !matchPasswords(password(), passwordRepeat(), setPasswordError)) {
+        setPasswordButtonPressed(false);
+        setReload(true);
+        return alert(passwordError());
       }
       let new_password = password();
       const response = await fetch(`${apiUrl}/change-password/`, {
@@ -391,53 +404,6 @@ function dynamicData(user_data, setReload) {
           }
         }
       }),
-
-      // // Action Buttons
-      // createComponent('div', {
-      //   className: styles.actions,
-      //   children: [
-      //     createComponent('button', {
-      //       className: styles.actionButton,
-      //       content: 'Change Avatar',
-      //       events: {
-      //         click : (event) => {
-      //           console.log('Change Avatar button clicked');
-      //           handleChangeAvatar(event, setReload);
-      //         }
-      //       }
-      //     }),
-      //     createComponent('button', {
-      //       className: styles.actionButton,
-      //       content: 'Change Username',
-      //       events: {
-      //         click : (event) => {
-      //           console.log('Change Username button clicked');
-      //           handleChangeUsername(event, setReload);
-      //         }
-      //       }
-      //     }),
-      //     createComponent('button', {
-      //       className: styles.actionButton,
-      //       content: 'Change Password',
-      //       events: {
-      //         click : (event) => {
-      //           console.log('Change Password button clicked');
-      //           handleChangePassword(event, setReload);
-      //         }
-      //       }
-      //     }),
-      //     createComponent('button', {
-      //       className: styles.deleteButton,
-      //       content: 'Delete Account',
-      //       events: {
-      //         click : (event) => {
-      //           console.log('Delete Account button clicked');
-      //           handleDeleteAccount(event);
-      //         }
-      //       }
-      //     }),
-      //   ],
-      // }),
 
       changeUsernameComponent(user_data, setReload),
       changePasswordComponent(user_data, setReload),
