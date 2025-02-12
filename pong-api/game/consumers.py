@@ -20,7 +20,10 @@ class GameConsumer(AsyncWebsocketConsumer):
         self.game_start_time = timezone.now()  # Store start time
 
         await self.channel_layer.group_add(self.game_group_name, self.channel_name)
-        self.game_state = await database_sync_to_async(self.get_game_state)()
+        logger.info(
+            f"Connection added to group: {self.game_group_name} and channel: {self.channel_name}"
+        )
+        self.game_state = self.get_game_state()
         await self.accept()
         logger.info(
             f"WebSocket connected: {self.channel_name}, game_state: {self.game_state}"
@@ -43,54 +46,46 @@ class GameConsumer(AsyncWebsocketConsumer):
         if action == "move":
             player_id = text_data_json["player_id"]
             direction = text_data_json["direction"]
+            logger.info(
+                f"Move action received: player_id={player_id}, direction={direction}"
+            )
             await self.move_player(player_id, direction)
 
         if action == "toggle":
             await self.toggle_game()
 
-        await self.channel_layer.group_send(
-            self.game_group_name, {"type": "game_update", "message": text_data_json}
+    async def game_state_update(self, event):
+        game_state_data = event["state"]
+        await self.send(
+            text_data=json.dumps(
+                {"type": "game_state_update", "state": game_state_data}
+            )
         )
 
-    async def game_update(self, event):
-        message = event["message"]
-        logger.debug(f"Game update: {message}")
+    async def move_player(self, player_id, direction):
+        try:
+            logger.info("move player is game running ok")
+            engine = PongGameEngine(self.game_state)
+            self.game_state = engine.move_player(player_id, direction)
+            logger.info(f"Player {player_id} moved to direction {direction}")
 
-        await self.send(text_data=json.dumps(message))
+            if not self.game_state.is_game_ended:
+                await self.save_game_state()
+                logger.info("move_player: game saved")
+                await self.send_game_state()
+                logger.info("move_player: game sent")
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while moving player: {e}")
 
-    async def game_state_update(self, event):
-        state = event["state"]
-        logger.debug(f"Game state update: {state}")
-
-        if not self.game_state.is_game_running:
-            self.send_updates = False
-        if self.send_updates:
-            await self.send(
-                text_data=json.dumps({"type": "game_state_update", "state": state})
-            )
-
-    @database_sync_to_async
-    def move_player(self, player_id, direction):
-        if self.game_state.is_game_running:
-            try:
-                engine = PongGameEngine(self.game_state)
-                self.game_state = engine.move_player(player_id, direction)
-                logger.debug(f"Player {player_id} moved to direction {direction}")
-
-                if self.game_state.is_game_ended:
-                    self.save_game_state(self.game_state)
-                    logger.debug("game saved")
-            except Exception as e:
-                logger.error(f"Unexpected error occurred while moving player: {e}")
-        else:
-            logger.debug("Move player exception, game not running")
-
-    @database_sync_to_async
-    def toggle_game(self):
+    async def toggle_game(self):
         self.game_state.is_game_running = not self.game_state.is_game_running
         self.send_updates = True
-        self.save_game_state(self.game_state)
-        logger.info("toggle: game saved")
+        await self.save_game_state()
+        logger.info(
+            f"Toggled game state for game_id {self.game_id}. New state: {self.game_state.is_game_running}"
+        )
+        await self.send_game_state()
+        logger.debug("toggle_game: game sent")
 
     async def send_periodic_updates(self):
         try:
@@ -103,44 +98,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                     await self.close()
                     break
 
-                await database_sync_to_async(self.update_game_state)()
-                # game_state = await database_sync_to_async(self.get_game_state)()
-                game_state = self.game_state
-                game_state_data = {
-                    "id": game_state.id,
-                    "max_score": game_state.max_score,
-                    "is_game_running": game_state.is_game_running,
-                    "is_game_ended": game_state.is_game_ended,
-                    "player_1_id": game_state.player_1_id,
-                    "player_2_id": game_state.player_2_id,
-                    "player_1_name": game_state.player_1_name,
-                    "player_2_name": game_state.player_2_name,
-                    "player_1_score": game_state.player_1_score,
-                    "player_2_score": game_state.player_2_score,
-                    "player_1_position": game_state.player_1_position,
-                    "player_2_position": game_state.player_2_position,
-                    "ball_x_position": game_state.ball_x_position,
-                    "ball_y_position": game_state.ball_y_position,
-                    "ball_speed": game_state.ball_speed,
-                    "ball_x_direction": game_state.ball_x_direction,
-                    "ball_y_direction": game_state.ball_y_direction,
-                    "ball_radius": game_state.ball_radius,
-                    "game_height": game_state.game_height,
-                    "game_width": game_state.game_width,
-                    "paddle_height": game_state.paddle_height,
-                    "paddle_width": game_state.paddle_width,
-                    "paddle_offset": game_state.paddle_offset,
-                }
-                logger.debug(f"Game state: {game_state_data}")
-
-                if not self.game_state.is_game_running:
-                    self.send_updates = False
-                if self.send_updates:
-                    await self.send(
-                        text_data=json.dumps(
-                            {"type": "game_state_update", "state": game_state_data}
-                        )
-                    )
+                await self.update_game_state()
+                await self.send_game_state()
+                logger.debug("send_periodic_updates: game sent")
                 await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
             logger.debug("Periodic task cancelled")
@@ -164,7 +124,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             )
             logger.debug("Created task to send game results to matchmaking service")
 
-    def update_game_state(self):
+    # Update AND save game_state
+    async def update_game_state(self):
         logger.debug(f"consumers update_game_state init with state: {self.game_state}")
 
         if self.game_state.is_game_running:
@@ -173,9 +134,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.game_state = engine.update_game_state()
                 logger.debug("game updated on engine")
 
-                # TODO: check save only if game ended
-                self.save_game_state(self.game_state)
-                logger.debug("game saved")
+                # TODO: check save only if game ended if there is lag
+                await self.save_game_state()
+                logger.debug("update_game_state: game saved")
 
             except GameState.DoesNotExist:
                 return {"error": "Game not found"}
@@ -234,36 +195,28 @@ class GameConsumer(AsyncWebsocketConsumer):
             raise GameState.DoesNotExist("Game not found in Redis.")
         return game_state
 
-    def save_game_state(self, game_state):
-        if settings.USE_REDIS:
-            cache_key = f"{self.game_id}"
+    async def save_game_state(self):
+        cache_key = f"{self.game_id}"
+        game_state_data = {
+            key: value
+            for key, value in self.game_state.__dict__.items()
+            if not key.startswith("_")
+        }
+        cache.set(cache_key, json.dumps(game_state_data), timeout=None)
+        logger.debug(f"Game state saved: {game_state_data}")
+
+    async def send_game_state(self):
+        logger.debug(f"Sending game state: {self.game_state}")
+
+        if not self.game_state.is_game_running:
+            self.send_updates = False
+        if self.send_updates:
             game_state_data = {
-                "id": game_state.id,
-                "max_score": game_state.max_score,
-                "is_game_running": game_state.is_game_running,
-                "is_game_ended": game_state.is_game_ended,
-                "player_1_id": game_state.player_1_id,
-                "player_2_id": game_state.player_2_id,
-                "player_1_name": game_state.player_1_name,
-                "player_2_name": game_state.player_2_name,
-                "player_1_score": game_state.player_1_score,
-                "player_2_score": game_state.player_2_score,
-                "player_1_position": game_state.player_1_position,
-                "player_2_position": game_state.player_2_position,
-                "ball_x_position": game_state.ball_x_position,
-                "ball_y_position": game_state.ball_y_position,
-                "ball_speed": game_state.ball_speed,
-                "ball_x_direction": game_state.ball_x_direction,
-                "ball_y_direction": game_state.ball_y_direction,
-                "ball_radius": game_state.ball_radius,
-                "game_height": game_state.game_height,
-                "game_width": game_state.game_width,
-                "paddle_height": game_state.paddle_height,
-                "paddle_width": game_state.paddle_width,
-                "paddle_offset": game_state.paddle_offset,
+                key: value
+                for key, value in self.game_state.__dict__.items()
+                if not key.startswith("_")
             }
-            cache.set(cache_key, json.dumps(game_state_data), timeout=None)
-            logger.debug("game saved in Redis")
-        else:
-            game_state.save()
-            logger.debug("game saved in database")
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {"type": "game_state_update", "state": game_state_data},
+            )

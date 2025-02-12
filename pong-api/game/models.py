@@ -97,17 +97,29 @@ class GameState(models.Model):
 
     def __str__(self) -> str:
         return (
-            f"Ball at position:\n"
-            f"  x: {self.ball_x_position}\n"
-            f"  y: {self.ball_y_position}\n"
-            f"With direction:\n"
-            f"  x: {self.ball_x_direction}\n"
-            f"  y: {self.ball_y_direction}\n"
-            f"And speed:\n"
-            f"  y: {self.ball_speed}\n"
-            f"Player 1 at position: {self.player_1_name} (ID: {self.player_1_id}, Position: {self.player_1_position}, Score: {self.player_1_score})\n"
-            f"Player 2 at position: {self.player_2_name} (ID: {self.player_2_id}, Position: {self.player_2_position}, Score: {self.player_2_score})\n"
-            f"Game status:\n"
-            f"  is_game_running: {self.is_game_running}\n"
-            f"  is_game_ended: {self.is_game_ended}"
+            "game_state_data = {\n"
+            f'    "id": {self.id},\n'
+            f'    "max_score": {self.max_score},\n'
+            f'    "is_game_running": {self.is_game_running},\n'
+            f'    "is_game_ended": {self.is_game_ended},\n'
+            f'    "player_1_id": {self.player_1_id},\n'
+            f'    "player_2_id": {self.player_2_id},\n'
+            f'    "player_1_name": {self.player_1_name},\n'
+            f'    "player_2_name": {self.player_2_name},\n'
+            f'    "player_1_score": {self.player_1_score},\n'
+            f'    "player_2_score": {self.player_2_score},\n'
+            f'    "player_1_position": {self.player_1_position},\n'
+            f'    "player_2_position": {self.player_2_position},\n'
+            f'    "ball_x_position": {self.ball_x_position},\n'
+            f'    "ball_y_position": {self.ball_y_position},\n'
+            f'    "ball_speed": {self.ball_speed},\n'
+            f'    "ball_x_direction": {self.ball_x_direction},\n'
+            f'    "ball_y_direction": {self.ball_y_direction},\n'
+            f'    "ball_radius": {self.ball_radius},\n'
+            f'    "game_height": {self.game_height},\n'
+            f'    "game_width": {self.game_width},\n'
+            f'    "paddle_height": {self.paddle_height},\n'
+            f'    "paddle_width": {self.paddle_width},\n'
+            f'    "paddle_offset": {self.paddle_offset},\n'
+            "}"
         )
