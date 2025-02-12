@@ -43,7 +43,7 @@ export default class Firework {
       velocities.set([v.x, v.y, v.z], i * 3);
 
       // Random color HSL with hight Saturation and Lightness
-      const c = new THREE.Color().setHSL(Math.random() * 0.25, 1.0, 0.75);
+      const c = new THREE.Color().setHSL(Math.random(), 1.0, 1.0);
       colors.set([c.r, c.g, c.b], i * 3);
     }
 
@@ -99,7 +99,7 @@ export default class Firework {
     this.uTime.value += dt / this.expireIn;
     if (this.uTime.value >= 1) {
       this.uTime.value = 1;
-      this.die();
+      this.isDie = true;
     }
   }
 
@@ -114,6 +114,5 @@ export default class Firework {
     }
     this.geometry.dispose();
     this.material.dispose();
-    this.isDie = true;
   }
 }

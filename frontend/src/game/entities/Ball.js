@@ -102,11 +102,9 @@ export default class Ball extends EventDispatcher {
 
         this.speed *= 1.1;
         this.velocity.normalize().multiplyScalar(this.speed);
+        this.dispatchEvent({ type: 'collide' });
       }
     }
-    // else {
-    //     this.pointCollision.position.set(0, 0, 0);
-    //   }
 
     this.mesh.position.copy(tPos);
   }

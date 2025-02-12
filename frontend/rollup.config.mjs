@@ -114,6 +114,7 @@ export default {
         { src: 'src/assets/icons/favicon.ico', dest: 'dist' },
         { src: 'src/assets/images', dest: 'dist/assets' },
         { src: 'src/assets/models', dest: 'dist/assets' },
+        { src: 'src/assets/textures', dest: 'dist/assets' },
         { src: 'src/assets/fonts', dest: 'dist/assets' },
         {
           src: 'node_modules/three/examples/jsm/libs/basis',

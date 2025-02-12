@@ -55,6 +55,10 @@ import {
   SpriteMaterial,
   TextureLoader,
   Sprite,
+  RepeatWrapping,
+  LineBasicMaterial,
+  EdgesGeometry,
+  LineSegments,
 } from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -70,23 +74,25 @@ import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import { pass, mrt, output, emissive, uniform, float } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { WaterMesh } from 'three/addons/objects/WaterMesh.js';
+import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
 import GameControls from '@/components/GameControls/GameControls';
-import Ball from '@/game/Ball.js';
-import Paddle from '@/game/Paddle.js';
-import AIController from '@/game/AIController.js';
-import lights from '@/game/lights.js';
-import Firework from '@/game/Firework.js';
-import HolographicMaterial from '@/game/HolographicMaterial.js';
+import Ball from '@/game/entities/Ball.js';
+import Paddle from '@/game/entities/Paddle.js';
+import AIController from '@/game/entities/AIController.js';
+import lights from '@/game/environment/lights.js';
+import Firework from '@/game/effects/Firework.js';
+import FireworkPool from '@/game/effects/FireworkPool.js';
+import NeonRingEffect from '@/game/effects/NeonRingEffect.js';
+import HolographicMaterial from '@/game/materials/HolographicMaterial.js';
+import MetallicWalls from '@/game/environment/MetallicWalls.js';
+import lerp from '@/game/utils/lerp.js';
+import { getSunParams, getSkyParams } from '@/game/utils/skyParams.js';
 
 import styles from './PongGame3DPage.module.css';
-
-function lerp(from, to, speed) {
-  const amount = (1 - speed) * from + speed * to;
-  return Math.abs(from - to) < 0.001 ? to : amount;
-}
 
 export default function PongGame3DPage({ navigate }) {
   const cleanup = createCleanupContext();
@@ -100,7 +106,6 @@ export default function PongGame3DPage({ navigate }) {
   });
 
   const fov = 75;
-  //colors
   const params = {
     environment: {
       backgroundColor: 0xb499ff, //0x9e7aff,
@@ -145,9 +150,36 @@ export default function PongGame3DPage({ navigate }) {
     },
   };
 
-  // Font Loader
+  let player2ScoreMesh,
+    player1ScoreMesh,
+    player1NameMesh,
+    player2NameMesh,
+    loadedFont,
+    bloomPass;
 
-  let player2ScoreMesh, player1ScoreMesh, loadedFont, bloomPass;
+  let sky, water, renderTarget, pmremGenerator;
+  const sceneEnv = new Scene();
+  // let sunUpdateTimer = 0;
+  // const sunUpdateInterval = 5.0;
+  const sunSpeed = 0.1;
+  let timeOfDay = 0;
+
+  const lat = 52.520008; // Berlin lat
+  const lon = 13.404954; // Berlin lon
+  const date = new Date();
+  let sunParams = getSunParams(lat, lon, date);
+
+  const skyParams = {
+    elevation: sunParams.elevation,
+    azimuth: sunParams.azimuth,
+    sunPosition: new Vector3(),
+    turbidity: 0,
+    rayleigh: 0,
+    mieCoefficient: 0,
+    mieDirectionalG: 0,
+  };
+  getSkyParams(skyParams);
+
   const TEXT_PARAMS = {
     size: 5,
     depth: 0.5,
@@ -158,13 +190,6 @@ export default function PongGame3DPage({ navigate }) {
     bevelOffset: 0,
     bevelSegments: 8,
   };
-
-  const scoreP1Material = new MeshStandardMaterial({
-    color: params.colors.scoreP1,
-  });
-  const scoreP2Material = new MeshStandardMaterial({
-    color: params.colors.scoreP2,
-  });
 
   let scoreP1MessageMaterial;
   let scoreP2MessageMaterial;
@@ -188,26 +213,68 @@ export default function PongGame3DPage({ navigate }) {
     'assets/fonts/helvetiker_bold.typeface.json',
     function (font) {
       loadedFont = font;
-      const geometry = new TextGeometry('0', {
+      const scoreGeometry = new TextGeometry('0', {
         font: font,
         ...TEXT_PARAMS,
       });
 
-      geometry.center();
+      const p1NameGeometry = new TextGeometry(params.score.info.p1.name, {
+        font: font,
+        ...TEXT_PARAMS,
+      });
+      const p2NameGeometry = new TextGeometry(params.score.info.p2.name, {
+        font: font,
+        ...TEXT_PARAMS,
+      });
 
-      player1ScoreMesh = new Mesh(geometry, holographicMaterial);
-      player2ScoreMesh = new Mesh(geometry, holographicMaterial);
-      player1ScoreMesh.position.set(0, 16, params.dimensions.boundaries.y);
-      player2ScoreMesh.position.set(0, 16, -params.dimensions.boundaries.y);
+      scoreGeometry.center();
+      p1NameGeometry.center();
+      p2NameGeometry.center();
+
+      player1ScoreMesh = new Mesh(scoreGeometry, holographicMaterial);
+      player1NameMesh = new Mesh(p1NameGeometry, holographicMaterial);
+      player2ScoreMesh = new Mesh(scoreGeometry, holographicMaterial);
+      player2NameMesh = new Mesh(p2NameGeometry, holographicMaterial);
+      player1ScoreMesh.rotation.y = -Math.PI * 0.5;
+      player1ScoreMesh.position.set(
+        params.dimensions.boundaries.y,
+        16,
+        params.dimensions.boundaries.x - 12
+      );
+      player2ScoreMesh.rotation.y = -Math.PI * 0.5;
+      player2ScoreMesh.position.set(
+        params.dimensions.boundaries.y,
+        16,
+        -params.dimensions.boundaries.x + 12
+      );
+      player1NameMesh.rotation.y = -Math.PI * 0.5;
+      player1NameMesh.position.set(
+        params.dimensions.boundaries.y,
+        24,
+        params.dimensions.boundaries.x + 2
+      );
+      player2NameMesh.rotation.y = -Math.PI * 0.5;
+      player2NameMesh.position.set(
+        params.dimensions.boundaries.y,
+        24,
+        -params.dimensions.boundaries.x - 2
+      );
 
       player1ScoreMesh.castShadow = true;
+      player1NameMesh.castShadow = true;
       player2ScoreMesh.castShadow = true;
+      player2NameMesh.castShadow = true;
 
-      scene.add(player2ScoreMesh, player1ScoreMesh);
+      scene.add(
+        player2ScoreMesh,
+        player1ScoreMesh,
+        player1NameMesh,
+        player2NameMesh
+      );
     }
   );
 
-  function getScoreGeometry(score) {
+  function scoreGetScoreGeometry(score) {
     const geometry = new TextGeometry(`${score}`, {
       font: loadedFont,
       ...TEXT_PARAMS,
@@ -221,20 +288,20 @@ export default function PongGame3DPage({ navigate }) {
 
   // Scene Setup
   const scene = new Scene();
-  scene.background = new Color(params.environment.backgroundColor);
-  scene.fog = new Fog(
-    params.environment.fog.color,
-    params.environment.fog.near,
-    params.environment.fog.far
-  );
+  // scene.background = new Color(params.environment.backgroundColor);
+  // scene.fog = new Fog(
+  //   params.environment.fog.color,
+  //   params.environment.fog.near,
+  //   params.environment.fog.far
+  // );
 
-  scene.add(...lights);
+  // scene.add(...lights);
 
-  const axesHelper = new AxesHelper(5);
-  axesHelper.position.y = -1;
-  scene.add(axesHelper);
-  const gridHelper = new GridHelper();
-  scene.add(gridHelper);
+  // const axesHelper = new AxesHelper(5);
+  // axesHelper.position.y = -1;
+  // scene.add(axesHelper);
+  // const gridHelper = new GridHelper();
+  // scene.add(gridHelper);
 
   const stats = new Stats();
 
@@ -387,65 +454,78 @@ export default function PongGame3DPage({ navigate }) {
   });
 
   // Plane
-  const planeGeometry = new PlaneGeometry(
-    params.dimensions.boundaries.x * 20,
-    params.dimensions.boundaries.y * 20,
-    params.dimensions.boundaries.x * 20,
-    params.dimensions.boundaries.y * 20
-  );
-  planeGeometry.rotateX(-Math.PI * 0.5);
-  const planeMaterial = new MeshStandardMaterial({
-    color: params.colors.plane,
-    // wireframe: true,
-    // transparent: true,
-    // opacity: 0.1,
-  });
+  // const planeGeometry = new PlaneGeometry(
+  //   params.dimensions.boundaries.x * 20,
+  //   params.dimensions.boundaries.y * 20,
+  //   params.dimensions.boundaries.x * 20,
+  //   params.dimensions.boundaries.y * 20
+  // );
+  // planeGeometry.rotateX(-Math.PI * 0.5);
+  // const planeMaterial = new MeshStandardMaterial({
+  //   color: params.colors.plane,
+  //   vismaterial: false,
+  //   // wireframe: true,
+  //   // transparent: true,
+  //   // opacity: 0.1,
+  // });
 
-  const plane = new Mesh(planeGeometry, planeMaterial);
-  // plane.castShadow = true;
-  plane.receiveShadow = true;
-  plane.position.y = -1.5;
-  scene.add(plane);
+  // const plane = new Mesh(planeGeometry, planeMaterial);
+  // // plane.castShadow = true;
+  // plane.receiveShadow = true;
+  // plane.position.y = -2.5;
+  // scene.add(plane);
 
   /**
    *
    **/
   const coliseumGeometry = new RoundedBoxGeometry(
-    params.dimensions.boundaries.x * 2 + 1,
+    params.dimensions.boundaries.x * 2 + 1.2,
     3.5,
-    params.dimensions.boundaries.y * 2 + 1,
+    params.dimensions.boundaries.y * 2 + 1.2,
     8,
     1.5
   );
 
+  const metallicWalls = MetallicWalls(params.dimensions);
+  scene.add(metallicWalls);
+
+  const noiseTexture = new TextureLoader().load('assets/textures/neon.webp');
+  noiseTexture.wrapS = noiseTexture.wrapT = RepeatWrapping;
+
   const coliseumMaterial = new MeshPhysicalMaterial({
+    map: noiseTexture,
+    alphaMap: noiseTexture,
+    clearcoat: 0.0,
+    clearcoatRoughness: 0.0,
+    // dispersion: 0.00000001,
+    ior: 1.25,
+    reflectivity: 1.0,
     transparent: true,
-    roughness: 0.15,
-    transmission: 1.0,
-    ior: 1.15,
+    thickness: 2.5,
+    roughness: 0.1,
+    transmission: 0.99,
     envMapIntensity: 25,
     transparent: true,
     opacity: 1.0,
-    metalness: 0,
-    thickness: 2.0,
-    clearcoat: 0.1,
-    clearcoatRoughness: 0,
-    // side: BackSide,
+    metalness: 0.0,
+    depthWrite: false,
+    depthTest: true,
   });
 
   const coliseum = new Mesh(coliseumGeometry, coliseumMaterial);
 
   const platformGeometry = new RoundedBoxGeometry(
     params.dimensions.boundaries.x * 4,
-    2,
+    3.0,
     params.dimensions.boundaries.y * 4,
     8,
     3
   );
-  platformGeometry.translate(0, -0.5, 0);
+  platformGeometry.translate(0, -1.0, 0);
 
   const platformMaterial = new MeshStandardMaterial({
-    metalness: 1.5,
+    color: 0x000000,
+    metalness: 1.0,
     roughness: 0.25,
     flatShading: true,
     side: FrontSide,
@@ -516,31 +596,48 @@ export default function PongGame3DPage({ navigate }) {
     bloomIntensity: uniform(bloomIntensity),
   });
 
-  // Pong Model
-  // new GLTFLoader().load('assets/models/pong-v1.glb', (gltf) => {
-  //   console.log('gltf', gltf);
-  //   console.log('gltf.scene', gltf.scene);
-  //   // s.position.set(0, 35, 0);
-  //   // s.rotation.set(0, 0, Math.PI / 2);
-  //   // s.scale.set(10, 10, 10);
-  //   // gltf.scene.traverse((child) => {
-  //   //   if (child.material) {
-  //   //     child.material.polygonOffset = true;
-  //   //     child.material.polygonOffsetFactor = -1;
-  //   //     child.material.polygonOffsetUnits = -1;
-  //   //     child.material.side = DoubleSide;
-  //   //   }
-  //   // if (child.isMesh) {
-  //   //   const normalHelper = new VertexNormalsHelper(child, 0.5, 0xff0000);
-  //   //   scene.add(normalHelper);
-  //   // }
-  //   // });
-  //   const s = gltf.scene;
-  //   s.scale.x *= -1;
-  //   scene.add(s);
-  // });
+  const fireworks = new FireworkPool(scene);
+  const ringWaves = new NeonRingEffect(scene, [
+    params.colors.paddleP1,
+    params.colors.paddleP2,
+  ]);
+  //
 
-  const fireworks = [];
+  function updateSun() {
+    timeOfDay += sunSpeed;
+    if (timeOfDay > 360) timeOfDay = 0;
+
+    skyParams.azimuth = sunParams.azimuth + timeOfDay;
+    skyParams.elevation =
+      sunParams.elevation + 10 * Math.sin(MathUtils.degToRad(timeOfDay));
+
+    const phi = MathUtils.degToRad(90 - skyParams.elevation);
+    const theta = MathUtils.degToRad(skyParams.azimuth);
+    skyParams.sunPosition.setFromSphericalCoords(1, phi, theta);
+
+    sky.sunPosition.value.copy(skyParams.sunPosition);
+    water.sunDirection.value.copy(skyParams.sunPosition).normalize();
+
+    if (renderTarget !== undefined) renderTarget.dispose();
+    sceneEnv.clear();
+    sceneEnv.add(sky);
+
+    pmremGenerator
+      .fromSceneAsync(sceneEnv)
+      .then((newRenderTarget) => {
+        renderTarget = newRenderTarget;
+        scene.environment = renderTarget.texture;
+        scene.background = renderTarget.texture;
+        scene.environmentIntensity = 0.9;
+        scene.backgroundIntensity = 0.1;
+        scene.backgroundBlurriness = 0.0;
+      })
+      .catch((error) => {
+        console.error('Error generando el render target:', error);
+      });
+  }
+
+  //
 
   const controller = new AIController(player2Paddle, ball);
 
@@ -577,38 +674,22 @@ export default function PongGame3DPage({ navigate }) {
     onCleanup(() => {
       resizeObserver.disconnect();
       device?.destroy();
-      fireworks.forEach((f) => f.die());
+      fireworks.dispose();
+      // fireworks.forEach((f) => f.die());
+      ringWaves.dispose();
     });
   });
 
   let adapter, device, format;
 
-  async function initWebGPU() {
-    if (!navigator.gpu) throw new Error('WebGPU not supported');
-    adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) throw new Error('No WebGPU adapter found');
-    device = await adapter.requestDevice();
-    format = navigator.gpu.getPreferredCanvasFormat();
-    return {
-      adapter,
-      device,
-      format,
-    };
-  }
-
   const init = async () => {
     try {
-      const { adap, devi, form } = await initWebGPU();
-
       renderer = new WebGPURenderer({
         antialias: window.devicePixelRatio < 2,
-        // device: devi,
-        // format: form,
-        // logarithmicDepthBuffer: true,
       });
-      renderer.init();
+      await renderer.init();
       renderer.toneMapping = ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1;
+      renderer.toneMappingExposure = 0.5;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = VSMShadowMap;
       renderer.setPixelRatio(window.devicePixelRatio);
@@ -617,12 +698,12 @@ export default function PongGame3DPage({ navigate }) {
       // const hdr = 'assets/images/shanghai_bund_4k.hdr';
       // const hdr = 'assets/images/kloppenheim_02_puresky_2k.hdr';
       // const hdr = 'assets/images/kloppenheim_03_puresky_2k.hdr';
-      // const hdr = 'assets/images/autumn_field_puresky_2k.hdr';
+      const hdr = 'assets/images/hdris/autumn_field_puresky_2k.hdr';
 
-      const hdr = 'assets/images/hdris/autumn_field_puresky_4k.hdr.jpg';
+      // const hdr = 'assets/images/hdris/autumn_field_puresky_4k.hdr.jpg';
 
       // NOTE: loader for hdri
-      // // let environmentTexture;
+      // let environmentTexture;
       // const pmremGenerator = new PMREMGenerator(renderer);
       // pmremGenerator.compileEquirectangularShader();
 
@@ -682,18 +763,18 @@ export default function PongGame3DPage({ navigate }) {
       const { width, height } = size();
 
       renderer.setSize(width, height);
-      camera = new PerspectiveCamera(fov, width / height, 0.1, 10000);
+      camera = new PerspectiveCamera(fov, width / height, 1, 20000);
       // camera.position.set(0, 20, 45);
-      camera.position.set(0, 25, 50);
+      camera.position.set(0, 30, 50);
       camera.lookAt(new Vector3(0, 5, 0));
 
       /**
        **/
       const pingTexture = await new TextureLoader().loadAsync(
-        'assets/images/ping.webp'
+        'assets/textures/ping.webp'
       );
       const pongTexture = await new TextureLoader().loadAsync(
-        'assets/images/pong.webp'
+        'assets/textures/pong.webp'
       );
 
       scoreP1MessageMaterial = new HolographicMaterial({
@@ -772,27 +853,16 @@ export default function PongGame3DPage({ navigate }) {
       ball.addEventListener('onGoal', (e) => {
         params.score[e.message] += 1;
         const mesh = e.message === 'p2' ? player2ScoreMesh : player1ScoreMesh;
-        const geometry = getScoreGeometry(params.score[e.message]);
+        const geometry = scoreGetScoreGeometry(params.score[e.message]);
         mesh.geometry.dispose();
         mesh.geometry = geometry;
 
         triggerScoreEffect(e.message);
-
-        const firework = new Firework(
-          20,
-          3,
-          e.message === 'player2'
-            ? player2ScoreMesh.position
-            : player1ScoreMesh.position
-        );
-        scene.add(firework.mesh);
-        fireworks.push(firework);
       });
 
       ball.addEventListener('collide', () => {
-        const firework = new Firework(50, 5, ball.mesh.position);
-        scene.add(firework.mesh);
-        fireworks.push(firework);
+        fireworks.getAvailableFirework(ball.mesh.position);
+        ringWaves.onCollision(ball.mesh.position);
       });
 
       gameRef.appendChild(renderer.domElement);
@@ -800,6 +870,58 @@ export default function PongGame3DPage({ navigate }) {
 
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
+
+      //
+      //
+      //
+
+      // Skybox
+      sky = new SkyMesh();
+      sky.scale.setScalar(10000);
+
+      sky.turbidity.value = skyParams.turbidity;
+      sky.rayleigh.value = skyParams.rayleigh;
+      sky.mieCoefficient.value = skyParams.mieCoefficient;
+      sky.mieDirectionalG.value = skyParams.mieDirectionalG;
+
+      sky.sunPosition.value.copy(skyParams.sunPosition);
+
+      scene.add(sky);
+
+      // Water
+
+      const waterGeometry = new PlaneGeometry(10000, 10000);
+      const loader = new TextureLoader();
+      const waterNormals = loader.load('assets/textures/waternormals.jpg');
+      waterNormals.wrapS = waterNormals.wrapT = RepeatWrapping;
+
+      water = new WaterMesh(waterGeometry, {
+        waterNormals: waterNormals,
+        sunDirection: skyParams.sunPosition.clone().normalize(),
+        sunColor: 0xffffff,
+        waterColor: 0x003333,
+        alpha: 0.98,
+        distortionScale: 3.7,
+      });
+      water.rotation.x = -Math.PI * 0.5;
+      water.position.y = -2.0;
+
+      scene.add(water);
+
+      pmremGenerator = new PMREMGenerator(renderer);
+      sceneEnv.add(sky);
+      renderTarget = await pmremGenerator.fromSceneAsync(sceneEnv);
+      scene.environment = renderTarget.texture;
+      scene.background = renderTarget.texture;
+      scene.environmentIntensity = 1.0;
+      scene.backgroundIntensity = 0.75;
+      scene.backgroundBlurriness = 0.0;
+
+      //
+
+      // //
+
+      renderer.setAnimationLoop(animate);
 
       /**
        **/
@@ -824,8 +946,6 @@ export default function PongGame3DPage({ navigate }) {
       postProcessing.outputNode = outputPass.add(bloomPass).renderOutput();
       /**
        **/
-
-      renderer.setAnimationLoop(animate);
     } catch (error) {
       console.error('WebGPU setup failed:', error);
     }
@@ -838,7 +958,7 @@ export default function PongGame3DPage({ navigate }) {
     const deltaTime = clock.getDelta();
 
     raycaster.setFromCamera(cursor, camera);
-    const [intersection] = raycaster.intersectObject(plane);
+    const [intersection] = raycaster.intersectObject(water);
 
     const dt = deltaTime * 0.1;
 
@@ -853,14 +973,8 @@ export default function PongGame3DPage({ navigate }) {
       controller.update(dt);
     }
 
-    fireworks.forEach((firework, index) => {
-      if (firework.isDie) {
-        scene.remove(firework.mesh);
-        fireworks.splice(index, 1);
-      } else {
-        firework.update(deltaTime);
-      }
-    });
+    fireworks.update(deltaTime);
+    ringWaves.update(deltaTime);
 
     controls.update();
 
@@ -868,9 +982,17 @@ export default function PongGame3DPage({ navigate }) {
     scoreP1MessageMaterial.update();
     scoreP2MessageMaterial.update();
 
+    // TODO: fix the sun update
+    // sunUpdateTimer += deltaTime;
+    // if (sunUpdateTimer > sunUpdateInterval) {
+    //   updateSun();
+    //   sunUpdateTimer = 0;
+    // }
+
+    stats.update();
+
     postProcessing.render();
     // renderer.render(scene, camera);
-    stats.update();
   }
 
   return createComponent('div', {
