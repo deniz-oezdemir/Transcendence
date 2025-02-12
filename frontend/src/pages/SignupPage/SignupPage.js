@@ -2,6 +2,11 @@ import { createComponent, Link, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './SignupPage.module.css';
 
+const hostname = window.location.hostname;
+const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+const port = 8007;
+const apiUrl = `${protocol}//${hostname}:${port}`;
+
 export default function SignupPage() {
   const cleanup = createCleanupContext();
 
@@ -88,7 +93,7 @@ export default function SignupPage() {
     // }
 
     try {
-      const response = await fetch(`http://localhost:8007/register/`, {
+      const response = await fetch(`${apiUrl}/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
