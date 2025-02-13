@@ -20,10 +20,11 @@ import {
 } from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import Game from '@/game/Game.js';
+import GameOptionsMenu from '@/components/GameOptionsMenu/GameOptionsMenu.js';
 
 import styles from './PongGame3DPage.module.css';
 
-export default function PongGame3DPage({ navigate }) {
+export default function PongGame3DPage() {
   const cleanup = createCleanupContext();
   const mount = createMountContext();
   const gameRef = { current: null };
@@ -118,8 +119,6 @@ export default function PongGame3DPage({ navigate }) {
 
   const game = new Game(scene, camera, renderer, params);
 
-  //
-
   onMount(async () => {
     try {
       gameRef.current.appendChild(renderer.domElement);
@@ -157,9 +156,33 @@ export default function PongGame3DPage({ navigate }) {
     game.update(delta);
   }
 
+  /**
+   * Components
+   **/
+  const [isFullScreen, setIsFullScreen] = createSignal(false);
+  const [aiEnabled, setAiEnabled] = createSignal(true);
+  const [mouseModeEnabled, setMouseModeEnabled] = createSignal(true);
+
+  createEffect(() => {
+    if (game) {
+      game.isAiMode = aiEnabled();
+      game.isMouseMode = mouseModeEnabled();
+    }
+  });
+
   return createComponent('div', {
     className: `${styles.gameWrapper}`,
-    children: [],
+    children: [
+      GameOptionsMenu({
+        isFullScreen,
+        setIsFullScreen,
+        aiEnabled,
+        setAiEnabled,
+        mouseModeEnabled,
+        setMouseModeEnabled,
+        gameRef,
+      }),
+    ],
     ref: (element) => (gameRef.current = element),
     cleanup,
     mount,

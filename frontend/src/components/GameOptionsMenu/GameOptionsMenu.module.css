@@ -1,0 +1,36 @@
+.fullScreenBtn {
+  text-align: center;
+  padding: 0.1 0.75rem !important;
+}
+
+.controlsContainer {
+  position: absolute;
+  padding: 0.5rem 0.75rem;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toogleSection {
+  color: var(--bs-info);
+}
+
+:global(.form-check-input) {
+  width: var(--step-1) !important;
+  height: var(--step--1) !important;
+}
+
+:global(.form-check-label) {
+  font-size: var(--step--1) !important;
+}
+
+:global(.form-check-input:checked) {
+  background-color: var(--bs-info) !important;
+  border-color: var(--bs-info) !important;
+}
+
+:global(.form-check-input:focus) {
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-secondary-rgb), 0.5) !important;
+}

@@ -20,18 +20,41 @@ import lerp from '@/game/utils/lerp.js';
 export default class Game {
   scene;
   camera;
-  player;
+  renderer;
+  params;
+  controls;
+  textureLoader;
+  fontLoader;
+  cursor;
+  raycaster;
+  keys;
+  postProcessing;
+  ScoreDisplay;
+  player1Paddle;
+  player2Paddle;
+  ball;
+  AIController;
+  sceneEnv;
+  fireworkPool;
+  neonRingEffect;
+  scoreMessages;
+  pongTable;
   world;
   rapierDebugRenderer;
   eventQueue;
-  pong;
+  paddleSpeed;
+  isMouseMode;
+  isAi;
 
   constructor(scene, camera, renderer, params) {
+    this.isMouseMode = false;
+    this.isAiMode = true;
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
     this.params = params;
 
+    this.paddleSpeed = 0.1;
     // this.gui = new GUI();
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -42,6 +65,7 @@ export default class Game {
 
     this.cursor = new Vector2(0, 0);
     this.raycaster = new Raycaster();
+    this.keys = {};
 
     this.postProcessing = createPostProcessing(
       this.renderer,
@@ -135,6 +159,9 @@ export default class Game {
   setEventListeners() {
     window.addEventListener('mousemove', this.handleMouseMove.bind(this));
 
+    window.addEventListener('keydown', this.handleKeyDown.bind(this));
+    window.addEventListener('keyup', this.handleKeyUp.bind(this));
+
     this.ball.addEventListener('onGoal', (e) => {
       this.params.score[e.message] += 1;
       this.scoreDisplay.updateScore(
@@ -156,20 +183,51 @@ export default class Game {
     this.cursor.y = -2 * (event.clientY / window.innerHeight) + 1;
   }
 
+  handleKeyDown(event) {
+    this.keys[event.key] = true;
+  }
+
+  handleKeyUp(event) {
+    this.keys[event.key] = false;
+  }
+
   update(delta) {
-    this.raycaster.setFromCamera(this.cursor, this.camera);
-    const [intersection] = this.raycaster.intersectObject(this.sceneEnv.water);
+    const dt = delta * 0.1;
+    let intersection = null;
+    if (this.isMouseMode) {
+      this.raycaster.setFromCamera(this.cursor, this.camera);
+      intersection = this.raycaster.intersectObject(this.sceneEnv.water)?.[0];
+    }
 
+    let prevX;
+    let nextX;
     for (let i = 0; i < 10; i++) {
+      prevX = this.player1Paddle.mesh.position.x;
       if (intersection) {
-        const nextX = intersection.point.x;
-        const prevX = this.player1Paddle.mesh.position.x;
+        nextX = intersection.point.x;
         this.player1Paddle.setX(lerp(prevX, nextX, 0.5));
+      } else {
+        if (this.keys['ArrowLeft']) {
+          nextX = prevX - this.paddleSpeed;
+          this.player1Paddle.setX(lerp(prevX, nextX, 0.5));
+        } else if (this.keys['ArrowRight']) {
+          nextX = prevX + this.paddleSpeed;
+          this.player1Paddle.setX(lerp(prevX, nextX, 0.5));
+        }
       }
-
-      const dt = delta * 0.1;
+      if (this.isAiMode) {
+        this.aiController.update(dt);
+      } else {
+        prevX = this.player2Paddle.mesh.position.x;
+        if (this.keys['a']) {
+          nextX = prevX - this.paddleSpeed;
+          this.player2Paddle.setX(lerp(prevX, nextX, 0.5));
+        } else if (this.keys['d']) {
+          nextX = prevX + this.paddleSpeed;
+          this.player2Paddle.setX(lerp(prevX, nextX, 0.5));
+        }
+      }
       this.ball.update(dt);
-      this.aiController.update(dt);
     }
 
     this.fireworks.update(delta);
