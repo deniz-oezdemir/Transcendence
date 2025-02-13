@@ -1,5 +1,6 @@
 import json
 import aiohttp
+import asyncio
 import logging
 from django.conf import settings
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -13,7 +14,6 @@ handler = logging.StreamHandler()
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-
 
 class WaitingRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -59,22 +59,27 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 logger.debug(
                     f"Creating AI player for match {match.match_id} with AI ID {match.player_2_id}"
                 )
+                # Add timeout parameter to the request
+                timeout = aiohttp.ClientTimeout(total=5)  # 5 seconds timeout
                 async with session.post(
                     "http://ai-opponent:8000/ai_player/create_ai_player/",
                     json={
                         "ai_player_id": match.player_2_id,
                         "target_game_id": match.match_id,
                     },
+                    timeout=timeout,
                 ) as response:
+                    response_text = await response.text()
                     if response.status != 201:
-                        logger.error(
-                            f"Failed to create AI player: {await response.text()}"
-                        )
+                        logger.error(f"Failed to create AI player: {response_text}")
                         return False
                     logger.debug(
                         f"Successfully created AI player for match {match.match_id}"
                     )
                     return True
+            except asyncio.TimeoutError:
+                logger.error(f"Timeout creating AI player for match {match.match_id}")
+                return False
             except Exception as e:
                 logger.error(f"Error creating AI player: {e}")
                 return False
@@ -118,6 +123,38 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "type": "match_created",
                     "id": match.match_id,
                     "creator_id": match.player_1_id,
+                    "available_games": available_games,
+                },
+            )
+
+        # Create local human vs human match
+        elif data["type"] == "create_local_match":
+            if await self.is_player_in_game(data["player_id"]):
+                await self.send_error("Player already in a game")
+                return
+
+            # Create match with player 2 as guest (id=0)
+            match = await self.create_match(data["player_id"], is_local=True)
+
+            # Create game in pong-api immediately since it's a local match
+            logger.info(f"Creating local game in pong-api for match {match.match_id}")
+            success, game_data = await self.create_game_in_pong_api(match)
+            if not success:
+                logger.error(
+                    f"Failed to create local game in pong-api for match {match.match_id}"
+                )
+                await self.send_error("Failed to create game in pong-api")
+                return
+
+            available_games = await self.get_available_games()
+            await self.channel_layer.group_send(
+                "waiting_room",
+                {
+                    "type": "match_created",
+                    "id": match.match_id,
+                    "creator_id": match.player_1_id,
+                    "is_local_match": True,
+                    "guest_id": match.player_2_id,
                     "available_games": available_games,
                 },
             )
@@ -242,7 +279,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     },
                 )
 
-        if data["type"] == "create_AI_match":
+        elif data["type"] == "create_AI_match":
             logger.info(
                 f"Received create_AI_match request from player {data['player_id']}"
             )
@@ -250,11 +287,14 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 logger.warning(
                     f"Player {data['player_id']} already in a game - rejecting AI match creation"
                 )
-                await self.send_error(f"Player {data['player_id']} already in a game")
+                await self.send_error("Player already in a game")
                 return
 
             logger.info(f"Creating AI match for player {data['player_id']}")
             match = await self.create_match(data["player_id"], is_ai_opponent=True)
+            logger.debug(
+                f"Created AI match {match.match_id} for player {data['player_id']}"
+            )
             logger.debug(
                 f"Created AI match {match.match_id} for player {data['player_id']}"
             )
@@ -266,8 +306,12 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 logger.error(
                     f"Failed to create game in pong-api for match {match.match_id}"
                 )
+                logger.error(
+                    f"Failed to create game in pong-api for match {match.match_id}"
+                )
                 await self.send_error("Failed to create game in pong-api")
                 return
+            logger.info(f"Created game in pong-api for match {match.match_id}")
 
             # Only create AI player after game is confirmed created
             logger.info(f"Creating AI player for match {match.match_id}")
@@ -276,6 +320,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 logger.error(f"Failed to create AI player for match {match.match_id}")
                 await self.send_error("Failed to create AI player")
                 return
+            logger.info(f"Created AI player for match {match.match_id}")
 
             # Broadcast success only after both operations complete
             logger.info(
@@ -313,8 +358,8 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({"type": "error", "message": message}))
 
     @database_sync_to_async
-    def create_match(self, player_id, is_ai_opponent=False):
-        """Creates a match, optionally against an AI opponent"""
+    def create_match(self, player_id, is_ai_opponent=False, is_local=False):
+        """Creates a match, optionally against an AI opponent or as a local match"""
         if is_ai_opponent:
             # Get the next available negative AI ID
             latest_ai_match = (
@@ -328,7 +373,10 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 status=Match.ACTIVE,  # AI matches are immediately active
             )
         else:
-            match = Match.objects.create(player_1_id=player_id, status=Match.PENDING)
+            match = Match.objects.create(
+                player_1_id=player_id,
+                status=Match.PENDING
+            )
         return match
 
     @database_sync_to_async

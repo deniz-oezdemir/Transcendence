@@ -62,6 +62,7 @@
 			<select id="gameType">
 				<option value="match">Regular Match (2 Players)</option>
 				<option value="ai_match">Match vs AI</option>
+				<option value="local_match">Local Match (vs Guest)</option>
 				<option value="tournament4">Tournament (4 Players)</option>
 				<option value="tournament8">Tournament (8 Players)</option>
 			</select>
@@ -114,16 +115,14 @@
 
 		function createGame(playerId) {
 			const gameType = document.getElementById('gameType').value;
+			console.log("Selected game type:", gameType); // Add this debug line
 			const message = {
 				type: gameType === 'match' ? 'create_match' :
-					gameType === 'ai_match' ? 'create_AI_match' : 'create_tournament',
+					gameType === 'ai_match' ? 'create_AI_match' : // Notice the capitalization
+						gameType === 'local_match' ? 'create_local_match' : 'create_tournament',
 				player_id: playerId
 			};
-
-			if (gameType.startsWith('tournament')) {
-				message.max_players = gameType === 'tournament4' ? 4 : 8;
-			}
-
+			console.log("Sending message:", message); // Add this debug line
 			socket.send(JSON.stringify(message));
 		}
 
@@ -157,33 +156,31 @@
 			const select = document.getElementById('gameList');
 			select.innerHTML = '<option value="">Select a game to join...</option>';
 
-			// Add available matches
-			data.matches?.filter(m => !m.player_2_id && !m.is_ai_match).forEach(match => {
+			// Add only joinable matches (not full, not AI, not local)
+			data.matches?.filter(m =>
+				m.player_2_id == null //&& // not full
+				// !m.is_ai_match && // not AI match
+				// !m.is_local_match // not local match
+			).forEach(match => {
 				select.innerHTML += `
-                <option value="match-${match.match_id}">
-                    Match ${match.match_id} (Created by Player ${match.player_1_id})
-                </option>
-            `;
+            <option value="match-${match.match_id}">
+                Match ${match.match_id} (Created by Player ${match.player_1_id})
+            </option>
+        `;
 			});
 
-			// Add AI matches (display only, not joinable)
-			data.matches?.filter(m => m.is_ai_match).forEach(match => {
-				select.innerHTML += `
-                <option value="" disabled>
-                    AI Match ${match.match_id} (Player ${match.player_1_id} vs AI ${match.ai_id})
-                </option>
-            `;
-			});
-
-			// Add available tournaments
-			data.tournaments?.filter(t => t.status === 'pending').forEach(tournament => {
+			// Add only available tournaments (not full)
+			data.tournaments?.filter(t =>
+				t.status === 'pending' &&
+				t.players.length < t.max_players
+			).forEach(tournament => {
 				const playerCount = tournament.players.length;
 				select.innerHTML += `
-					<option value="tournament-${tournament.tournament_id}">
-						${tournament.max_players}-Player Tournament ${tournament.tournament_id}
-						(${playerCount}/${tournament.max_players} players)
-					</option>
-				`;
+            <option value="tournament-${tournament.tournament_id}">
+                ${tournament.max_players}-Player Tournament ${tournament.tournament_id}
+                (${playerCount}/${tournament.max_players} players)
+            </option>
+        `;
 			});
 		}
 
@@ -206,8 +203,16 @@
 					break;
 
 				case 'match_created':
-					const matchType = data.is_ai_match ? "AI Match" : "Match";
-					const opponent = data.is_ai_match ? `vs AI ${data.ai_id}` : "";
+					console.log("Raw match created data:", data);
+					// Add these debug lines
+					console.log("is_ai_match:", data.is_ai_match);
+					console.log("is_local_match:", data.is_local_match);
+					console.log("ai_id:", data.ai_id);
+
+					const matchType = data.is_ai_match ? "AI Match" :
+						data.is_local_match ? "Local Match" : "Match";
+					const opponent = data.is_ai_match ? `vs AI ${data.ai_id}` :
+						data.is_local_match ? "vs Guest" : "";
 					addMessage('Success', `${matchType} ${data.id} created by Player ${data.creator_id} ${opponent}`);
 					addGameDataMessage('Info', data);
 					updateGameList(data.available_games);
