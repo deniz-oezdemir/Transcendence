@@ -1,65 +1,58 @@
-import {
-  CapsuleGeometry,
-  Mesh,
-  MeshNormalMaterial,
-  MeshStandardMaterial,
-  MeshBasicNodeMaterial,
-  NormalBlending,
-} from 'three';
+import { Mesh, MeshNormalMaterial, MeshBasicNodeMaterial } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import HolographicMaterial from '@/game/HolographicMaterial.js';
-
-// const GEOMETRY = new CapsuleGeometry(0.5, 5, 20, 20);
-const GEOMETRY = new RoundedBoxGeometry(5, 2, 1, 8, 0.5);
-// const HELPER_GEOMETRY = new CapsuleGeometry(1.0, 5, 20, 8);
-const HELPER_GEOMETRY = new RoundedBoxGeometry(6, 2, 2, 4, 0.5);
-// HELPER_GEOMETRY.rotateZ(Math.PI * 0.5);
-// HELPER_GEOMETRY.rotateX(Math.PI * 0.125);
-// GEOMETRY.rotateZ(Math.PI * 0.5);
+import { mrt, uniform } from 'three/tsl';
 
 export default class Paddle {
+  static HELPER_MATERIAL = new MeshNormalMaterial({
+    transparent: true,
+    opacity: 0.25,
+    visible: false,
+  });
+
   constructor(scene, dimensions, position, color) {
     this.scene = scene;
     this.boundaries = dimensions.boundaries;
 
-    this.geometry = GEOMETRY;
-    if (this.geometry.width !== dimensions.paddle.x)
-      this.geometry.width = dimensions.paddle.x;
-    if (this.geometry.depth !== dimensions.paddle.y)
-      this.geometry.depth = dimensions.paddle.y;
+    this.geometry = new RoundedBoxGeometry(
+      dimensions.paddle.x,
+      dimensions.paddle.y,
+      1,
+      8,
+      0.5
+    );
 
-    this.halfLength = this.geometry.width * 0.5;
-
+    this.halfLength = dimensions.paddle.x * 0.5;
     this.material = new MeshBasicNodeMaterial({ color });
 
-    this.mesh = new Mesh(GEOMETRY, this.material);
-    this.mesh.castShadow = true;
-    this.mesh.receiveShadow = true;
+    this.mesh = new Mesh(this.geometry, this.material);
+    this.mesh.castShadow = this.mesh.receiveShadow = true;
 
     this.collisionHelper = new Mesh(
-      HELPER_GEOMETRY,
-      new MeshNormalMaterial({
-        transparent: true,
-        opacity: 0.25,
-        visible: false,
-      })
+      new RoundedBoxGeometry(
+        dimensions.paddle.x + 1,
+        dimensions.paddle.y + 1,
+        2,
+        4,
+        0.5
+      ),
+      Paddle.HELPER_MATERIAL
     );
 
     this.mesh.add(this.collisionHelper);
-
     this.mesh.position.copy(position);
     this.scene.add(this.mesh);
   }
 
   setX(x) {
-    const maxX = this.boundaries.x - this.halfLength;
+    this.mesh.position.x = Math.max(
+      -this.boundaries.x + this.halfLength,
+      Math.min(x, this.boundaries.x - this.halfLength)
+    );
+  }
 
-    if (x > maxX) {
-      x = maxX;
-    } else if (x < -maxX) {
-      x = -maxX;
-    }
-
-    this.mesh.position.x = x;
+  setBloomEffect(bloomIntensity) {
+    this.mesh.material.mrtNode = mrt({
+      bloomIntensity: uniform(bloomIntensity),
+    });
   }
 }

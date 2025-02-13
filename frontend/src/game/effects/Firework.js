@@ -1,14 +1,13 @@
-import * as THREE from 'three';
 import {
-  attribute,
-  color,
-  float,
-  mix,
-  range,
-  uniform,
-  vec3,
-  vec4,
-} from 'three/tsl';
+  Vector3,
+  BufferGeometry,
+  Color,
+  BufferAttribute,
+  PointsNodeMaterial,
+  AdditiveBlending,
+  Points,
+} from 'three';
+import { attribute, color, float, mix, range, uniform, vec4 } from 'three/tsl';
 
 export default class Firework {
   // Explotion duration (in seconds)
@@ -17,53 +16,54 @@ export default class Firework {
   /**
    * @param {number} num - Particles Numben
    * @param {number} radius - Dispersion factor (particles will be placed in a sphere of this radius)
-   * @param {THREE.Vector3} startPosition - Position where the particles will be positioned
+   * @param {Vector3} startPosition - Position where the particles will be positioned
    */
   constructor(num, radius, startPosition) {
     this.num = num;
     this.radius = radius;
 
-    this.geometry = new THREE.BufferGeometry();
+    this.geometry = new BufferGeometry();
     const positions = new Float32Array(num * 3);
     const velocities = new Float32Array(num * 3);
     const colors = new Float32Array(num * 3);
 
+    const velocityVec = new Vector3();
+    const colorObj = new Color();
+
     for (let i = 0; i < num; i++) {
       // Each particle position is stored in 3 consecutive positions in the buffer
-      positions.set([0, 0, 0], i * 3);
+      const index = i * 3;
+      positions.set([0, 0, 0], index);
 
       // Random velocity vector
-      const v = new THREE.Vector3(
-        Math.random() * 2 - 1,
-        Math.random() * 2 - 1,
-        Math.random() * 2 - 1
-      )
+      velocityVec
+        .set(
+          Math.random() * 2 - 1,
+          Math.random() * 2 - 1,
+          Math.random() * 2 - 1
+        )
         .normalize()
         .multiplyScalar(Math.random() * radius * 3);
-      velocities.set([v.x, v.y, v.z], i * 3);
+
+      velocities.set([velocityVec.x, velocityVec.y, velocityVec.z], index);
 
       // Random color HSL with hight Saturation and Lightness
-      const c = new THREE.Color().setHSL(Math.random(), 1.0, 1.0);
-      colors.set([c.r, c.g, c.b], i * 3);
+      colorObj.setHSL(Math.random(), 1.0, 1.0);
+      colors.set([colorObj.r, colorObj.g, colorObj.b], index);
     }
 
-    this.geometry.setAttribute(
-      'position',
-      new THREE.BufferAttribute(positions, 3)
-    );
-    this.geometry.setAttribute(
-      'velocity',
-      new THREE.BufferAttribute(velocities, 3)
-    );
-    this.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    this.geometry.setAttribute('position', new BufferAttribute(positions, 3));
+    this.geometry.setAttribute('velocity', new BufferAttribute(velocities, 3));
+    this.geometry.setAttribute('color', new BufferAttribute(colors, 3));
 
     // Time uniform to control the particles life
     this.uTime = uniform(0.0);
 
-    this.material = new THREE.PointsNodeMaterial({
+    this.material = new PointsNodeMaterial({
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
+      blending: AdditiveBlending,
+      sizeAttenuation: true,
     });
 
     // Each particle is positioned by its velocity and time
@@ -83,13 +83,11 @@ export default class Firework {
       mix(attribute('color', 'vec3'), color(0x000000), this.uTime),
       float(1).sub(this.uTime)
     );
-    this.material.sizeAttenuation = true;
 
-    this.mesh = new THREE.Points(this.geometry, this.material);
+    this.mesh = new Points(this.geometry, this.material);
     this.mesh.position.copy(startPosition);
 
     this.isDie = false;
-    this.born();
   }
 
   /**
@@ -107,11 +105,16 @@ export default class Firework {
     this.uTime.value = 0;
   }
 
+  reset(position) {
+    this.mesh.position.copy(position);
+    this.mesh.visible = true;
+    this.isDie = false;
+    this.born();
+  }
+
   // Remove the particle from the scene and dispose the geometry
   die() {
-    if (this.mesh.parent) {
-      this.mesh.parent.remove(this.mesh);
-    }
+    this.mesh.parent?.remove(this.mesh);
     this.geometry.dispose();
     this.material.dispose();
   }

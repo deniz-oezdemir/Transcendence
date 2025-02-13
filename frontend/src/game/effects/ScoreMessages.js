@@ -1,11 +1,4 @@
-import {
-  AdditiveBlending,
-  Color,
-  Mesh,
-  Group,
-  PlaneGeometry,
-  RepeatWrapping,
-} from 'three';
+import { AdditiveBlending, Color, Mesh, Group, PlaneGeometry } from 'three';
 import HolographicMaterial from '@/game/materials/HolographicMaterial.js';
 
 export default class ScoreMessages {

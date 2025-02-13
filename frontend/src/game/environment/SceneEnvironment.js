@@ -111,8 +111,8 @@ export default class SceneEnvironment {
     this.renderTarget = await this.pmremGenerator.fromSceneAsync(this.sceneEnv);
     this.scene.environment = this.renderTarget.texture;
     this.scene.background = this.renderTarget.texture;
-    this.scene.environmentIntensity = 1.0;
-    this.scene.backgroundIntensity = 0.75;
+    this.scene.environmentIntensity = 1.2;
+    this.scene.backgroundIntensity = 0.7;
     this.scene.backgroundBlurriness = 0.0;
 
     this.scene.add(this.group);

@@ -4,7 +4,6 @@ import {
   TextureLoader,
   RepeatWrapping,
   MeshStandardMaterial,
-  MeshBasicMaterial,
   DoubleSide,
   AdditiveBlending,
   Mesh,
@@ -12,9 +11,36 @@ import {
 import lerp from '@/game/utils/lerp.js';
 
 export default class NeonRingEffect {
-  constructor(scene, colors = [0x00ff00, 0xff0066], poolSize = 8) {
+  scene;
+  poolSize;
+  textureLoader;
+  colors;
+  currentColor;
+  ringPool;
+  currentRingIndex;
+  isSecondary;
+  lastCollisionTime;
+  maxAge;
+  progressScale;
+  maxScale;
+  ringGeometry;
+  noiseTexture;
+
+  constructor(
+    scene,
+    colors = [0x00ff00, 0xff0066],
+    textureLoader = new TextureLoader(),
+    poolSize = 8
+  ) {
     this.scene = scene;
     this.poolSize = poolSize;
+    this.textureLoader = textureLoader;
+    this.colors = {
+      primary: new Color(colors[0]),
+      secondary: new Color(colors[1]),
+    };
+    this.currentColor = this.colors.primary;
+
     this.ringPool = [];
     this.currentRingIndex = 0;
     this.isSecondary = false;
@@ -29,23 +55,21 @@ export default class NeonRingEffect {
     // Create ring geometry once to reuse
     this.ringGeometry = new RingGeometry(1, 1.15, 64);
     this.ringGeometry.rotateX(Math.PI * 0.5);
+  }
 
-    // 	TODO: make this async
-    // Load noise texture
-    this.noiseTexture = new TextureLoader().load(
-      'assets/textures/wavesTexture.webp'
-    );
-    this.noiseTexture.wrapS = this.noiseTexture.wrapT = RepeatWrapping;
+  async init() {
+    try {
+      // Load noise texture
+      this.noiseTexture = await this.textureLoader.loadAsync(
+        'assets/textures/wavesTexture.webp'
+      );
+      this.noiseTexture.wrapS = this.noiseTexture.wrapT = RepeatWrapping;
 
-    this.colors = {
-      primary: new Color(colors[0]),
-      secondary: new Color(colors[1]),
-    };
-
-    this.currentColor = this.colors.primary;
-
-    // Initialize the pool with inactive rings
-    this.initializePool();
+      // Initialize the pool with inactive rings
+      this.initializePool();
+    } catch (error) {
+      console.error('Error loading noise texture en NeonRingEffect:', error);
+    }
   }
 
   initializePool() {

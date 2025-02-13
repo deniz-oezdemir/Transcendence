@@ -10,10 +10,15 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import MetallicWalls from '@/game/environment/MetallicWalls.js';
 
-export default function createPongTable(params) {
+export default async function createPongTable(
+  params,
+  textureLoader = new TextureLoader()
+) {
   const metallicWalls = MetallicWalls(params.dimensions);
 
-  const noiseTexture = new TextureLoader().load('assets/textures/neon.webp');
+  const noiseTexture = await textureLoader.loadAsync(
+    'assets/textures/neon.webp'
+  );
   noiseTexture.wrapS = noiseTexture.wrapT = RepeatWrapping;
 
   const coliseumMaterial = new MeshPhysicalMaterial({
@@ -46,7 +51,7 @@ export default function createPongTable(params) {
   const platformGeometry = new RoundedBoxGeometry(
     params.dimensions.boundaries.x * 4,
     3.0,
-    params.dimensions.boundaries.y * 4,
+    params.dimensions.boundaries.x * 5,
     8,
     3
   );

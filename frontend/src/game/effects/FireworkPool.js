@@ -1,7 +1,14 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import Firework from './Firework.js';
 
 export default class FireworkPool {
+  scene;
+  poolSize;
+  numParticles;
+  radius;
+  fireworks;
+  currentIndex;
+
   constructor(scene, poolSize = 8, numParticles = 50, radius = 5) {
     this.scene = scene;
     this.poolSize = poolSize;
@@ -14,44 +21,38 @@ export default class FireworkPool {
   }
 
   initializePool() {
+    const defaultPosition = new Vector3();
     for (let i = 0; i < this.poolSize; i++) {
       const firework = new Firework(
         this.numParticles,
         this.radius,
-        new THREE.Vector3()
+        defaultPosition
       );
       firework.mesh.visible = false;
+      firework.isDie = true;
+
+      this.fireworks[i] = firework;
       this.scene.add(firework.mesh);
-      this.fireworks.push(firework);
     }
   }
 
   getAvailableFirework(position) {
-    const firework = this.fireworks[this.currentIndex];
-
-    // Reset properties instead de recrearlo
-    firework.mesh.position.copy(position);
-    firework.mesh.visible = true;
-    firework.isDie = false;
-    firework.born();
-
-    // Avanzar índice circularmente
+    this.fireworks[this.currentIndex].reset(position);
     this.currentIndex = (this.currentIndex + 1) % this.poolSize;
   }
 
   update(deltaTime) {
-    this.fireworks.forEach((firework) => {
+    for (const firework of this.fireworks) {
       if (!firework.isDie) {
         firework.update(deltaTime);
       }
-    });
+    }
   }
 
   dispose() {
-    this.fireworks.forEach((firework) => {
-      this.scene.remove(firework.mesh);
+    for (const firework of this.fireworks) {
       firework.die();
-    });
-    this.fireworks = [];
+    }
+    this.fireworks.length = 0;
   }
 }
