@@ -226,6 +226,8 @@ Second version: support also tournmanets - work in progress
 	3. send created game to frontend via websocket and initiate ai player
 - if waiting too complicated tell gameengine to just retry a second after instead of error in gameengine
 
+10. Add player names to all endpoints for frontend
+
 ## Is Redis not sufficient as a database? Why also use PostgreSQL?
 
 Both PostgreSQL and Redis serve different purposes in the matchmaking service:
