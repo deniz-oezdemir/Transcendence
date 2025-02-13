@@ -78,7 +78,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
             if ai_player_position is None:
                 logger.error(
-                    f"ai_player_position is None. AI-Player ID: {self.ai_player.ai_player_id}. ai-opponent will not move"
+                    f"ai_player_position is None. AI-Player ID: {self.ai_player.ai_player_id}. ai-opponent will not move. Player_1_id: {player_1_id}, player_2_id: {player_2_id}"
                 )
                 return
 
