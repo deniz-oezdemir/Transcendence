@@ -54,6 +54,7 @@ class CreateAIPlayer(generics.CreateAPIView):
         except serializers.ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         headers = self.get_success_headers(serializer.data)
+        logger.info("ai-opponent create succesfully, sending response")
 
         return Response(
             AIPlayerSerializer(ai_player).data,

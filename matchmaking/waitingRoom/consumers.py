@@ -15,7 +15,6 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-
 class WaitingRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.channel_layer.group_add("waiting_room", self.channel_name)
@@ -112,7 +111,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
         elif data["type"] == "create_match":
             if await self.is_player_in_game(data["player_id"]):
-                await self.send_error("Player already in a game")
+                await self.send_error(f"Player {data['player_id']} already in a game")
                 return
 
             match = await self.create_match(data["player_id"])
@@ -163,7 +162,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         # Join match
         elif data["type"] == "join_match":
             if await self.is_player_in_game(data["player_id"]):
-                await self.send_error("Player already in a game")
+                await self.send_error(f"Player {data['player_id']} already in a game")
                 return
 
             match = await self.join_match(data["match_id"], data["player_id"])
@@ -197,7 +196,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
         elif data["type"] == "create_tournament":
             if await self.is_player_in_game(data["player_id"]):
-                await self.send_error("Player already in a game")
+                await self.send_error(f"Player {data['player_id']} already in a game")
                 return
 
             tournament = await self.create_tournament(
@@ -217,7 +216,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
         elif data["type"] == "join_tournament":
             if await self.is_player_in_game(data["player_id"]):
-                await self.send_error("Player already in a game")
+                await self.send_error(f"Player {data['player_id']} already in a game")
                 logger.debug(f"Player {data['player_id']} already in a game")
                 return
 
@@ -296,11 +295,17 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             logger.debug(
                 f"Created AI match {match.match_id} for player {data['player_id']}"
             )
+            logger.debug(
+                f"Created AI match {match.match_id} for player {data['player_id']}"
+            )
 
             # First create game in pong-api and wait for response
             logger.info(f"Creating game in pong-api for match {match.match_id}")
             success, game_data = await self.create_game_in_pong_api(match)
             if not success:
+                logger.error(
+                    f"Failed to create game in pong-api for match {match.match_id}"
+                )
                 logger.error(
                     f"Failed to create game in pong-api for match {match.match_id}"
                 )
@@ -367,14 +372,11 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 player_2_id=ai_id,
                 status=Match.ACTIVE,  # AI matches are immediately active
             )
-        elif is_local:
+        else:
             match = Match.objects.create(
                 player_1_id=player_id,
-                player_2_id=0,  # 0 represents guest player
-                status=Match.ACTIVE,  # Local matches are immediately active
+                status=Match.PENDING
             )
-        else:
-            match = Match.objects.create(player_1_id=player_id, status=Match.PENDING)
         return match
 
     @database_sync_to_async
