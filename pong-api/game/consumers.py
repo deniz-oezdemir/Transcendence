@@ -29,7 +29,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             f"WebSocket connected: {self.channel_name}, game_state: {self.game_state}"
         )
         self.periodic_task = asyncio.create_task(self.send_periodic_updates())
-        self.send_updates = True  # set to False after first is_game_running False or
+        self.send_updates = (
+            self.game_state.is_game_running
+        )  # set to False after first is_game_running False or
         # is_game_ended True
 
     async def disconnect(self, close_code):
@@ -55,15 +57,20 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.toggle_game()
 
     async def game_state_update(self, event):
+        logger.debug(f"game_state_update: event: {event}")
         game_state_data = event["state"]
+        for key, value in game_state_data.items():
+            setattr(self.game_state, key, value)
+
         await self.send(
             text_data=json.dumps(
                 {"type": "game_state_update", "state": game_state_data}
-            )
+            ),
         )
 
     async def move_player(self, player_id, direction):
         try:
+            self.game_state = self.get_game_state()
             logger.info("move player is game running ok")
             engine = PongGameEngine(self.game_state)
             self.game_state = engine.move_player(player_id, direction)
@@ -73,13 +80,13 @@ class GameConsumer(AsyncWebsocketConsumer):
                 await self.save_game_state()
                 logger.info("move_player: game saved")
                 await self.send_game_state()
-                logger.info("move_player: game sent")
+                logger.info(f"move_player: game sent: {self.game_state}")
         except Exception as e:
             logger.error(f"Unexpected error occurred while moving player: {e}")
 
     async def toggle_game(self):
+        self.game_state = self.get_game_state()
         self.game_state.is_game_running = not self.game_state.is_game_running
-        self.send_updates = True
         await self.save_game_state()
         logger.info(
             f"Toggled game state for game_id {self.game_id}. New state: {self.game_state.is_game_running}"
@@ -88,12 +95,14 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.debug("toggle_game: game sent")
 
     async def send_periodic_updates(self):
+        self.game_state = self.get_game_state()
         try:
             while True:
                 if self.game_state.is_game_ended:
                     logger.debug(
                         f"Disconnect because is_game_running is: {self.game_state.is_game_running}, is_game_ended is: {self.game_state.is_game_ended}"
                     )
+                    self.game_state.is_game_running = False
                     self.send_updates = False
                     await self.close()
                     break
@@ -208,8 +217,6 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def send_game_state(self):
         logger.debug(f"Sending game state: {self.game_state}")
 
-        if not self.game_state.is_game_running:
-            self.send_updates = False
         if self.send_updates:
             game_state_data = {
                 key: value
@@ -220,3 +227,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.game_group_name,
                 {"type": "game_state_update", "state": game_state_data},
             )
+        self.send_updates = self.game_state.is_game_running
+        if self.game_state.is_game_ended:
+            self.send_updates = False  # Stop sending after game ended
