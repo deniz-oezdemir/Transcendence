@@ -3,6 +3,7 @@ import time
 import websockets
 import json
 import logging
+import threading
 from channels.generic.websocket import AsyncWebsocketConsumer
 from websockets.exceptions import ConnectionClosedError, InvalidURI, InvalidHandshake
 
@@ -25,7 +26,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
     async def connect(self):
         try:
             async with websockets.connect(self.uri) as websocket:
-                logger.info("WebSocket connection success")
+                logger.info("connect: WebSocket connection success")
                 self.websocket = websocket
                 await self.listen()
         except (
@@ -46,7 +47,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
                 data = json.loads(message)
                 current_time = time.time()
                 if current_time - self.last_update_time >= 1:  # Only once per second
-                    logger.debug(f"Received message: {data}")
+                    logger.info(f"Received message: {data}")
                     await self.handle_game_update(data)
                     self.last_update_time = current_time
         except websockets.ConnectionClosed:
@@ -164,7 +165,6 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
     def start(self):
         self.connection_error = False
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.connect())
+        thread = threading.Thread(target=self.run)
+        thread.start()
         return self.connection_error
