@@ -13,6 +13,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import json from '@rollup/plugin-json';
 import glsl from 'rollup-plugin-glsl';
+import wasm from '@rollup/plugin-wasm';
 
 const isDev = process.env.ROLLUP_WATCH;
 const isProduction = process.env.NODE_ENV === 'production';
@@ -26,6 +27,9 @@ export default {
     sourcemap: true,
   },
   plugins: [
+    wasm({
+      maxFileSize: 100000,
+    }),
     // json(),
     glsl({
       include: ['**/*.glsl'],

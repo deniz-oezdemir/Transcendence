@@ -39,7 +39,7 @@ import { Clock, Color, MeshBasicNodeMaterial, Texture } from 'three';
  *  - blendMode: AdditiveBlending
  *  - side: FrontSide
  */
-class HolographicMaterial extends MeshBasicNodeMaterial {
+export default class HolographicMaterial extends MeshBasicNodeMaterial {
   constructor(parameters = {}) {
     super();
 
@@ -213,5 +213,3 @@ class HolographicMaterial extends MeshBasicNodeMaterial {
     this.timeNode.value = this._clock.getElapsedTime();
   }
 }
-
-export default HolographicMaterial;

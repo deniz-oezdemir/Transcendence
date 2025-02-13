@@ -30,6 +30,7 @@ export default class NeonRingEffect {
     this.ringGeometry = new RingGeometry(1, 1.15, 64);
     this.ringGeometry.rotateX(Math.PI * 0.5);
 
+    // 	TODO: make this async
     // Load noise texture
     this.noiseTexture = new TextureLoader().load(
       'assets/textures/wavesTexture.webp'

@@ -36,6 +36,9 @@ importers:
         specifier: ^0.0.16
         version: 0.0.16(three-mesh-bvh@0.9.0(three@0.173.0))(three@0.173.0)
     devDependencies:
+      '@dimforge/rapier3d':
+        specifier: ^0.14.0
+        version: 0.14.0
       '@eslint/js':
         specifier: ^9.17.0
         version: 9.17.0
@@ -60,6 +63,9 @@ importers:
       '@rollup/plugin-terser':
         specifier: ^0.4.4
         version: 0.4.4(rollup@4.29.1)
+      '@rollup/plugin-wasm':
+        specifier: ^6.2.2
+        version: 6.2.2(rollup@4.29.1)
       '@swc/core':
         specifier: ^1.10.4
         version: 1.10.4
@@ -107,6 +113,9 @@ importers:
         version: 4.0.2(postcss@8.4.49)
 
 packages:
+
+  '@dimforge/rapier3d@0.14.0':
+    resolution: {integrity: sha512-+R9T/AGbvdRLentporVaOYEYjPHKdUeUuGObOBAskhSv8fFFyTiUcGMKhRH4VyCaGP8JAKMLapAETR4xAvJqlg==}
 
   '@eslint-community/eslint-utils@4.4.1':
     resolution: {integrity: sha512-s3O3waFUrMV8P/XaF/+ZTp1X9XBZW1a4B97ZnjQF2KYWaFD2A8KyFBsrsfSjEmjn3RGWAIuvlneuZm3CUK3jbA==}
@@ -300,6 +309,15 @@ packages:
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+
+  '@rollup/plugin-wasm@6.2.2':
+    resolution: {integrity: sha512-gpC4R1G9Ni92ZIRTexqbhX7U+9estZrbhP+9SRb0DW9xpB9g7j34r+J2hqrcW/lRI7dJaU84MxZM0Rt82tqYPQ==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
     peerDependenciesMeta:
       rollup:
         optional: true
@@ -1866,6 +1884,8 @@ packages:
 
 snapshots:
 
+  '@dimforge/rapier3d@0.14.0': {}
+
   '@eslint-community/eslint-utils@4.4.1(eslint@9.17.0)':
     dependencies:
       eslint: 9.17.0
@@ -2064,6 +2084,12 @@ snapshots:
       serialize-javascript: 6.0.2
       smob: 1.5.0
       terser: 5.37.0
+    optionalDependencies:
+      rollup: 4.29.1
+
+  '@rollup/plugin-wasm@6.2.2(rollup@4.29.1)':
+    dependencies:
+      '@rollup/pluginutils': 5.1.4(rollup@4.29.1)
     optionalDependencies:
       rollup: 4.29.1
 
