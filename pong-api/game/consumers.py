@@ -48,7 +48,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         if action == "move":
             player_id = text_data_json["player_id"]
             direction = text_data_json["direction"]
-            logger.info(
+            logger.debug(
                 f"Move action received: player_id={player_id}, direction={direction}"
             )
             await self.move_player(player_id, direction)
@@ -71,16 +71,16 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def move_player(self, player_id, direction):
         try:
             self.game_state = self.get_game_state()
-            logger.info("move player is game running ok")
+            logger.debug("move player is game running ok")
             engine = PongGameEngine(self.game_state)
             self.game_state = engine.move_player(player_id, direction)
-            logger.info(f"Player {player_id} moved to direction {direction}")
+            logger.debug(f"Player {player_id} moved to direction {direction}")
 
             if not self.game_state.is_game_ended:
                 await self.save_game_state()
-                logger.info("move_player: game saved")
+                logger.debug("move_player: game saved")
                 await self.send_game_state()
-                logger.info(f"move_player: game sent: {self.game_state}")
+                logger.debug(f"move_player: game sent: {self.game_state}")
         except Exception as e:
             logger.error(f"Unexpected error occurred while moving player: {e}")
 
@@ -88,7 +88,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         self.game_state = self.get_game_state()
         self.game_state.is_game_running = not self.game_state.is_game_running
         await self.save_game_state()
-        logger.info(
+        logger.debug(
             f"Toggled game state for game_id {self.game_id}. New state: {self.game_state.is_game_running}"
         )
         await self.send_game_state()

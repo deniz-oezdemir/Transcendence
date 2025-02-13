@@ -1,4 +1,5 @@
 import asyncio
+import math
 import time
 import websockets
 import json
@@ -47,7 +48,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
                 data = json.loads(message)
                 current_time = time.time()
                 if current_time - self.last_update_time >= 1:  # Only once per second
-                    logger.info(f"Received message: {data}")
+                    logger.debug(f"Received message: {data}")
                     await self.handle_game_update(data)
                     self.last_update_time = current_time
         except websockets.ConnectionClosed:
@@ -67,6 +68,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
             player_2_id = state.get("player_2_id")
             player_1_position = state.get("player_1_position")
             player_2_position = state.get("player_2_position")
+            move_step = state.get("move_step")
 
             ai_player_position = None
 
@@ -105,7 +107,8 @@ class WebSocketClient(AsyncWebsocketConsumer):
                     # Ball is moving away from the AI player, move towards the center
                     predicted_y = game_height / 2
 
-                await self.move_towards_ball(ai_player_position, predicted_y)
+                self.moving = False
+                await self.move_towards_ball(ai_player_position, predicted_y, move_step)
             else:
                 logger.error(
                     f"ai-player cannot move because one of these is null:\nai_player_position: {ai_player_position}\nball_x_position: {ball_x_position}\nball_y_position: {ball_y_position}"
@@ -132,13 +135,17 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
         return ball_y
 
-    async def move_towards_ball(self, ai_player_position, predicted_y):
-        # Move towards the predicted Y position of the ball
-        logger.debug("Moving towards ball")
-        if ai_player_position < predicted_y:
-            await self.send_move_command(1)  # Move down
-        elif ai_player_position > predicted_y:
-            await self.send_move_command(-1)  # Move up
+    async def move_towards_ball(self, ai_player_position, predicted_y, move_step):
+        logger.info("Moving towards ball")
+        self.moving = True
+
+        while self.moving:
+            if ai_player_position < predicted_y:
+                await self.send_move_command(1)  # Move down
+            elif ai_player_position > predicted_y:
+                await self.send_move_command(-1)  # Move up
+
+            await asyncio.sleep(0.1)  # Small delay to prevent spamming commands
 
     async def send_move_command(self, direction):
         move_command = {
@@ -148,7 +155,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
         }
         logger.debug("Sending move command")
         await self.websocket.send(json.dumps(move_command))
-        logger.info(f"Sent move command: {move_command}")
+        logger.debug(f"Sent move command: {move_command}")
 
     def delete_ai_player(self):
         self.ai_player.delete()

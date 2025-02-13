@@ -155,7 +155,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'join_match',
       match_id: matches()[0].match_id,
-      player_id: localStorage.getItem('userId')
+      player_id: -1
     }));
   };
 
