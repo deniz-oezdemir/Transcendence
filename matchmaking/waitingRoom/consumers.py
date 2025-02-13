@@ -32,7 +32,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "http://pong-api:8000/game/create_game/",
                     json={
                         "id": match.match_id,
-                        "max_score": 1,
+                        "max_score": 3,
                         "player_1_id": match.player_1_id,
                         "player_1_name": f"Player {match.player_1_id}",
                         "player_2_id": match.player_2_id,
