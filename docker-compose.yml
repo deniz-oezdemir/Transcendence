@@ -7,6 +7,17 @@ services:
       service: accounts
     networks:
       - transcendence
+      - accounts-internal
+    restart: on-failure
+    depends_on:
+      - accounts-postgres
+  
+  accounts-postgres:
+    extends:
+      file: ./user-access-management/docker/docker-compose.yml
+      service: accounts-postgres
+    networks:
+      - accounts-internal
     restart: on-failure
 
   # Frontend
@@ -126,6 +137,9 @@ networks:
   game-history-internal:
     driver: bridge
     name: game-history-internal
+  accounts-internal:
+    driver: bridge
+    name: accounts-internal
 
 volumes:
   matchmaking_postgres_data:
@@ -133,3 +147,5 @@ volumes:
   game-history-postgres-data:
     driver: local
   # ai_messages_models:
+  accounts-postgres_data:
+    driver: local

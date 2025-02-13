@@ -27,6 +27,7 @@ class CreateGame(generics.CreateAPIView):
             raise serializers.ValidationError(
                 f"Game with ID {game_id} already exists in cache."
             )
+        logger.info(f"Game with ID: {cache_key} created in REDIS.")
         game_state = serializer.save()
         return game_state
 
