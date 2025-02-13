@@ -63,7 +63,7 @@ function friendRequestForm(setReload) {
       });
 
       const data = await response.json();
-      alert(data.message); // Show success or error message
+      // alert(data.message); // Show success or error message
       if (response.ok) {
         setUsername(""); // Reset input on success
         setReload(true);
@@ -119,7 +119,7 @@ function friendListComponent(user_data, setReload) {
       });
   
       const data = await response.json();
-      alert(data.message); // Show success or error message
+      // alert(data.message); // Show success or error message
   
       if (response.ok) {
         setReload(true);
@@ -288,6 +288,7 @@ function changePasswordComponent(user_data, setReload) {
       });
   
       if (response.ok) {
+        alert("Password changed successfully.");
         setPasswordButtonPressed(false);
         setReload(true);
       } else {
