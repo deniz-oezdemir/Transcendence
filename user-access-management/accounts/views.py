@@ -9,6 +9,7 @@ from .serializers.friend_request_serializer import FriendRequestSerializer, Frie
 from .serializers.profile_serializer import ProfileDataSerializer
 from .serializers.change_password_serializer import ChangePasswordSerializer
 from .serializers.change_username_serializer import ChangeUsernameSerializer
+from .serializers.change_avatar_serializer import ChangeAvatarSerializer
 from .models import CustomUser
 
 class RegisterView(APIView):
@@ -79,10 +80,13 @@ class ChangeAvatarView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request):
-        user = request.user
-        user.avatar = request.data['avatar']
-        user.save(update_fields=['avatar'])
-        return Response({"message": "avatar changed successfully."}, status=status.HTTP_200_OK)
+        serializer = ChangeAvatarSerializer(data=request.data, instance=request.user)
+        if serializer.is_valid():
+            serializer.update(request.user, serializer.validated_data)
+            return Response({"message": "Avatar changed successfully."}, status=status.HTTP_200_OK)
+        first_field = list(serializer.errors.keys())[0]
+        error_message = serializer.errors[first_field][0]
+        return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
 class ChangeUsernameView(APIView):
     authentication_classes = [TokenAuthentication]
