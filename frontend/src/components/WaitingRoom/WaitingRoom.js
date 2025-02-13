@@ -2,7 +2,7 @@ import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
 import styles from './WaitingRoom.module.css';
 
-export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPlayerName }) {
+export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType }) {
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
   const [socket, setSocket] = createSignal(null);
@@ -11,7 +11,6 @@ export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPl
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
   const port = 8001;
   const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
-  const ws = new WebSocket(wsUrl);
 
   createEffect(() => {
     const ws = new WebSocket(wsUrl);
@@ -33,13 +32,31 @@ export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPl
             setMatches(data.games.matches || []);
             setTournaments(data.games.tournaments || []);
             break;
-
+          
           case 'match_created':
           case 'tournament_created':
-          case 'tournament_started':
           case 'games_deleted':
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
+            if (data.is_local_match === true) {
+              console.log('Local match created:', data);
+              setGameId(data.available_games.matches[0].match_id);
+              setCreatorId(data.available_games.matches[0].player_1_id);
+              setCreatorName(data.available_games.matches[0].player_1_name);
+              setPlayerId(data.available_games.matches[0].player_2_id);
+              setPlayerName('Guest');
+              setGameType('local_match');
+              onStartGame(data.game, data.available_games.matches[0].match_id);
+            } else if (data.is_ai_match === true) {
+              console.log('AI match created:', data);
+              setGameId(data.available_games.matches[0].match_id);
+              setCreatorId(data.available_games.matches[0].player_1_id);
+              setCreatorName(data.available_games.matches[0].player_1_name);
+              setPlayerId(data.available_games.matches[0].player_2_id);
+              setPlayerName('Bot');
+              setGameType('AI_match');
+              onStartGame(data.game, data.available_games.matches[0].match_id);
+            }
             break;
           
             case 'player_joined':
@@ -51,8 +68,11 @@ export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPl
                     case 'active':
                       console.log('Match Started');
                       setGameId(data.available_games.matches[0].match_id);
-                      setPlayerId(localStorage.getItem('userId'));
-                      setPlayerName(localStorage.getItem('username'));
+                      setCreatorId(localStorage.getItem('userId'));
+                      setCreatorName(localStorage.getItem('username'));
+                      setPlayerId(data.available_games.matches[0].player_id);
+                      setPlayerName(data.available_games.matches[0].player_name);
+                      setGameType('match');
                       onStartGame(data.game, data.available_games.matches[0].match_id);
 
                       break;
@@ -68,10 +88,6 @@ export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPl
             
                 if (data.available_games.tournaments && data.available_games.tournaments.length > 0) {
                   switch (data.available_games.tournaments[0].status) {
-                    case 'active':
-                      console.log('Tournament Started');
-                      onStartGame(data.game, data.available_games.tournaments[0].tournament_id);
-                      break;
                     case 'pending':
                       console.log('Tournament Pending');
                       break;
@@ -85,6 +101,11 @@ export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPl
                 console.log('No available games data found');
               }
             
+              break;
+            
+            case 'tournament_started':
+              console.log('Tournament Started TEST');
+              
               break;
 
           case 'error':
@@ -126,8 +147,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPl
   const aiGame = () => {
     if (!socket()) return;
     socket().send(JSON.stringify({
-      type: gameType === 'match' ? 'create_match' :
-					gameType === 'ai_match' ? 'create_AI_match' : 'create_tournament',
+      type: 'create_AI_match',
       player_id: localStorage.getItem('userId'),
     }));
   };
@@ -135,8 +155,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPl
   const createLocalMatch = () => {
     if (!socket()) return;
     socket().send(JSON.stringify({
-      gameType: 'match',
-      type: 'create_match',
+      type: 'create_local_match',
       player_id: localStorage.getItem('userId'),
     }));
   };
@@ -291,7 +310,15 @@ export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPl
     }).element);
   });
 
-
+  const localGame = createComponent("ul");
+  createEffect(() => {
+    localGame.element.innerHTML = '';
+    localGame.element.appendChild(createComponent('button', {
+      className: styles.createButton,
+      content: 'Local Game',
+      events: { click: createLocalMatch }
+    }).element);
+  });
 
   const checkAvailableGames = createComponent("ul");
   createEffect(() => {
@@ -308,7 +335,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPl
     className: styles.waitingRoom,
     children: [
       creatGame,
-      //botMatch,
+      localGame,
+      botMatch,
       checkAvailableGames,
       deleteAllGames,
       createComponent('div', {
