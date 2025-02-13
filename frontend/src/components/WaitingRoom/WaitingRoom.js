@@ -2,7 +2,7 @@ import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
 import styles from './WaitingRoom.module.css';
 
-export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setCreatorName/*, setJoinId, setJoinName*/ }) {
+export default function WaitingRoom({ onStartGame, setGameId, setPlayerId, setPlayerName }) {
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
   const [socket, setSocket] = createSignal(null);
@@ -51,8 +51,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                     case 'active':
                       console.log('Match Started');
                       setGameId(data.available_games.matches[0].match_id);
-                      setCreatorId(localStorage.getItem('userId'));
-                      setCreatorName(localStorage.getItem('username'));
+                      setPlayerId(localStorage.getItem('userId'));
+                      setPlayerName(localStorage.getItem('username'));
                       onStartGame(data.game, data.available_games.matches[0].match_id);
 
                       break;
@@ -120,6 +120,24 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     if (!socket()) return;
     socket().send(JSON.stringify({
       type: 'delete_all_games',
+    }));
+  };
+
+  const aiGame = () => {
+    if (!socket()) return;
+    socket().send(JSON.stringify({
+      type: gameType === 'match' ? 'create_match' :
+					gameType === 'ai_match' ? 'create_AI_match' : 'create_tournament',
+      player_id: localStorage.getItem('userId'),
+    }));
+  };
+
+  const createLocalMatch = () => {
+    if (!socket()) return;
+    socket().send(JSON.stringify({
+      gameType: 'match',
+      type: 'create_match',
+      player_id: localStorage.getItem('userId'),
     }));
   };
 
@@ -221,6 +239,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
       }).element);
   });
 
+  // dropdown for game creation type
   const creatGame = createComponent("ul");
   createEffect(() => {
     creatGame.element.innerHTML = '';
@@ -262,6 +281,18 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     }).element);
   });
 
+  const botMatch = createComponent("ul");
+  createEffect(() => {
+    botMatch.element.innerHTML = '';
+    botMatch.element.appendChild(createComponent('button', {
+      className: styles.createButton,
+      content: 'Bot Match',
+      events: { click: aiGame }
+    }).element);
+  });
+
+
+
   const checkAvailableGames = createComponent("ul");
   createEffect(() => {
     checkAvailableGames.element.innerHTML = '';
@@ -277,6 +308,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     className: styles.waitingRoom,
     children: [
       creatGame,
+      //botMatch,
       checkAvailableGames,
       deleteAllGames,
       createComponent('div', {
