@@ -82,6 +82,28 @@ http://localhost:8001/api/match/<match_id>/result/
 	}
 	```
 
+**Create Local Match**
+
+**Send:**
+```json
+{
+	"type": "create_local_match",
+	"player_id": 1
+}
+```
+
+**Receive:**
+```json
+{
+	"type": "match_created",
+	"id": 123,
+	"creator_id": 1,
+	"is_local_match": true,
+	"guest_id": 0,
+	"available_games": []
+}
+```
+
 **Create Tournament**
 
 - **Send:** `{"type": "create_tournament", "player_id": int, "max_players": int}`
