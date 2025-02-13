@@ -10,6 +10,7 @@ const apiUrl = `${protocol}//${hostname}:${port}`;
 
 const[usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
 const[passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
+const[avatarButtonPressed, setAvatarButtonPressed] = createSignal(false);
 
 //*********************************************************************************************//
 
@@ -365,6 +366,213 @@ function changePasswordComponent(user_data, setReload) {
 
 //*********************************************************************************************//
 
+function changeAvatarComponent(user_data, setReload) {
+  const[avatar, setAvatar] = createSignal("");
+  const[avatarUrl, setAvatarUrl] = createSignal(user_data.avatar_url);
+  const[avatarError, setAvatarError] = createSignal("");
+
+  const handleChangeAvatar = async (file, setReload) => {
+    try {
+      console.log("Uploading avatar...", file);
+
+      //***logic to store file in the nginx server goes here***//
+      // setAvatarUrl(*nginx's file location*);
+  
+      const response = await fetch("/api/change-avatar/", {
+        method: "PUT",
+        headers: {
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+        },
+        body: JSON.stringify({ avatarUrl }),
+      });
+  
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log("Avatar changed successfully!");
+        setReload((prev) => !prev);
+      } else {
+        console.error("Change avatar error:", data.error || "Unknown error");
+      }
+    } catch (error) {
+      console.error("Change avatar error:", error);
+    }
+  };
+
+  let changeAvatarComponent = [];
+  if (avatarButtonPressed()) {
+    return createComponent("div", {
+      className: styles.changeBox,
+      children: [
+        createComponent("input", {
+          className: styles.changeInput,
+          attributes: {
+            type: "file",
+            accept: "image/*",
+          },
+          events: {
+            change: (event) => {
+              const file = event.target.files[0];
+              if (file) {
+                console.log("Selected file:", file.name);
+                setAvatar(file);
+              }
+            },
+          },
+        }),
+        createComponent("button", {
+          className: styles.changeButton,
+          content: "Change Avatar",
+          events: {
+            click: async () => {
+              if (!avatar()) {
+                alert("Please select an image first.");
+                return;
+              }
+              console.log("Uploading avatar...");
+              await handleChangeAvatar(avatar(), setReload);
+            },
+          },
+        }),
+      ],
+    });
+    
+  } else {
+    changeAvatarComponent = [createComponent('button', {
+      className: styles.changeButton,
+      content: 'Change Avatar',
+      events: {
+        click: (event) => {
+          console.log("Change Avatar button clicked for:", user_data.username);
+          setAvatarButtonPressed(true);
+          setReload(true);
+        }
+      },
+    }),
+  ];
+  }
+
+  return createComponent('div', {
+    className: styles.changeBox, // create own style!!
+    children: changeAvatarComponent,
+  });
+}
+
+// function AvatarComponent({ user_data, setReload }) {
+//   const [avatar, setAvatar] = createSignal(user_data.avatar_url);
+//   const [isDragging, setIsDragging] = createSignal(false);
+//   const [error, setError] = createSignal("");
+//   const [isEditing, setIsEditing] = createSignal(false);
+
+//   // Handle file drop
+//   const handleDrop = (event) => {
+//     event.preventDefault();
+//     setIsDragging(false);
+
+//     const files = event.dataTransfer.files;
+//     if (files.length > 0) {
+//       const file = files[0];
+//       if (file.type.startsWith("image/")) {
+//         uploadAvatar(file);
+//       } else {
+//         setError("Please upload a valid image file.");
+//       }
+//     }
+//   };
+
+//   // Handle file upload
+//   const uploadAvatar = async (file) => {
+//     const formData = new FormData();
+//     formData.append("avatar", file);
+
+//     try {
+//       const response = await fetch(`${apiUrl}/change-avatar/`, {
+//         method: "PUT",
+//         headers: {
+//           Authorization: `Token ${localStorage.getItem("authToken")}`,
+//         },
+//         body: formData,
+//       });
+
+//       if (response.ok) {
+//         const data = await response.json();
+//         setAvatar(data.avatar_url); // Update the avatar URL
+//         setReload(true); // Trigger a reload to reflect changes
+//         setIsEditing(false); // Exit edit mode
+//       } else {
+//         const errorData = await response.json();
+//         setError(errorData.error || "Failed to upload avatar.");
+//       }
+//     } catch (err) {
+//       setError("An error occurred while uploading the avatar.");
+//     }
+//   };
+
+//   // Render the avatar component
+//   let avatarComponent = [];
+//   if (isEditing()) {
+//     avatarComponent = [
+//       createComponent("div", {
+//         className: `avatar-container ${isDragging() ? "dragging" : ""}`,
+//         attributes: {
+//           ondragover: (event) => {
+//             event.preventDefault();
+//             setIsDragging(true);
+//           },
+//           ondragleave: () => setIsDragging(false),
+//           ondrop: handleDrop,
+//         },
+//         children: [
+//           createComponent("img", {
+//             className: "avatar",
+//             attributes: {
+//               src: avatar(),
+//               alt: `${user_data.username}'s avatar`,
+//             },
+//           }),
+//           createComponent("div", {
+//             className: "drag-drop-overlay",
+//             content: isDragging() ? "Drop to upload" : "Drag & drop to change avatar",
+//           }),
+//         ],
+//       }),
+//       error() &&
+//         createComponent("div", {
+//           className: "error-message",
+//           content: error(),
+//         }),
+//       createComponent("button", {
+//         className: "cancel-button",
+//         content: "Cancel",
+//         events: {
+//           click: () => setIsEditing(false),
+//         },
+//       }),
+//     ].filter(Boolean); // Filter out false values
+//   } else {
+//     avatarComponent = [
+//       createComponent("img", {
+//         className: "avatar",
+//         attributes: {
+//           src: avatar(),
+//           alt: `${user_data.username}'s avatar`,
+//         },
+//         events: {
+//           click: (event) => setIsEditing(true), // Enter edit mode on click
+//         },
+//       }),
+//     ];
+//   }
+
+//   return createComponent("div", {
+//     className: "avatar-wrapper",
+//     children: avatarComponent,
+//   });
+// }
+
+
+//*********************************************************************************************//
+
 function dynamicData(user_data, setReload) {
   if (!user_data) {
     return createComponent('div', {
@@ -387,6 +595,7 @@ function dynamicData(user_data, setReload) {
               alt: `${user_data.username}'s avatar`,
             }
           }),
+          // AvatarComponent({ user_data: user_data, setReload: () => setReload(true) }),
           createComponent('h1', {
             className: styles.username,
             content: user_data.username,
@@ -408,6 +617,7 @@ function dynamicData(user_data, setReload) {
 
       changeUsernameComponent(user_data, setReload),
       changePasswordComponent(user_data, setReload),
+      changeAvatarComponent(user_data, setReload),
       
       // Friends List Section
       friendListComponent(user_data, setReload),
