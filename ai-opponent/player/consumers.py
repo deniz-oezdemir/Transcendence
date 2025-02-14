@@ -10,12 +10,10 @@ from websockets.exceptions import ConnectionClosedError, InvalidURI, InvalidHand
 
 logger = logging.getLogger(__name__)
 
-
 class WebSocketConnectionError(Exception):
     def __init__(self, message):
         super().__init__(message)
         self.status_code = 450
-
 
 class WebSocketClient(AsyncWebsocketConsumer):
     def __init__(self, uri, ai_player):
@@ -25,6 +23,9 @@ class WebSocketClient(AsyncWebsocketConsumer):
         self.last_update_time = 0
         self.move_task = None
         self.game_running = True
+        self.move_step = 10
+        self.predicted_ball_y = None
+        self.ball_x_direction_sign = 0
 
     async def connect(self):
         try:
@@ -48,9 +49,14 @@ class WebSocketClient(AsyncWebsocketConsumer):
             while True:
                 message = await self.websocket.recv()
                 data = json.loads(message)
+                state = data.get("state", {})
+                is_game_running = state.get("is_game_running", True)
+                is_game_ended = state.get("is_game_ended", False)
+                if not is_game_running or is_game_ended:
+                    self.game_running = False
                 current_time = time.time()
                 if current_time - self.last_update_time >= 1:  # Only once per second
-                    logger.info(f"Received message: {data}")
+                    logger.debug(f"Received message: {data}")
                     await self.handle_game_update(data)
                     self.last_update_time = current_time
         except websockets.ConnectionClosed:
@@ -62,16 +68,22 @@ class WebSocketClient(AsyncWebsocketConsumer):
             state = data.get("state", {})
             ball_x_position = state.get("ball_x_position")
             ball_y_position = state.get("ball_y_position")
-            ball_x_direction = state.get("ball_x_direction")
+            new_ball_x_direction = state.get("ball_x_direction")
             ball_y_direction = state.get("ball_y_direction")
             game_width = state.get("game_width")
             game_height = state.get("game_height")
+            paddle_height = state.get("paddle_height")
             player_1_id = state.get("player_1_id")
             player_2_id = state.get("player_2_id")
             player_1_position = state.get("player_1_position")
             player_2_position = state.get("player_2_position")
             is_game_running = state.get("is_game_running", True)
             is_game_ended = state.get("is_game_ended", False)
+            self.move_step = state.get("move_step")
+
+            if self.predicted_ball_y is None:
+                logger.debug("handle_game_update: predicted_y is None, setting to middle of board")
+                self.predicted_ball_y = game_height / 2
 
             if not is_game_running or is_game_ended:
                 logger.info("Game has ended or is paused. Stopping AI.")
@@ -89,6 +101,8 @@ class WebSocketClient(AsyncWebsocketConsumer):
                 ai_player_position = player_1_position
             elif self.ai_player.ai_player_id == player_2_id:
                 ai_player_position = player_2_position
+            # Because in game engine position is top of paddle, set it to middle:
+            ai_player_position += paddle_height / 2
 
             if ai_player_position is None:
                 logger.error(
@@ -101,30 +115,37 @@ class WebSocketClient(AsyncWebsocketConsumer):
                 and ball_x_position is not None
                 and ball_y_position is not None
             ):
-                if (
-                    self.ai_player.ai_player_id == player_1_id and ball_x_direction < 0
-                ) or (
-                    self.ai_player.ai_player_id == player_2_id and ball_x_direction > 0
-                ):
-                    # Ball is moving towards the AI player
-                    predicted_y = self.predict_ball_y(
-                        ball_x_position,
-                        ball_y_position,
-                        ball_x_direction,
-                        ball_y_direction,
-                        game_width,
-                        game_height,
-                    )
-                else:
-                    # Ball is moving away from the AI player, move towards the center
-                    predicted_y = game_height / 2
+                new_ball_x_direction_sign = 1 if new_ball_x_direction > 0 else -1
+                if new_ball_x_direction_sign != self.ball_x_direction_sign:
+                    self.ball_x_direction_sign = new_ball_x_direction_sign
+                    logger.debug("Ball direction sign changed, updating prediction")
+                    if (
+                        self.ai_player.ai_player_id == player_1_id and self.ball_x_direction_sign < 0
+                    ) or (
+                        self.ai_player.ai_player_id == player_2_id and self.ball_x_direction_sign > 0
+                    ):
+                        # Ball is moving towards the AI player
+                        new_predicted_y = self.predict_ball_y(
+                            ball_x_position,
+                            ball_y_position,
+                            new_ball_x_direction,
+                            ball_y_direction,
+                            game_width,
+                            game_height,
+                        )
+                        if math.fabs(self.predicted_ball_y - new_predicted_y) > 10:
+                            self.predicted_ball_y = new_predicted_y
+                    else:
+                        # Ball is moving away from the AI player, move towards the center
+                        self.predicted_ball_y = game_height / 2
+                        logger.debug(f"Ball is moving away, go to middle: {self.predicted_ball_y}")
 
-                # Cancel any existing move task
-                if self.move_task is not None:
-                    self.move_task.cancel()
+                    # Cancel any existing move task
+                    if self.move_task is not None:
+                        self.move_task.cancel()
 
-                # Start a new move task
-                self.move_task = asyncio.create_task(self.continuous_move(ai_player_position, predicted_y))
+                    # Start a new move task
+                    self.move_task = asyncio.create_task(self.continuous_move(ai_player_position))
             else:
                 logger.error(
                     f"ai-player cannot move because one of these is null:\nai_player_position: {ai_player_position}\nball_x_position: {ball_x_position}\nball_y_position: {ball_y_position}"
@@ -151,15 +172,17 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
         return ball_y
 
-    async def continuous_move(self, ai_player_position, predicted_y):
+    async def continuous_move(self, ai_player_position):
         try:
             while self.game_running:
-                if math.fabs(ai_player_position - predicted_y) < 20:
+                if math.fabs(ai_player_position - self.predicted_ball_y) < 10: # TODO: remove magic number
                     break
-                elif ai_player_position < predicted_y:
+                elif ai_player_position < self.predicted_ball_y:
                     await self.send_move_command(1)  # Move down
-                elif ai_player_position > predicted_y:
+                    ai_player_position += self.move_step
+                elif ai_player_position > self.predicted_ball_y:
                     await self.send_move_command(-1)  # Move up
+                    ai_player_position -= self.move_step
                 else:
                     break  # Target position reached
 
@@ -178,11 +201,11 @@ class WebSocketClient(AsyncWebsocketConsumer):
         }
         logger.debug("Sending move command")
         await self.websocket.send(json.dumps(move_command))
-        logger.info(f"Sent move command: {move_command}")
+        logger.debug(f"Sent move command: {move_command}")
 
     def delete_ai_player(self):
         self.ai_player.delete()
-        logger.info(
+        logger.debug(
             f"AI player {self.ai_player.ai_player_id} deleted from database and Redis"
         )
 
@@ -198,3 +221,4 @@ class WebSocketClient(AsyncWebsocketConsumer):
         thread = threading.Thread(target=self.run)
         thread.start()
         return self.connection_error
+
