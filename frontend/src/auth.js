@@ -30,7 +30,7 @@ async function login(username, password) {
   const data = await response.json();
   console.log('Response received:', response, data)
   if (!response.ok) {
-    throw new Error(data.message || 'Login failed');
+    throw new Error(data.error || 'Login failed');
   }
 	
   localStorage.setItem('authToken', data.token);
@@ -56,8 +56,8 @@ async function logout() {
   });
   console.log('Response received:', response)
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Logout failed');
+    const data = await response.json();
+    throw new Error(data.error || 'Logout failed');
   }
 
   localStorage.removeItem('authToken');

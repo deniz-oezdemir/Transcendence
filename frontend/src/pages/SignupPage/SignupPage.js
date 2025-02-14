@@ -67,8 +67,8 @@ export default function SignupPage() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed on server side');
+        const data = await response.json();
+        throw new Error(data.error || 'Registration failed');
       }
 
       setSubmitSuccess('User created successfully! Redirecting to login page...');

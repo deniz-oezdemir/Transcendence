@@ -42,6 +42,7 @@ export default function LoginPage() {
     } catch (error) {
       setIsLoggingIn(false);
       setSubmitError(error.message);
+      
     }
   }
 
