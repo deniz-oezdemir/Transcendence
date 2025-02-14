@@ -22,9 +22,9 @@ async def create_game_in_pong_api(match):
                     "id": match.match_id,
                     "max_score": 3,
                     "player_1_id": match.player_1_id,
-                    "player_1_name": f"Player {match.player_1_id}",
+                    "player_1_name": f"Player {match.player_1_name}",
                     "player_2_id": match.player_2_id,
-                    "player_2_name": f"Player {match.player_2_id}",
+                    "player_2_name": f"Player {match.player_2_name}",
                 },
             ) as response:
                 if response.status != 201:

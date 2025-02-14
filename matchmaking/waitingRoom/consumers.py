@@ -34,9 +34,9 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                         "id": match.match_id,
                         "max_score": 3,
                         "player_1_id": match.player_1_id,
-                        "player_1_name": f"Player {match.player_1_id}",
+                        "player_1_name": f"Player {match.player_1_name}",
                         "player_2_id": match.player_2_id,
-                        "player_2_name": f"Player {match.player_2_id}",
+                        "player_2_name": f"Player {match.player_2_name}",
                     },
                 ) as response:
                     response_data = await response.json()
@@ -115,7 +115,11 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 await self.send_error("Player already in a game")
                 return
 
-            match = await self.create_match(data["player_id"])
+            player_name = data.get("player_name", f"Name {data['player_id']}")
+            match = await self.create_match(
+                player_id=data["player_id"],
+                player_name=player_name
+            )
             available_games = await self.get_available_games()
 
             await self.channel_layer.group_send(
@@ -124,18 +128,19 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "type": "match_created",
                     "id": match.match_id,
                     "creator_id": match.player_1_id,
+                    "creator_name": match.player_1_name,
                     "available_games": available_games,
-                },
+                }
             )
-
         # Create local human vs human match
         elif data["type"] == "create_local_match":
             if await self.is_player_in_game(data["player_id"]):
                 await self.send_error("Player already in a game")
                 return
 
+            player_name = data.get("player_name", f"Name {data['player_id']}")
             # Create match with player 2 as guest (id=0)
-            match = await self.create_match(data["player_id"], is_local=True)
+            match = await self.create_match(data["player_id"], player_name=player_name,  is_local=True)
 
             # Create game in pong-api immediately since it's a local match
             logger.info(f"Creating local game in pong-api for match {match.match_id}")
@@ -154,8 +159,10 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "type": "match_created",
                     "id": match.match_id,
                     "creator_id": match.player_1_id,
+                    "creator_name": match.player_1_name,
                     "is_local_match": True,
                     "guest_id": match.player_2_id,
+                    "guest_name": "Guest",
                     "available_games": available_games,
                 },
             )
@@ -166,7 +173,12 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 await self.send_error(f"Player {data['player_id']} already in a game")
                 return
 
-            match = await self.join_match(data["match_id"], data["player_id"])
+            joiner_name = data.get("player_name", f"Name {data['player_id']}")
+            match = await self.join_match(
+                match_id=data["match_id"],
+                player_id=data["player_id"],
+                player_name=joiner_name
+            )
             if not match:
                 await self.send_error("Match not found or already full")
                 return
@@ -191,6 +203,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "game_type": "match",
                     "game_id": match.match_id,
                     "player_id": data["player_id"],
+                    "player_name": joiner_name,
                     "available_games": available_games,
                 },
             )
@@ -201,7 +214,9 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 return
 
             tournament = await self.create_tournament(
-                data["player_id"], data["max_players"]
+                data["player_id"],
+                data.get("player_name", f"Name {data['player_id']}"),
+                data["max_players"]
             )
             available_games = await self.get_available_games()
 
@@ -209,7 +224,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 "waiting_room",
                 {
                     "type": "tournament_created",
-                    "id": tournament.tournament_id,
+                    "tournament_id": tournament.tournament_id,
                     "creator_id": tournament.creator_id,
                     "available_games": available_games,
                 },
@@ -274,7 +289,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     {
                         "type": "player_joined",
                         "game_type": "tournament",
-                        "game_id": tournament.tournament_id,
+                        "tournament_id": tournament.tournament_id,
                         "player_id": data["player_id"],
                         "available_games": available_games,
                     },
@@ -291,8 +306,10 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 await self.send_error("Player already in a game")
                 return
 
+            player_name = data.get("player_name", f"Player {data['player_id']}")
+
             logger.info(f"Creating AI match for player {data['player_id']}")
-            match = await self.create_match(data["player_id"], is_ai_opponent=True)
+            match = await self.create_match(data["player_id"], player_name=player_name, is_ai_opponent=True)
             logger.debug(
                 f"Created AI match {match.match_id} for player {data['player_id']}"
             )
@@ -353,35 +370,42 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({"type": "error", "message": message}))
 
     @database_sync_to_async
-    def create_match(self, player_id, is_ai_opponent=False, is_local=False):
-        """Creates a match, optionally against an AI opponent or as a local match"""
+    def create_match(
+        self, player_id, player_name, is_ai_opponent=False, is_local=False
+    ):
+        """Creates a match with player names"""
         if is_ai_opponent:
-            # Get the next available negative AI ID
             latest_ai_match = (
                 Match.objects.filter(player_2_id__lt=0).order_by("player_2_id").first()
             )
             ai_id = -1 if not latest_ai_match else latest_ai_match.player_2_id - 1
-
             match = Match.objects.create(
                 player_1_id=player_id,
+                player_1_name=player_name,
                 player_2_id=ai_id,
-                status=Match.ACTIVE,  # AI matches are immediately active
+                player_2_name="AI",
+                status=Match.ACTIVE,
             )
         elif is_local:
             match = Match.objects.create(
                 player_1_id=player_id,
-                player_2_id=0,  # 0 represents guest player
-                status=Match.ACTIVE,  # Local matches are immediately active
+                player_1_name=player_name,
+                player_2_id=0,
+                player_2_name="Guest",
+                status=Match.ACTIVE,
             )
         else:
-            match = Match.objects.create(player_1_id=player_id, status=Match.PENDING)
+            match = Match.objects.create(
+                player_1_id=player_id, player_1_name=player_name, status=Match.PENDING
+            )
         return match
 
     @database_sync_to_async
-    def join_match(self, match_id, player_id):
+    def join_match(self, match_id, player_id, player_name):
         try:
             match = Match.objects.get(match_id=match_id, player_2_id__isnull=True)
             match.player_2_id = player_id
+            match.player_2_name = player_name
             match.status = Match.ACTIVE
             match.save()
             return match
@@ -389,9 +413,10 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             return False
 
     @database_sync_to_async
-    def create_tournament(self, creator_id, max_players):
+    def create_tournament(self, creator_id, creator_name, max_players):
         return Tournament.objects.create(
             creator_id=creator_id,
+            creator_name=creator_name,
             max_players=max_players,
             players=[creator_id],
             status=Tournament.PENDING,
@@ -497,14 +522,29 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_available_games(self):
+        """Gets all active and pending matches and tournaments"""
         matches = list(
-            Match.objects.filter(status__in=[Match.PENDING, Match.ACTIVE]).values()
+            Match.objects.filter(status__in=[Match.PENDING, Match.ACTIVE]).values(
+                "match_id",
+                "player_1_id",
+                "player_1_name",
+                "player_2_id",
+                "player_2_name",
+                "status",
+            )
         )
 
         tournaments = list(
             Tournament.objects.filter(
                 status__in=[Tournament.PENDING, Tournament.ACTIVE]
-            ).values()
+            ).values(
+                "tournament_id",
+                "creator_id",
+                "creator_name",
+                "players",
+                "max_players",
+                "status",
+            )
         )
         return {"matches": matches, "tournaments": tournaments}
 

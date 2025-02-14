@@ -253,6 +253,8 @@ Second version: support also tournmanets - work in progress
 	3. send created game to frontend via websocket and initiate ai player
 - if waiting too complicated tell gameengine to just retry a second after instead of error in gameengine
 
+10. Add player name to endpoints regarding frontend.
+
 11. Harmonize all status responses (player id vs guest id vs ai id -> just do player id) - tell kang
 
 ## Is Redis not sufficient as a database? Why also use PostgreSQL?
