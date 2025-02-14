@@ -1,5 +1,6 @@
 import asyncio
 import time
+import math
 import websockets
 import json
 import logging
@@ -22,6 +23,8 @@ class WebSocketClient(AsyncWebsocketConsumer):
         self.ai_player = ai_player
         self.websocket = None
         self.last_update_time = 0
+        self.move_task = None
+        self.game_running = True
 
     async def connect(self):
         try:
@@ -67,6 +70,17 @@ class WebSocketClient(AsyncWebsocketConsumer):
             player_2_id = state.get("player_2_id")
             player_1_position = state.get("player_1_position")
             player_2_position = state.get("player_2_position")
+            is_game_running = state.get("is_game_running", True)
+            is_game_ended = state.get("is_game_ended", False)
+
+            if not is_game_running or is_game_ended:
+                logger.info("Game has ended or is paused. Stopping AI.")
+                self.game_running = False
+                if self.move_task is not None:
+                    self.move_task.cancel()
+                return
+            else:
+                self.game_running = True
 
             ai_player_position = None
 
@@ -105,7 +119,12 @@ class WebSocketClient(AsyncWebsocketConsumer):
                     # Ball is moving away from the AI player, move towards the center
                     predicted_y = game_height / 2
 
-                await self.move_towards_ball(ai_player_position, predicted_y)
+                # Cancel any existing move task
+                if self.move_task is not None:
+                    self.move_task.cancel()
+
+                # Start a new move task
+                self.move_task = asyncio.create_task(self.continuous_move(ai_player_position, predicted_y))
             else:
                 logger.error(
                     f"ai-player cannot move because one of these is null:\nai_player_position: {ai_player_position}\nball_x_position: {ball_x_position}\nball_y_position: {ball_y_position}"
@@ -132,15 +151,26 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
         return ball_y
 
-    async def move_towards_ball(self, ai_player_position, predicted_y):
-        # Move towards the predicted Y position of the ball
-        logger.debug("Moving towards ball")
-        if ai_player_position < predicted_y:
-            await self.send_move_command(1)  # Move down
-        elif ai_player_position > predicted_y:
-            await self.send_move_command(-1)  # Move up
+    async def continuous_move(self, ai_player_position, predicted_y):
+        try:
+            while self.game_running:
+                if math.fabs(ai_player_position - predicted_y) < 20:
+                    break
+                elif ai_player_position < predicted_y:
+                    await self.send_move_command(1)  # Move down
+                elif ai_player_position > predicted_y:
+                    await self.send_move_command(-1)  # Move up
+                else:
+                    break  # Target position reached
+
+                # Wait for a short interval before sending the next move command
+                await asyncio.sleep(0.1)
+        except asyncio.CancelledError:
+            pass
 
     async def send_move_command(self, direction):
+        if not self.game_running:
+            return
         move_command = {
             "action": "move",
             "player_id": self.ai_player.ai_player_id,
