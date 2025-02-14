@@ -1,7 +1,5 @@
 # Matchmaking Microservice
 
-Info: match and game are used synonymously.
-
 ## Table of Contents
 - [REST Endpoint for Game Engine Service](#rest-endpoint-for-game-engine-service)
 - [WebSocket Endpoint for Front End Service](#websocket-endpoint-for-front-end-service)
@@ -325,7 +323,7 @@ Second version: support also tournmanets - work in progress
 
 10. Add player name to endpoints for matches.
 
-11. Add player name to endpoints for tournaments. - sync with Frontend on message format before
+11. Add player name to endpoints for tournaments.
 
 ## Is Redis not sufficient as a database? Why also use PostgreSQL?
 
