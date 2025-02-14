@@ -115,14 +115,17 @@
 
 		function createGame(playerId) {
 			const gameType = document.getElementById('gameType').value;
-			console.log("Selected game type:", gameType); // Add this debug line
+			console.log("Selected game type:", gameType);
 			const message = {
 				type: gameType === 'match' ? 'create_match' :
-					gameType === 'ai_match' ? 'create_AI_match' : // Notice the capitalization
+					gameType === 'ai_match' ? 'create_AI_match' :
 						gameType === 'local_match' ? 'create_local_match' : 'create_tournament',
-				player_id: playerId
+				player_id: playerId,
+				player_name: `Name_${playerId}`,
+				max_players: gameType === 'tournament4' ? 4 :
+					gameType === 'tournament8' ? 8 : null
 			};
-			console.log("Sending message:", message); // Add this debug line
+			console.log("Sending message:", message);
 			socket.send(JSON.stringify(message));
 		}
 

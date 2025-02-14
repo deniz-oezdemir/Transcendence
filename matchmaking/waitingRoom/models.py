@@ -15,6 +15,8 @@ class Match(models.Model):
     match_id = models.BigAutoField(primary_key=True)
     player_1_id = models.BigIntegerField()
     player_2_id = models.BigIntegerField(null=True, blank=True)
+    player_1_name = models.CharField(max_length=50, default="Player")
+    player_2_name = models.CharField(max_length=50, null=True, blank=True)
     winner_id = models.BigIntegerField(null=True, blank=True)
     player_1_score = models.IntegerField(null=True, blank=True, default=0)
     player_2_score = models.IntegerField(null=True, blank=True, default=0)
@@ -41,6 +43,7 @@ class Tournament(models.Model):
 
     tournament_id = models.BigAutoField(primary_key=True)
     creator_id = models.BigIntegerField()
+    creator_name = models.CharField(max_length=50, default="Player")
     max_players = models.IntegerField(choices=[(4, "4 Players"), (8, "8 Players")]) #TODO: rename to nbrOfParticipants
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
     players = models.JSONField(default=list)
