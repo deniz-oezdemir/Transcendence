@@ -51,17 +51,17 @@ class RegisterSerializer(serializers.ModelSerializer):
                 "Password cannot contain spaces, forward slashes, or backslashes."
             )
         return value
-    # def validate_avatar_url(self, value):
-    #     if value:
-    #         max_file_size = 2 * 1024 * 1024  # 2 MB
-    #         if value.size > max_file_size:
-    #             raise serializers.ValidationError("Avatar file size must not exceed 2MB.")
+    def validate_avatar(self, file):
+        if file:
+            max_file_size = 2 * 1024 * 1024  # 2 MB
+            if file.size > max_file_size:
+                raise serializers.ValidationError("Avatar file size must not exceed 2MB.")
 
-    #         allowed_extensions = ['jpg', 'jpeg', 'png']
-    #         file_extension = value.name.split('.')[-1].lower()
-    #         if file_extension not in allowed_extensions:
-    #             raise serializers.ValidationError("Only JPG, JPEG, and PNG files are allowed.")
-    #     return value
+            allowed_extensions = ['jpg', 'jpeg', 'png']
+            file_extension = file.name.split('.')[-1].lower()
+            if file_extension not in allowed_extensions:
+                raise serializers.ValidationError("Only JPG, JPEG, and PNG files are allowed.")
+        return file
     def validate(self, data):
         if data['password'] == data['username']:
             raise serializers.ValidationError("Password cannot be the same as username.")

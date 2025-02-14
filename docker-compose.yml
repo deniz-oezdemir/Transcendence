@@ -1,4 +1,25 @@
 services:
+  # Nginx
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/dist:/usr/share/nginx/html
+      - ./avatars:/usr/share/nginx/html/avatars # Store avatars here
+    depends_on:
+      - frontend
+    networks:
+      - transcendence
+
+  # networks:
+  #   frontend-internal:
+  #     driver: bridge
   #UAM service
   accounts:
     container_name: accounts

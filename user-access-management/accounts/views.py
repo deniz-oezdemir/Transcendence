@@ -1,3 +1,5 @@
+import os
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -80,11 +82,28 @@ class ChangeAvatarView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request):
-        serializer = ChangeAvatarSerializer(data=request.data, instance=request.user)
-        if serializer.is_valid():
-            serializer.update(request.user, serializer.validated_data)
+        try:
+            # file = request.FILES.get('avatar')
+            serializer = ChangeAvatarSerializer(data=request.data, instance=request.user, context={"request": request})
+            if not serializer.is_valid():
+                first_field = list(serializer.errors.keys())[0]
+                error_message = serializer.errors[first_field][0]
+                return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # #Save file in /usr/share/nginx/media/avatars/
+            # avatar_path = os.path.join("avatars", f"user_{request.user.id}_{file.name}")
+            # file_path = os.path.join(settings.MEDIA_ROOT, avatar_path)
+
+            # with open(file_path, "wb+") as destination:
+            #     for chunk in file.chunks():
+            #         destination.write(chunk)
+            # avatar_url = settings.MEDIA_URL + avatar_path
+
+            serializer.update()
             return Response({"message": "avatar changed successfully."}, status=status.HTTP_200_OK)
-        return Response({"error": f"Change avatar failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        except Exception as e:
+            return Response({"error": f"Change avatar failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ChangeUsernameView(APIView):
     authentication_classes = [TokenAuthentication]

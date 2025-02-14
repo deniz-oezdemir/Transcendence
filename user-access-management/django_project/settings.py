@@ -190,7 +190,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.CustomUser" #points to my custom user model
 
 # Uploaded avatars
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # The 'media' folder in your project root
-MEDIA_URL = '/media/'  # The URL prefix for accessing media files
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media') #The 'media' folder in your project root
+# MEDIA_ROOT = '/usr/share/nginx/static/'  # physical directory where files are stored. 
+MEDIA_URL = '/media/'  # public URL where Nginx will serve the media files
+
 
 # APPEND_SLASH=False
