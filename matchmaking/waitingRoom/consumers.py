@@ -117,8 +117,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
             player_name = data.get("player_name", f"Name {data['player_id']}")
             match = await self.create_match(
-                player_id=data["player_id"],
-                player_name=player_name
+                player_id=data["player_id"], player_name=player_name
             )
             available_games = await self.get_available_games()
 
@@ -130,7 +129,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "creator_id": match.player_1_id,
                     "creator_name": match.player_1_name,
                     "available_games": available_games,
-                }
+                },
             )
         # Create local human vs human match
         elif data["type"] == "create_local_match":
@@ -140,7 +139,9 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
             player_name = data.get("player_name", f"Name {data['player_id']}")
             # Create match with player 2 as guest (id=0)
-            match = await self.create_match(data["player_id"], player_name=player_name,  is_local=True)
+            match = await self.create_match(
+                data["player_id"], player_name=player_name, is_local=True
+            )
 
             # Create game in pong-api immediately since it's a local match
             logger.info(f"Creating local game in pong-api for match {match.match_id}")
@@ -177,7 +178,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             match = await self.join_match(
                 match_id=data["match_id"],
                 player_id=data["player_id"],
-                player_name=joiner_name
+                player_name=joiner_name,
             )
             if not match:
                 await self.send_error("Match not found or already full")
@@ -216,7 +217,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             tournament = await self.create_tournament(
                 data["player_id"],
                 data.get("player_name", f"Name {data['player_id']}"),
-                data["max_players"]
+                data["max_players"],
             )
             available_games = await self.get_available_games()
 
@@ -236,8 +237,10 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 logger.debug(f"Player {data['player_id']} already in a game")
                 return
 
+            player_name = data.get("player_name", f"Player {data['player_id']}")
+
             success = await self.join_tournament(
-                data["tournament_id"], data["player_id"]
+                data["tournament_id"], data["player_id"], player_name
             )
             if not success:
                 await self.send_error("Tournament not found or already full")
@@ -309,7 +312,9 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             player_name = data.get("player_name", f"Player {data['player_id']}")
 
             logger.info(f"Creating AI match for player {data['player_id']}")
-            match = await self.create_match(data["player_id"], player_name=player_name, is_ai_opponent=True)
+            match = await self.create_match(
+                data["player_id"], player_name=player_name, is_ai_opponent=True
+            )
             logger.debug(
                 f"Created AI match {match.match_id} for player {data['player_id']}"
             )
@@ -419,17 +424,19 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             creator_name=creator_name,
             max_players=max_players,
             players=[creator_id],
+            player_names={str(creator_id): creator_name},
             status=Tournament.PENDING,
         )
 
     @database_sync_to_async
-    def join_tournament(self, tournament_id, player_id):
+    def join_tournament(self, tournament_id, player_id, player_name):
         try:
             tournament = Tournament.objects.get(
                 tournament_id=tournament_id, status=Tournament.PENDING
             )
             if len(tournament.players) < tournament.max_players:
                 tournament.players.append(player_id)
+                tournament.player_names[str(player_id)] = player_name
                 tournament.save()
                 return tournament
             return None
@@ -447,17 +454,21 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         created_matches = []
 
         if tournament.max_players == 4:
-            # Create 2 semi-final matches
+            # Create 2 semi-final matches with player names
             semi1 = Match.objects.create(
                 player_1_id=players[0],
+                player_1_name=tournament.player_names.get(str(players[0])),
                 player_2_id=players[1],
+                player_2_name=tournament.player_names.get(str(players[1])),
                 tournament_id=tournament.tournament_id,
                 round=1,
                 status=Match.ACTIVE,
             )
             semi2 = Match.objects.create(
                 player_1_id=players[2],
+                player_1_name=tournament.player_names.get(str(players[2])),
                 player_2_id=players[3],
+                player_2_name=tournament.player_names.get(str(players[3])),
                 tournament_id=tournament.tournament_id,
                 round=1,
                 status=Match.ACTIVE,
@@ -474,7 +485,13 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             for i in range(0, 8, 2):
                 match = Match.objects.create(
                     player_1_id=players[i],
+                    player_1_name=tournament.player_names.get(
+                        str(players[i]), f"Player {players[i]}"
+                    ),
                     player_2_id=players[i + 1],
+                    player_2_name=tournament.player_names.get(
+                        str(players[i + 1]), f"Player {players[i + 1]}"
+                    ),
                     tournament_id=tournament.tournament_id,
                     round=1,
                     status=Match.ACTIVE,
@@ -542,6 +559,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 "creator_id",
                 "creator_name",
                 "players",
+                "player_names",
                 "max_players",
                 "status",
             )

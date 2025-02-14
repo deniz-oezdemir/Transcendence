@@ -59,7 +59,18 @@ http://localhost:8001/api/match/<match_id>/result/
                     "status": string
                 }
             ],
-            "tournaments": []
+            "tournaments": [
+                {
+                    "tournament_id": int,
+                    "creator_id": int,
+                    "creator_name": string,
+                    "players": [int],
+                    "player_names": {
+                        "player_id": "player_name" // Map of player IDs to names
+                    },
+                    "max_players": int,
+                    "status": string
+                }
         }
     }
     ```
@@ -163,41 +174,68 @@ http://localhost:8001/api/match/<match_id>/result/
 	2. Initialize an AI player in the ai-opponent service
 	3. The `ai_id` will be a negative integer to distinguish it from regular player IDs
 
+
 **Create Tournament**
 
-- **Send:** `{"type": "create_tournament", "player_id": int, "max_players": int}`
+- **Send:**
+    ```json
+    {
+        "type": "create_tournament",
+        "player_id": int,
+        "player_name": string,
+        "max_players": int
+    }
+    ```
 - **Receive:**
-	```json
-	{
-		"type": "tournament_created",
-		"id": int,
-		"creator_id": int,
-		"available_games": []
-	}
-	```
+    ```json
+    {
+        "type": "tournament_created",
+        "id": int,
+        "creator_id": int,
+        "creator_name": string,
+        "available_games": []
+    }
+    ```
 
 **Join Tournament**
 
-- **Send:** `{"type": "join_tournament", "tournament_id": int, "player_id": int}`
+- **Send:**
+    ```json
+    {
+        "type": "join_tournament",
+        "tournament_id": int,
+        "player_id": int,
+        "player_name": string
+    }
+    ```
 - **Receive when not full:**
-	```json
-	{
-		"type": "player_joined",
-		"game_type": "tournament",
-		"game_id": int,
-		"player_id": int,
-		"available_games": []
-	}
-	```
+    ```json
+    {
+        "type": "player_joined",
+        "game_type": "tournament",
+        "tournament_id": int,
+        "player_id": int,
+        "player_name": string,
+        "available_games": []
+    }
+    ```
 - **Receive when full:**
-	```json
-	{
-		"type": "tournament_started",
-		"tournament_id": int,
-		"matches": [],
-		"available_games": []
-	}
-	```
+    ```json
+    {
+        "type": "tournament_started",
+        "tournament_id": int,
+        "matches": [
+            {
+                "round": int,
+                "matches": [int]  // Array of match IDs
+            }
+        ],
+        "player_names": {
+            "player_id": "player_name"  // Map of player IDs to names
+        },
+        "available_games": []
+    }
+    ```
 
 ## Goals
 First version: support only matches - done
