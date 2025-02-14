@@ -45,72 +45,77 @@ http://localhost:8001/api/match/<match_id>/result/
 
 - **Send:** `{"type": "get_games"}`
 - **Receive:**
-	```json
-	{
-		"type": "initial_games",
-		"games": {
-			"matches": [],
-			"tournaments": []
-		}
-	}
-	```
+    ```json
+    {
+        "type": "initial_games",
+        "games": {
+            "matches": [
+                {
+                    "match_id": int,
+                    "player_1_id": int,
+                    "player_1_name": string,
+                    "player_2_id": int,
+                    "player_2_name": string,
+                    "status": string
+                }
+            ],
+            "tournaments": []
+        }
+    }
+    ```
 
 **Create Match**
-
-- **Send:** `{"type": "create_match", "player_id": int}`
-- **Receive:**
-	```json
-	{
-		"type": "match_created",
-		"id": int,
-		"creator_id": int,
-		"available_games": []
-	}
-	```
-
-**Join Match**
-
-- **Send:** `{"type": "join_match", "match_id": int, "player_id": int}`
-- **Receive:**
-	```json
-	{
-		"type": "player_joined",
-		"game_type": "match",
-		"game_id": int,
-		"player_id": int,
-		"available_games": []
-	}
-	```
-
-**Create Local Match**
-
-- **Send:**
-	```json
-	{
-		"type": "create_local_match",
-		"player_id": int
-	}
-	```
-
-- **Receive:**
-	```json
-	{
-		"type": "match_created",
-		"id": int,
-		"creator_id": int,
-		"is_local_match": true,
-		"guest_id": 0,
-		"available_games": []
-	}
-	```
-
-**Create AI Match**
 
 - **Send:**
     ```json
     {
-        "type": "create_AI_match",
-        "player_id": int
+        "type": "create_match",
+        "player_id": int,
+        "player_name": string
+    }
+    ```
+- **Receive:**
+    ```json
+    {
+        "type": "match_created",
+        "id": int,
+        "creator_id": int,
+        "creator_name": string,
+        "available_games": []
+    }
+    ```
+
+**Join Match**
+
+- **Send:**
+    ```json
+    {
+        "type": "join_match",
+        "match_id": int,
+        "player_id": int,
+        "player_name": string
+    }
+    ```
+- **Receive:**
+    ```json
+    {
+        "type": "player_joined",
+        "game_type": "match",
+        "game_id": int,
+        "player_id": int,
+        "player_name": string,
+        "available_games": []
+    }
+    ```
+
+**Create Local Match**
+
+- **Send:**
+    ```json
+    {
+        "type": "create_local_match",
+        "player_id": int,
+        "player_name": string
     }
     ```
 
@@ -120,8 +125,35 @@ http://localhost:8001/api/match/<match_id>/result/
         "type": "match_created",
         "id": int,
         "creator_id": int,
+        "creator_name": string,
+        "is_local_match": true,
+        "guest_id": 0,
+        "guest_name": "Guest",
+        "available_games": []
+    }
+    ```
+
+**Create AI Match**
+
+- **Send:**
+    ```json
+    {
+        "type": "create_AI_match",
+        "player_id": int,
+        "player_name": string
+    }
+    ```
+
+- **Receive:**
+    ```json
+    {
+        "type": "match_created",
+        "id": int,
+        "creator_id": int,
+        "creator_name": string,
         "is_ai_match": true,
         "ai_id": int,
+        "ai_name": "AI",
         "available_games": []
     }
     ```
@@ -253,9 +285,9 @@ Second version: support also tournmanets - work in progress
 	3. send created game to frontend via websocket and initiate ai player
 - if waiting too complicated tell gameengine to just retry a second after instead of error in gameengine
 
-10. Add player name to endpoints regarding frontend.
+10. Add player name to endpoints for matches.
 
-11. Harmonize all status responses (player id vs guest id vs ai id -> just do player id) - tell kang
+11. Add player name to endpoints for tournaments. - sync with Frontend on message format before
 
 ## Is Redis not sufficient as a database? Why also use PostgreSQL?
 
