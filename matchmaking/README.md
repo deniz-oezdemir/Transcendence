@@ -104,6 +104,33 @@ http://localhost:8001/api/match/<match_id>/result/
 	}
 	```
 
+**Create AI Match**
+
+- **Send:**
+    ```json
+    {
+        "type": "create_AI_match",
+        "player_id": int
+    }
+    ```
+
+- **Receive:**
+    ```json
+    {
+        "type": "match_created",
+        "id": int,
+        "creator_id": int,
+        "is_ai_match": true,
+        "ai_id": int,
+        "available_games": []
+    }
+    ```
+
+	Note: After creating an AI match, the service will:
+	1. Create a game in the pong-api service
+	2. Initialize an AI player in the ai-opponent service
+	3. The `ai_id` will be a negative integer to distinguish it from regular player IDs
+
 **Create Tournament**
 
 - **Send:** `{"type": "create_tournament", "player_id": int, "max_players": int}`
@@ -225,6 +252,8 @@ Second version: support also tournmanets - work in progress
 	2. then wait for success response from gameengine
 	3. send created game to frontend via websocket and initiate ai player
 - if waiting too complicated tell gameengine to just retry a second after instead of error in gameengine
+
+11. Harmonize all status responses (player id vs guest id vs ai id -> just do player id) - tell kang
 
 ## Is Redis not sufficient as a database? Why also use PostgreSQL?
 
