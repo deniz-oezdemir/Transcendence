@@ -28,7 +28,18 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.info(
             f"WebSocket connected: {self.channel_name}, game_state: {self.game_state}"
         )
-        self.periodic_task = asyncio.create_task(self.send_periodic_updates())
+
+        # Increment the connected clients counter
+        connected_clients = cache.get(f"{self.game_id}_connected_clients", 0) + 1
+        cache.set(f"{self.game_id}_connected_clients", connected_clients)
+        logger.info(f"Connected clients for game {self.game_id}: {connected_clients}")
+
+        # Start the periodic task only if not already running
+        if not cache.get(f"{self.game_id}_periodic_task_running"):
+            self.periodic_task = asyncio.create_task(self.send_periodic_updates())
+            cache.set(f"{self.game_id}_periodic_task_running", True)
+            logger.info("Started periodic task for game updates")
+
         self.send_updates = (
             self.game_state.is_game_running
         )  # set to False after first is_game_running False or
@@ -38,7 +49,17 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
         logger.debug(f"WebSocket disconnected: {self.channel_name}")
 
-        self.periodic_task.cancel()
+        # Decrement the connected clients counter
+        connected_clients = cache.get(f"{self.game_id}_connected_clients", 0) - 1
+        cache.set(f"{self.game_id}_connected_clients", connected_clients)
+        logger.info(f"Connected clients for game {self.game_id}: {connected_clients}")
+
+        # Cancel the periodic task if this instance is running it and connected clients are less than 1
+        if connected_clients == 0 and cache.get(f"{self.game_id}_periodic_task_running"):
+            if hasattr(self, 'periodic_task'):
+                self.periodic_task.cancel()
+                cache.set(f"{self.game_id}_periodic_task_running", False)
+                logger.info("Cancelled periodic task for game updates")
 
     async def receive(self, text_data):
         logger.debug(f"Message received: {text_data}")
