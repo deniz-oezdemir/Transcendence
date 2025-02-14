@@ -9,7 +9,7 @@ from .serializers.friend_request_serializer import FriendRequestSerializer, Frie
 from .serializers.profile_serializer import ProfileDataSerializer
 from .serializers.change_password_serializer import ChangePasswordSerializer
 from .serializers.change_username_serializer import ChangeUsernameSerializer
-# from .serializers.change_avatar_serializer import ChangeAvatarSerializer
+from .serializers.change_avatar_serializer import ChangeAvatarSerializer
 from .models import CustomUser
 
 class RegisterView(APIView):
@@ -80,13 +80,11 @@ class ChangeAvatarView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request):
-        try:
-            user = request.user
-            user.avatar_url = request.data['avatar_url']
-            user.save(update_fields=['avatar_url'])
+        serializer = ChangeAvatarSerializer(data=request.data, instance=request.user)
+        if serializer.is_valid():
+            serializer.update(request.user, serializer.validated_data)
             return Response({"message": "avatar changed successfully."}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": f"Change avatar failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"error": f"Change avatar failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ChangeUsernameView(APIView):
     authentication_classes = [TokenAuthentication]

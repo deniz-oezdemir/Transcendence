@@ -371,17 +371,48 @@ function changeAvatarComponent(user_data, setReload) {
   const[avatarUrl, setAvatarUrl] = createSignal(user_data.avatar_url);
   const[avatarError, setAvatarError] = createSignal("");
 
+  function validateImage(file) {
+    const allowedTypes = ["image/jpeg", "image/png"];
+    const maxSize = 2 * 1024 * 1024;
+    if (!file) return false;
+    if (!allowedTypes.includes(file.type)) {
+        alert("Only JPG and PNG are allowed.");
+        return false;
+    }
+    if (file.size > maxSize) {
+        alert("File must be less than 2MB.");
+        return false;
+    }
+    return true;
+  }
+
   const handleChangeAvatar = async (file, setReload) => {
     try {
       console.log("Uploading avatar...", file);
 
       //***logic to store file in the nginx server goes here***//
-      // setAvatarUrl(*nginx's file location*);
-  
-      const response = await fetch("/api/change-avatar/", {
+      // add security layer!!
+      const formData = new FormData();
+      formData.append("file", file);
+    
+      const server_response = await fetch("https://your-nginx-server.com/upload", {
+          method: "POST",
+          body: formData,
+      });
+
+      if (!server_response.ok) throw new Error("Image upload failed");
+
+      const server_data = await response.json();
+      console.log("File uploaded to server:", server_data.file_url);
+
+      setAvatarUrl(server_data.file_url);
+      
+      // Send URL to Django
+      const response = await fetch(`${apiUrl}/change-avatar/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ avatarUrl }),
       });
@@ -392,7 +423,7 @@ function changeAvatarComponent(user_data, setReload) {
         console.log("Avatar changed successfully!");
         setReload((prev) => !prev);
       } else {
-        console.error("Change avatar error:", data.error || "Unknown error");
+        console.error("Change avatar error:", data.error);
       }
     } catch (error) {
       console.error("Change avatar error:", error);
@@ -413,7 +444,7 @@ function changeAvatarComponent(user_data, setReload) {
           events: {
             change: (event) => {
               const file = event.target.files[0];
-              if (file) {
+              if (validateImage(file)) {
                 console.log("Selected file:", file.name);
                 setAvatar(file);
               }
