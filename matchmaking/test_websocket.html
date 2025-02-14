@@ -140,6 +140,7 @@
 			const message = {
 				type: type === 'match' ? 'join_match' : 'join_tournament',
 				player_id: playerId,
+				player_name: `Name_${playerId}`,
 				[type === 'match' ? 'match_id' : 'tournament_id']: parseInt(id)
 			};
 

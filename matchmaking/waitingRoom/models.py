@@ -47,6 +47,7 @@ class Tournament(models.Model):
     max_players = models.IntegerField(choices=[(4, "4 Players"), (8, "8 Players")]) #TODO: rename to nbrOfParticipants
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
     players = models.JSONField(default=list)
+    player_names = models.JSONField(default=dict)
     matches = models.JSONField(default=list)
     winner_id = models.BigIntegerField(null=True, blank=True)
 
