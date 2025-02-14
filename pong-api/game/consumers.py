@@ -1,6 +1,7 @@
 import json
 import logging
 import asyncio
+from asyncio import Lock
 import aiohttp
 from django.utils import timezone
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -14,6 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 class GameConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lock = Lock()
+        self.last_move_time = None
+        self.move_debounce_interval = 0.05  # 50 milliseconds debounce interval
+
     async def connect(self):
         self.game_id = self.scope["url_route"]["kwargs"]["game_id"]
         self.game_group_name = f"game_{self.game_id}"
@@ -90,24 +97,26 @@ class GameConsumer(AsyncWebsocketConsumer):
         )
 
     async def move_player(self, player_id, direction):
-        try:
-            self.game_state = self.get_game_state()
-            logger.debug("move player is game running ok")
-            engine = PongGameEngine(self.game_state)
-            self.game_state = engine.move_player(player_id, direction)
-            logger.debug(f"Player {player_id} moved to direction {direction}")
+        async with self.lock:
+            current_time = asyncio.get_event_loop().time()
+            if self.last_move_time is None or (current_time - self.last_move_time) >= self.move_debounce_interval:
+                self.last_move_time = current_time
+                try:
+                    logger.debug("move player is game running ok")
+                    engine = PongGameEngine(self.game_state)
+                    self.game_state = engine.move_player(player_id, direction)
+                    logger.debug(f"Player {player_id} moved to direction {direction}")
 
-            if not self.game_state.is_game_ended:
-                await self.save_game_state()
-                logger.debug("move_player: game saved")
-                await self.send_game_state()
-                logger.debug(f"move_player: game sent: {self.game_state}")
-        except Exception as e:
-            logger.error(f"Unexpected error occurred while moving player: {e}")
+                    if not self.game_state.is_game_ended:
+                        logger.debug("move_player: game saved")
+                        await self.send_game_state()  # Ensure immediate feedback
+                        logger.debug(f"move_player: game sent: {self.game_state}")
+                except Exception as e:
+                    logger.error(f"Unexpected error occurred while moving player: {e}")
 
     async def toggle_game(self):
         try:
-            self.game_state = self.get_game_state()
+            # self.game_state = self.get_game_state()
             self.game_state.is_game_running = not self.game_state.is_game_running
             await self.save_game_state()
             logger.info(
@@ -119,7 +128,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             logger.error(f"Unexpected error occurred while toggling game: {e}")
 
     async def send_periodic_updates(self):
-        self.game_state = self.get_game_state()
+        # self.game_state = self.get_game_state()
         try:
             while True:
                 if self.game_state.is_game_ended:
@@ -132,8 +141,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                     break
 
                 await self.update_game_state()
-                await self.send_game_state()
-                logger.debug("send_periodic_updates: game sent")
+                async with self.lock:
+                    await self.send_game_state()
+                    logger.debug("send_periodic_updates: game sent")
                 await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
             logger.debug("Periodic task cancelled")
@@ -167,9 +177,10 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.game_state = engine.update_game_state()
                 logger.debug("game updated on engine")
 
-                # TODO: check save only if game ended if there is lag
-                await self.save_game_state()
-                logger.debug("update_game_state: game saved")
+                if self.game_state.is_game_ended:
+                    await self.save_game_state()
+                    await self.delete_game_state()  # Delete game state from Redis
+                    logger.debug("update_game_state: game saved and deleted")
 
             except GameState.DoesNotExist:
                 return {"error": "Game not found"}

@@ -1,3 +1,4 @@
+import msgpack
 import json
 from django.db import models
 from django.conf import settings
@@ -6,7 +7,6 @@ from .managers import GameStateManager
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 class GameState(models.Model):
     # Game configuration
@@ -70,7 +70,8 @@ class GameState(models.Model):
             "paddle_offset": self.paddle_offset,
             "move_step": self.move_step,
         }
-        cache.set(cache_key, json.dumps(game_state_data), timeout=None)
+        packed_data = msgpack.packb(game_state_data)
+        cache.set(cache_key, packed_data, timeout=None)
         logger.info(f"Saved game state to cache with key {cache_key}")
 
     def delete(self, *args, **kwargs):
@@ -82,17 +83,10 @@ class GameState(models.Model):
     @classmethod
     def from_cache(cls, game_id):
         cache_key = f"{game_id}"
-        game_state_data = cache.get(cache_key)
-        if game_state_data:
-            if isinstance(game_state_data, str):
-                game_state_dict = json.loads(game_state_data)
-            else:
-                game_state_dict = {
-                    k: v
-                    for k, v in game_state_data.__dict__.items()
-                    if not k.startswith("_")
-                }
-            return cls(**game_state_dict)
+        packed_data = cache.get(cache_key)
+        if packed_data:
+            game_state_data = msgpack.unpackb(packed_data, raw=False)
+            return cls(**game_state_data)
         return None
 
     def __str__(self) -> str:
