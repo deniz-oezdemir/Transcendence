@@ -167,47 +167,53 @@ export default function OnlinePongGamePage({ navigate }) {
       console.log('WebSocket connected.');
       setWebsocket(ws);
     };
+    let currentGameState = {}; // Maintain the current game state
 
-	ws.onmessage = function (event) {
-	  const data = JSON.parse(event.data);
-	  if (data.type === 'game_state_update') {
-		try {
-		  // console.log('Received encoded data: ', data)
-		  const binaryString = atob(data.state);
-		  const len = binaryString.length;
-		  const bytes = new Uint8Array(len);
-		  for (let i = 0; i < len; i++) {
-			bytes[i] = binaryString.charCodeAt(i);
-		  }
-		  const gameStateData = JSON.parse(pako.inflate(bytes, { to: 'string' }));
-		  // console.log('Data from server:', gameStateData);
+    ws.onmessage = function (event) {
+      const data = JSON.parse(event.data);
+      if (data.type === 'game_state_update') {
+        try {
+          // console.log('Received encoded data: ', data)
+          const binaryString = atob(data.state);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const partialGameState = JSON.parse(
+            pako.inflate(bytes, { to: 'string' })
+          );
+          // Merge partial update into the current game state
+          currentGameState = { ...currentGameState, ...partialGameState };
+          // console.log('Data from server:', gameStateData);
 
-		  const { scaleFactor } = gameDimensions();
-		  setGamePositions((prevPositions) => ({
-			...prevPositions,
-			player1Position: gameStateData.player_1_position * scaleFactor,
-			player2Position: gameStateData.player_2_position * scaleFactor,
-			ball: {
-			  x: gameStateData.ball_x_position * scaleFactor,
-			  y: gameStateData.ball_y_position * scaleFactor,
-			},
-		  }));
-		  const currentGameScore = gameScore();
-		  if (
-			gameStateData.player_1_score !== currentGameScore.player1.score ||
-			gameStateData.player_2_score !== currentGameScore.player2.score
-		  ) {
-			setGameScore((prevScore) => ({
-			  ...prevScore,
-			  player1: { score: gameStateData.player_1_score },
-			  player2: { score: gameStateData.player_2_score },
-			}));
-		  }
-		} catch (error) {
-		  console.error('Error processing game state update:', error);
-		}
-	  }
-	};
+          const { scaleFactor } = gameDimensions();
+          setGamePositions((prevPositions) => ({
+            ...prevPositions,
+            player1Position: currentGameState.player_1_position * scaleFactor,
+            player2Position: currentGameState.player_2_position * scaleFactor,
+            ball: {
+              x: currentGameState.ball_x_position * scaleFactor,
+              y: currentGameState.ball_y_position * scaleFactor,
+            },
+          }));
+          const currentGameState = gameScore();
+          if (
+            currentGameState.player_1_score !==
+              currentGameState.player1.score ||
+            currentGameState.player_2_score !== currentGameState.player2.score
+          ) {
+            setGameScore((prevScore) => ({
+              ...prevScore,
+              player1: { score: currentGameState.player_1_score },
+              player2: { score: currentGameState.player_2_score },
+            }));
+          }
+        } catch (error) {
+          console.error('Error processing game state update:', error);
+        }
+      }
+    };
 
     ws.onclose = async () => {
       console.log('WebSocket Disconnected.');

@@ -30,6 +30,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
         self.move_step = 10
         self.predicted_ball_y = None
         self.ball_x_direction_sign = 0
+        self.current_game_state = {}  # Maintain the current game state
 
     async def connect(self):
         try:
@@ -57,19 +58,24 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
                 if encoded_state:
                     compressed_state = base64.b64decode(encoded_state)
-                    state = json.loads(zlib.decompress(compressed_state).decode())
+                    partial_state = json.loads(
+                        zlib.decompress(compressed_state).decode()
+                    )
+                    self.current_game_state.update(
+                        partial_state
+                    )  # Merge partial update
                 else:
-                    state = {}
+                    partial_state = {}
 
-                is_game_running = state.get("is_game_running", True)
-                is_game_ended = state.get("is_game_ended", False)
+                is_game_running = self.current_game_state.get("is_game_running", True)
+                is_game_ended = self.current_game_state.get("is_game_ended", False)
                 if not is_game_running or is_game_ended:
                     self.game_running = False
                 current_time = time.time()
                 if current_time - self.last_update_time >= 1:  # Only once per second
-                    logger.debug(f"Received message: {state}")
+                    logger.debug(f"Received message: {self.current_game_state}")
                     if data.get("type") == "game_state_update":
-                        await self.handle_game_update(state)
+                        await self.handle_game_update(self.current_game_state)
                     self.last_update_time = current_time
         except websockets.ConnectionClosed:
             logger.warning("Connection closed")

@@ -4,11 +4,17 @@ set -e
 # Start Redis server in background
 redis-server --daemonize yes
 
-
 # Wait for Redis to be ready
 while ! redis-cli ping; do
   sleep 1
 done
+
+# Configure Redis settings
+redis-cli CONFIG SET maxclients 10000
+redis-cli CONFIG SET maxmemory 2gb
+redis-cli CONFIG SET maxmemory-policy allkeys-lru
+redis-cli CONFIG SET save ""
+redis-cli CONFIG SET appendonly no
 
 # Flush all Redis data
 redis-cli FLUSHALL

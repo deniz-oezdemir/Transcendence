@@ -23,7 +23,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         connected_clients = cache.get(f"{self.game_id}_connected_clients", 0) + 1
         cache.set(f"{self.game_id}_connected_clients", connected_clients)
-        logger.debug(
+        logger.info(
             f"Client connected: {self.channel_name}, Total connected clients: {connected_clients}"
         )
 
@@ -31,7 +31,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.game_state_manager.start_periodic_updates(
                 self.channel_layer, self.game_group_name
             )
-            logger.debug(f"Started periodic updates for game: {self.game_id}")
+            logger.info(f"Started periodic updates for game: {self.game_id}")
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
@@ -64,9 +64,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         if action == "toggle":
             logger.debug("Toggle action received")
-            self.game_state_manager.game_state.is_game_running = (
-                not self.game_state_manager.game_state.is_game_running
-            )
+            await self.game_state_manager.toggle_game()
             logger.debug(
                 f"Game running state toggled to: {self.game_state_manager.game_state.is_game_running}"
             )

@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import json
 import aiohttp
 from django.utils import timezone
@@ -30,6 +31,7 @@ class GameStateManager:
             return
         self.game_id = game_id
         self.game_state = self.get_game_state()
+        self.previous_game_state = copy.deepcopy(self.game_state)
         self.lock = asyncio.Lock()
         self.periodic_task = None
         self.initialized = True
@@ -48,6 +50,11 @@ class GameStateManager:
         self.game_state.save()
         logger.debug(f"Saved game state for game_id: {self.game_id}")
 
+    async def toggle_game(self):
+        async with self.lock:
+            self.game_state.is_game_running = not self.game_state.is_game_running
+            logger.debug(f"Toggled game_id: {self.game_id}")
+
     async def move_player(self, player_id, direction):
         async with self.lock:
             if self.game_state.is_game_running:
@@ -61,28 +68,43 @@ class GameStateManager:
             if self.game_state.is_game_running:
                 engine = PongGameEngine(self.game_state)
                 self.game_state = engine.update_game_state()
-                await self.save_game_state()
                 logger.debug(f"Updated game state for game_id: {self.game_id}")
             if self.game_state.is_game_ended:
+                logger.info(f"Ending game state for game_id: {self.game_id}")
                 await self.send_game_result_to_matchmaking()
+
+    def calculate_diffs(self, current_state, previous_state):
+        diffs = {}
+        for key, value in current_state.__dict__.items():
+            if not key.startswith("_"):
+                prev_value = getattr(previous_state, key, None)
+                if prev_value != value:
+                    diffs[key] = value
+                    logger.debug(f"Detected change in {key}: {prev_value} -> {value}")
+        return diffs
 
     async def send_game_state(self, channel_layer, game_group_name):
         async with self.lock:
-            game_state_data = {
-                key: value
-                for key, value in self.game_state.__dict__.items()
-                if not key.startswith("_")
-            }
-            compressed_data = zlib.compress(json.dumps(game_state_data).encode())
-            encoded_data = base64.b64encode(compressed_data).decode()
+            if self.previous_game_state is None:
+                self.previous_game_state = copy.deepcopy(
+                    self.game_state
+                )  # Initialize previous state if None
 
-            await channel_layer.group_send(
-                game_group_name,
-                {"type": "game_state_update", "state": encoded_data},
-            )
-            logger.debug(
-                f"Sent game state to group: {game_group_name} for game_id: {self.game_id}"
-            )
+            diffs = self.calculate_diffs(self.game_state, self.previous_game_state)
+            if diffs:
+                compressed_data = zlib.compress(json.dumps(diffs).encode())
+                encoded_data = base64.b64encode(compressed_data).decode()
+
+                await channel_layer.group_send(
+                    game_group_name,
+                    {"type": "game_state_update", "state": encoded_data},
+                )
+                logger.debug(
+                    f"Sent game state diffs to group: {game_group_name} for game_id: {self.game_id}"
+                )
+            self.previous_game_state = copy.deepcopy(
+                self.game_state
+            )  # Update previous state
 
     async def start_periodic_updates(self, channel_layer, game_group_name):
         if self.periodic_task is None:
@@ -95,6 +117,7 @@ class GameStateManager:
         try:
             while True:
                 await self.update_game_state()
+                logger.debug("Game updated now send")
                 await self.send_game_state(channel_layer, game_group_name)
                 await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
@@ -135,7 +158,7 @@ class GameStateManager:
             logger.debug(f"Game result data: {game_result}")
 
             try:
-                logger.info("Initiating HTTP request to matchmaking service")
+                logger.debug("Initiating HTTP request to matchmaking service")
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                         matchmaking_url, json=game_result
