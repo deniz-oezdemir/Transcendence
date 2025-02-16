@@ -17,13 +17,13 @@ export default function HomePage() {
         content: 'Welcome to the Home Page!',
       }),
       Link({
-        href: '/stats',
-        content: 'Go to Stats Page',
+        href: '/user/username',
+        content: 'Go to Profile Page',
         className: `${styles.button} mx-2`, // Apply the button class
         attributes: { type: 'button', role: 'button' },
       }),
       Link({
-        href: '/pong-game',
+        href: '/online-pong-game',
         content: 'Go to Pong Game Page',
         className: 'mx-2 btn btn-secondary',
         attributes: { type: 'button', role: 'button' },

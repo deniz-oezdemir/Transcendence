@@ -4,10 +4,22 @@ set -e
 # Start Redis server in background
 redis-server --daemonize yes
 
+
 # Wait for Redis to be ready
 while ! redis-cli ping; do
   sleep 1
 done
+
+# Flush all Redis data
+redis-cli FLUSHALL
+
+# Confirm FLUSHALL worked
+if [ "$(redis-cli dbsize)" -eq 0 ]; then
+  echo "Redis FLUSHALL successful"
+else
+  echo "Redis FLUSHALL failed"
+  exit 1
+fi
 
 python manage.py makemigrations
 # Apply database migrations

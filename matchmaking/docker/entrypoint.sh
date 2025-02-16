@@ -23,6 +23,17 @@ python manage.py makemigrations waitingRoom
 echo "Applying database migrations..."
 python manage.py migrate
 
+echo "Creating superuser..."
+python manage.py shell << END
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(username='admin').exists():
+    User.objects.create_superuser('admin', 'admin@example.com', 'admin')
+END
+
+echo "Collecting static files..."
+python manage.py collectstatic --noinput --clear --verbosity 0
+
 # Start server
 echo "Starting Daphne server..."
 exec daphne -b 0.0.0.0 -p 8000 matchmaking.asgi:application

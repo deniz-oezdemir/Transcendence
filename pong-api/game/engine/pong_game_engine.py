@@ -58,7 +58,6 @@ class PongGameEngine:
         self._check_paddle_collision()
         self._check_scoring()
 
-        # self.game_state.save()
         logger.debug("GameEngine: Game state saved")
         logger.debug(
             "PongGameEngine saved with game state: game_height: %d, game_width: %d, paddle_height: %d, paddle_width: %d, paddle_offset: %d, ball_radius: %d, player_move_step: %d, ball_y_direction: %f, ball_x_direction: %f",
@@ -75,7 +74,11 @@ class PongGameEngine:
         return self.game_state
 
     def move_player(self, player_id, direction):
-        logger.debug("Moving player: player_id=%s, direction=%s", player_id, direction)
+        logger.debug(
+            "Game Engine: Moving player: player_id=%s, direction=%s",
+            player_id,
+            direction,
+        )
         if not self.game_state.is_game_running or self.game_state.is_game_ended:
             logger.debug("Game is not running or has ended")
             return self.game_state
@@ -93,18 +96,19 @@ class PongGameEngine:
         elif direction == -1:
             player_position -= self.player_move_step
 
+        logger.debug(f"direction: {direction}")
+
         # Ensure the player doesn't move out of bounds
         player_position = max(
             0, min(self.game_height - self.paddle_height, player_position)
         )
+        logger.debug(f"player position: {player_position}")
 
         if player_id == self.game_state.player_1_id:
             self.game_state.player_1_position = player_position
         elif player_id == self.game_state.player_2_id:
             self.game_state.player_2_position = player_position
 
-        # Save the updated player state
-        # self.game_state.save()
         logger.debug(
             "Player position updated and saved: player_id=%s, position=%s",
             player_id,

@@ -13,7 +13,7 @@ node_modules/
 *.log
 local_settings.py
 db.sqlite3
-media/
+# media/
 
 # Environments
 .env
@@ -35,3 +35,11 @@ venv/
 .DS_Store
 Thumbs.db
 
+# Frontend
+frontend/node_modules/
+
+# PongApi
+dump.rdb
+
+# LLM
+.safetensors

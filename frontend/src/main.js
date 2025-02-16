@@ -5,9 +5,9 @@ import AppLayout from './Layout';
 import HomePage from './pages/HomePage/HomePage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
-import StatsPage from './pages/StatsPage/StatsPage';
-import PongGamePage from './pages/PongGamePage/PongGamePage';
 import PongGame3DPage from './pages/PongGame3DPage/PongGame3DPage';
+import SignupPage from './pages/SignupPage/SignupPage';
+import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
 import OnlinePongGamePage from './pages/OnlinePongGamePage/OnlinePongGamePage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
 
@@ -26,21 +26,22 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 
 import '@styles/global.css';
-import SignupPage from './pages/SignupPage.js/SignupPage';
+import { checkAuth } from './auth';
 
+// TODO: remove the return
 // Authentication Middleware
-const isAuthenticated = async (path, context) => {
+const authentication = async (path, context) => {
+  return true;
   const isAuthenticated = checkAuth();
-  console.log('path:', path);
-  console.log('isAuthenticated:', isAuthenticated);
+  console.log('isAuthenticated in middleware:', isAuthenticated);
   if (
-    !isAuthenticated &&
-    (path.startsWith('/profile') ||
-      path.startsWith('/admin') ||
-      path.startsWith('/user/username') ||
-      path.startsWith('/pong-game') ||
-      path.startsWith('/stats'))
+    context.nextPath === '/' ||
+    context.nextPath === '/login' ||
+    context.nextPath === '/signup'
   ) {
+    return true;
+  }
+  if (!isAuthenticated) {
     console.log('Unauthorized access. Redirecting to login page...');
     router.navigate('/login');
     return false;
@@ -54,21 +55,6 @@ library.add(faCircleUp, faCircleDown, faW, faS, faKeyboard);
 // Replace i tags with SVG automatically
 dom.watch();
 
-const middlewares = [
-  isAuthenticated,
-  async (path, context) => {
-    console.log(`Navigating to: ${path}`);
-    return true;
-  },
-];
-
-// Check if the user is authenticated
-function checkAuth() {
-  //const token = localStorage.getItem('authToken');
-  //return !!token;
-  return true;
-}
-
 // Root element
 const root = document.getElementById('app');
 
@@ -78,10 +64,9 @@ const routes = [
   { path: '/signup', component: SignupPage },
   { path: '/login', component: LoginPage },
   { path: '/user/:username', component: ProfilePage },
-  { path: '/stats', component: StatsPage },
-  { path: '/pong-game', component: PongGamePage },
-  { path: '/pong-game-3d', component: PongGame3DPage },
   { path: '/online-pong-game', component: OnlinePongGamePage },
+  { path: '/pong-game-3d', component: PongGame3DPage },
+  { path: '/leaderboard', component: LeaderboardPage },
 ];
 
 // Initialize Theme Manager
@@ -93,8 +78,16 @@ const router = new Router({
   routes,
   rootElement: root,
   layoutComponent: AppLayout,
-  middlewares,
+  middlewares: [authentication],
   errorComponent: ErrorPage,
+});
+
+// // Run the middleware on initial page load
+const initialPath = window.location.pathname;
+authentication(initialPath, {}).then((allowed) => {
+  if (!allowed) {
+    router.navigate('/login');
+  }
 });
 
 // Expose router to the window object

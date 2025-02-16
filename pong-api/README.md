@@ -152,7 +152,7 @@
 
 ### Connect to Game
 
-- **WebSocket URL:** `ws://localhost:8000/ws/game/<game_id>/`
+- **WebSocket URL:** `ws://localhost:8002/ws/game/<game_id>/`
 
 ### Move Player
 
@@ -222,7 +222,7 @@ Here is a simple diagram for reference:
 ### Creating a Game
 
 ```bash
-curl -X POST http://localhost:8000/game/create_game/ -H "Content-Type: application/json" -d '{
+curl -X POST http://localhost:8002/game/create_game/ -H "Content-Type: application/json" -d '{
   "id": 1,
   "max_score": 3,
   "player_1_id": 1,
@@ -234,48 +234,80 @@ curl -X POST http://localhost:8000/game/create_game/ -H "Content-Type: applicati
 
 ### Toggle Game On/Off
 
+This endpoint will not result in an inmediate stop for websocket matches. Use a message
+with "toggle" action within the websocket for better results.
+
 ```bash
-curl -X PUT http://localhost:8000/game/toggle_game/1/
+curl -X PUT http://localhost:8002/game/toggle_game/1/
 ```
 
 ### Retrieving Game State
 
 ```bash
-curl http://localhost:8000/game/get_game_state/1/
+curl http://localhost:8002/game/get_game_state/1/
 ```
 
 ### Deleting a Game
 
 ```bash
-curl -X DELETE http://localhost:8000/game/delete_game/1/
+curl -X DELETE http://localhost:8002/game/delete_game/1/
 ```
 
 ### WebSocket Connection
 
-**JavaScript Example:**
+- **WebSocket URL:** `ws://localhost:8002/ws/game/<game_id>/`
 
-```javascript
-const socket = new WebSocket('ws://localhost:8000/ws/game/1/');
+### Messages Clients Can Send
 
-socket.onopen = function(event) {
-  console.log('WebSocket is connected.');
-  socket.send(JSON.stringify({
-    action: 'move',
-    player_id: 1,
-    direction: 1
-  }));
-};
+- **Move Player:**
 
-socket.onmessage = function(event) {
-  const message = JSON.parse(event.data);
-  console.log('Game update:', message);
-};
+  ```json
+  {
+    "action": "move",
+    "player_id": 1,
+    "direction": 1
+  }
+  ```
 
-socket.onclose = function(event) {
-  console.log('WebSocket is closed.');
-};
+- **Toggle Game:**
 
-socket.onerror = function(error) {
-  console.error('WebSocket error:', error);
-};
+  ```json
+  {
+    "action": "toggle"
+  }
+  ```
 
+### Messages Game Sends
+
+- **Game State Update:**
+
+```json
+{
+"type": "game_state_update",
+"state": {
+  "id": 1,
+  "max_score": 3,
+  "is_game_running": true,
+  "is_game_ended": false,
+  "player_1_id": 1,
+  "player_2_id": 2,
+  "player_1_name": "PlayerOne",
+  "player_2_name": "PlayerTwo",
+  "player_1_score": 0,
+  "player_2_score": 0,
+  "player_1_position": 50,
+  "player_2_position": 50,
+  "ball_x_position": 400,
+  "ball_y_position": 200,
+  "ball_speed": 10,
+  "ball_x_direction": 1,
+  "ball_y_direction": 1,
+  "ball_radius": 10,
+  "game_height": 1200,
+  "game_width": 1600,
+  "paddle_height": 100,
+  "paddle_width": 20,
+  "paddle_offset": 10
+}
+}
+  ```

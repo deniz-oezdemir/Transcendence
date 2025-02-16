@@ -1,6 +1,7 @@
 import { createComponent, Link } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import { setTheme, getPreferredTheme } from '@themeManager';
+import { isAuthenticated, login, logout } from '../../auth.js';
 
 import styles from './Navbar.module.css';
 
@@ -14,17 +15,18 @@ export default function Navbar({ location, navigate }) {
     setThemeState(newTheme);
   };
 
-  const updateNavLinks = () => {
-    const currentPath = location();
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach((link) => {
-      const href = link.getAttribute('href');
-      if (href === currentPath) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
+  const handleAuthButtonClick = () => {
+    if (isAuthenticated()) {
+      try {
+        logout();
+        router.navigate('/login');
+      } catch (error) {
+        console.error('Error logging out:', error);
+        navigate('/profile');
       }
-    });
+    } else {
+      navigate('/login');
+    }
   };
 
   const themeButton = createComponent('button', {
@@ -36,14 +38,36 @@ export default function Navbar({ location, navigate }) {
     },
   });
 
+  const authButton = createComponent('button', {
+    className: `btn btn-outline-success ${styles.customBtn}`,
+    attributes: { type: 'button', role: 'button' },
+    content: isAuthenticated() ? 'Logout' : 'Login',
+    events: {
+      click: handleAuthButtonClick,
+    },
+  });
+
   createEffect(() => {
-    updateNavLinks();
+    authButton.element.textContent = isAuthenticated() ? 'Logout' : 'Login';
+  });
+
+  createEffect(() => {
+    const currentPath = location();
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach((link) => {
+      const href = link.getAttribute('href');
+      if (href === currentPath) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
   });
 
   createEffect(() => {
     const th = theme();
     setTheme(th);
-    themeButton.element.textContent = th !== 'dark' ? '🌙 Dark' : '☀️ Light';
+    themeButton.element.textContent = th !== 'dark' ? '🌙Dark' : '☀️Light';
     themeButton.element.classList.toggle('btn-outline-light', th === 'dark');
     themeButton.element.classList.toggle('btn-outline-dark', th === 'light');
   });
@@ -107,20 +131,9 @@ export default function Navbar({ location, navigate }) {
                     className: 'nav-item',
                     children: [
                       Link({
-                        href: '/stats',
-                        content: 'Stats',
-                        className: `nav-link ${path === '/stats' ? 'active' : ''}`,
-                        attributes: { 'aria-current': 'page' },
-                      }),
-                    ],
-                  }),
-                  createComponent('li', {
-                    className: 'nav-item',
-                    children: [
-                      Link({
-                        href: '/pong-game',
-                        content: 'Pong Game',
-                        className: `nav-link ${path === '/pong-game' ? 'active' : ''}`,
+                        href: '/leaderboard',
+                        content: 'Leaderboard',
+                        className: `nav-link ${path === '/leaderboard' ? 'active' : ''}`,
                         attributes: { 'aria-current': 'page' },
                       }),
                     ],
@@ -153,12 +166,13 @@ export default function Navbar({ location, navigate }) {
                 className: 'd-flex align-items-center',
                 children: [
                   themeButton,
-                  Link({
-                    href: '/login',
-                    className: `btn btn-outline-success ${styles.customBtn}`,
-                    attributes: { type: 'button', role: 'button' },
-                    content: 'Login',
-                  }),
+                  authButton,
+                  // Link({
+                  //   href: '/login',
+                  //   className: `btn btn-outline-success ${styles.customBtn}`,
+                  //   attributes: { type: 'button', role: 'button' },
+                  //   content: 'Login',
+                  // }),
                 ],
               }),
             ],

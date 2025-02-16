@@ -1,5 +1,6 @@
 import { createComponent } from '@component';
 import { createSignal, createEffect } from '@reactivity';
+// import isAuthenticated from '../main.js';
 
 export class Router {
   constructor({
@@ -198,16 +199,16 @@ export class Router {
 
   // Execute middleware functions
   async executeMiddlewares(path, context) {
-    if (this.middlewareCache.has(path)) {
-      return this.middlewareCache.get(path);
-    }
+    // if (this.middlewareCache.has(path)) {
+    //   return this.middlewareCache.get(path);
+    // }
 
     const results = await Promise.all(
       this.middlewares.map((middleware) => middleware(path, context))
     );
     const proceed = results.every((result) => result !== false);
 
-    this.middlewareCache.set(path, proceed);
+    // this.middlewareCache.set(path, proceed);
     return proceed;
   }
 
@@ -219,7 +220,11 @@ export class Router {
 
     const context = { currentPath: window.location.pathname, nextPath: path };
     const proceed = await this.executeMiddlewares(path, context);
-    if (!proceed) return;
+    if (!proceed) {
+      console.log('Middleware blocked navigation');
+      // history.pushState(null, '', '/login');
+      return;
+    }
 
     if (replace) {
       history.replaceState(null, '', path);

@@ -1,0 +1,63 @@
+services:
+  accounts:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8007:8000"
+    volumes:
+      - ..:/app
+    # env_file:
+    #   - path: ./.env
+    #     required: true
+    environment:
+      POSTGRES_DB: accounts
+      POSTGRES_USER: accounts
+      POSTGRES_PASSWORD: accounts
+      POSTGRES_HOST: accounts-postgres
+      POSTGRES_PORT: 5432
+    #   - DJANGO_SETTINGS_MODULE=accounts.settings
+    #   - PYTHONPATH=/app
+    networks:
+      - transcendence
+      - accounts-internal
+    depends_on:
+      accounts-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8007/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  accounts-postgres:
+    image: postgres:16
+    container_name: accounts-postgres
+    restart: always
+    # env_file:
+    #   - path: ./.env
+    #     required: true
+    environment:
+      POSTGRES_DB: accounts
+      POSTGRES_USER: accounts
+      POSTGRES_PASSWORD: accounts
+    ports:
+      - "5433:5432"
+    volumes:
+      - accounts-postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - accounts-internal
+
+networks:
+  transcendence:
+    external: true
+  accounts-internal:
+    driver: bridge
+
+volumes:
+  accounts-postgres_data:
