@@ -322,8 +322,8 @@ class PongGameEngine:
         # Reset the ball position and direction
         self.game_state.ball_x_position = self.game_width // 2
         self.game_state.ball_y_position = self.game_height // 2
-        self.game_state.ball_x_direction *= -1
-        self.game_state.ball_y_direction *= -1
+        self.game_state.ball_x_direction = self.game_state.ball_x_direction / -2
+        self.game_state.ball_y_direction = self.game_state.ball_y_direction / -2
 
         # Check if the game has ended
         if self.game_state.player_1_score >= self.game_state.max_score:
