@@ -1,8 +1,9 @@
 import json
+import aiohttp
+from django.utils import timezone
 import zlib
 import base64
 import logging
-import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
 from .game_state_manager import GameStateManager
@@ -22,7 +23,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         connected_clients = cache.get(f"{self.game_id}_connected_clients", 0) + 1
         cache.set(f"{self.game_id}_connected_clients", connected_clients)
-        logger.info(
+        logger.debug(
             f"Client connected: {self.channel_name}, Total connected clients: {connected_clients}"
         )
 
@@ -30,20 +31,20 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.game_state_manager.start_periodic_updates(
                 self.channel_layer, self.game_group_name
             )
-            logger.info(f"Started periodic updates for game: {self.game_id}")
+            logger.debug(f"Started periodic updates for game: {self.game_id}")
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
 
         connected_clients = cache.get(f"{self.game_id}_connected_clients", 0) - 1
         cache.set(f"{self.game_id}_connected_clients", connected_clients)
-        logger.info(
+        logger.debug(
             f"Client disconnected: {self.channel_name}, Total connected clients: {connected_clients}"
         )
 
         if connected_clients == 0:
             await self.game_state_manager.stop_periodic_updates()
-            logger.info(f"Stopped periodic updates for game: {self.game_id}")
+            logger.debug(f"Stopped periodic updates for game: {self.game_id}")
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
@@ -62,11 +63,11 @@ class GameConsumer(AsyncWebsocketConsumer):
             )
 
         if action == "toggle":
-            logger.info("Toggle action received")
+            logger.debug("Toggle action received")
             self.game_state_manager.game_state.is_game_running = (
                 not self.game_state_manager.game_state.is_game_running
             )
-            logger.info(
+            logger.debug(
                 f"Game running state toggled to: {self.game_state_manager.game_state.is_game_running}"
             )
 
@@ -81,4 +82,11 @@ class GameConsumer(AsyncWebsocketConsumer):
             text_data=json.dumps({"type": "game_state_update", "state": encoded_data})
         )
         logger.debug(f"Game state update sent to client: {self.channel_name}")
-
+        try:
+            if self.game_state_manager.game_state.is_game_ended:
+                await self.disconnect(0)
+        except Exception as e:
+            logger.error(
+                f"Error disconnecting and sending game to matchmaking: {str(e)}",
+                exc_info=True,
+            )

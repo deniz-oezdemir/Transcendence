@@ -1,5 +1,7 @@
 import asyncio
 import json
+import aiohttp
+from django.utils import timezone
 import base64
 import zlib
 import logging
@@ -18,7 +20,9 @@ class GameStateManager:
             instance = super(GameStateManager, cls).__new__(cls)
             instance.__init__(game_id)
             cls._instances[game_id] = instance
-            logger.info(f"Created new GameStateManager instance for game_id: {game_id}")
+            logger.debug(
+                f"Created new GameStateManager instance for game_id: {game_id}"
+            )
         return cls._instances[game_id]
 
     def __init__(self, game_id):
@@ -29,13 +33,15 @@ class GameStateManager:
         self.lock = asyncio.Lock()
         self.periodic_task = None
         self.initialized = True
-        logger.info(f"Initialized GameStateManager for game_id: {game_id}")
+        self.match_result_sent = False
+        self.game_start_time = timezone.now()  # Store start time
+        logger.debug(f"Initialized GameStateManager for game_id: {game_id}")
 
     def get_game_state(self):
         game_state = GameState.from_cache(self.game_id)
         if not game_state:
             raise GameState.DoesNotExist("Game not found in Redis.")
-        logger.info(f"Retrieved game state for game_id: {self.game_id}")
+        logger.debug(f"Retrieved game state for game_id: {self.game_id}")
         return game_state
 
     async def save_game_state(self):
@@ -57,6 +63,8 @@ class GameStateManager:
                 self.game_state = engine.update_game_state()
                 await self.save_game_state()
                 logger.debug(f"Updated game state for game_id: {self.game_id}")
+            if self.game_state.is_game_ended:
+                await self.send_game_result_to_matchmaking()
 
     async def send_game_state(self, channel_layer, game_group_name):
         async with self.lock:
@@ -81,7 +89,7 @@ class GameStateManager:
             self.periodic_task = asyncio.create_task(
                 self._periodic_updates(channel_layer, game_group_name)
             )
-            logger.info(f"Started periodic updates for game_id: {self.game_id}")
+            logger.debug(f"Started periodic updates for game_id: {self.game_id}")
 
     async def _periodic_updates(self, channel_layer, game_group_name):
         try:
@@ -91,10 +99,68 @@ class GameStateManager:
                 await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
             pass
-        logger.info(f"Stopped periodic updates for game_id: {self.game_id}")
+        logger.debug(f"Stopped periodic updates for game_id: {self.game_id}")
 
     async def stop_periodic_updates(self):
         if self.periodic_task is not None:
             self.periodic_task.cancel()
             self.periodic_task = None
-            logger.info(f"Stopped periodic updates for game_id: {self.game_id}")
+            logger.debug(f"Stopped periodic updates for game_id: {self.game_id}")
+
+    async def send_game_result_to_matchmaking(self):
+        """Sends game result to matchmaking service when game ends"""
+        if not self.match_result_sent:
+            self.match_result_sent = True
+            logger.debug(f"Preparing to send game result for game {self.game_id}")
+            matchmaking_url = (
+                f"http://matchmaking:8000/api/match/{self.game_id}/result/"
+            )
+            logger.debug(f"Matchmaking URL: {matchmaking_url}")
+
+            # Determine the winner based on the player with the most goals
+            if self.game_state.player_1_score > self.game_state.player_2_score:
+                winner_id = self.game_state.player_1_id
+            elif self.game_state.player_2_score > self.game_state.player_1_score:
+                winner_id = self.game_state.player_2_id
+            else:
+                winner_id = None  # It's a tie
+
+            game_result = {
+                "winner_id": winner_id,
+                "player_1_score": self.game_state.player_1_score,
+                "player_2_score": self.game_state.player_2_score,
+                "start_time": self.game_start_time.isoformat(),
+                "end_time": timezone.now().isoformat(),
+            }
+            logger.debug(f"Game result data: {game_result}")
+
+            try:
+                logger.info("Initiating HTTP request to matchmaking service")
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        matchmaking_url, json=game_result
+                    ) as response:
+                        response_text = await response.text()
+                        logger.debug(f"Matchmaking response: {response_text}")
+                        if response.status == 200:
+                            logger.debug(
+                                f"Game {self.game_id} result successfully sent to matchmaking. Response: {response_text}"
+                            )
+                            try:
+                                self.game_state.delete()
+                                logger.info(
+                                    "Game successfully deleted from REDIS after ended"
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    f"Game could not be deleted after finished: {str(e)}"
+                                )
+                        else:
+                            logger.error(
+                                f"Failed to send game result. Status: {response.status}, Error: {response_text}"
+                            )
+            except Exception as e:
+                self.match_result_sent = False
+                logger.error(
+                    f"Error sending game result to matchmaking: {str(e)}", exc_info=True
+                )

@@ -87,7 +87,7 @@ async def send_match_to_history(match):
 
                 if response.status != 201:
                     logger.error(
-                        f"Failed to send match to history. Status: {response.status}, Response: {response_text}"
+                        f"Failed to send match to history. Status: {response.status}"
                     )
                     return False
 
