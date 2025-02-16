@@ -21,6 +21,7 @@ import {
 import Stats from 'three/addons/libs/stats.module.js';
 import Game from '@/game/Game.js';
 import GameOptionsMenu from '@/components/GameOptionsMenu/GameOptionsMenu.js';
+import GameMenu from '@/components/GameMenu/GameMenu.js';
 
 import styles from './PongGame3DPage.module.css';
 
@@ -58,11 +59,10 @@ export default function PongGame3DPage() {
         window.innerWidth,
         container.getBoundingClientRect().height
       ),
-      fov: 75,
       boundaries: new Vector2(20, 30),
       paddle: new Vector2(5, 1),
       ballRadius: 1,
-      world: new Vector2(10000, 10000),
+      world: new Vector2(4096, 4096),
     },
     positions: {
       ball: new Vector3(0, 0, 0),
@@ -84,6 +84,13 @@ export default function PongGame3DPage() {
       strength: 3.0,
       radius: 0.9,
     },
+    camera: {
+      fov: 60,
+      pongP1Position: new Vector3(0, 55, 75),
+      pongP2Position: new Vector3(0, 30, -60),
+      pongLookAt: new Vector3(0, 0, 0),
+      startPosition: new Vector3(-256, 96, 0),
+    },
   };
 
   const scene = new Scene();
@@ -97,13 +104,13 @@ export default function PongGame3DPage() {
   // scene.add(...lights);
 
   const camera = new PerspectiveCamera(
-    params.dimensions.fov,
+    params.camera.fov,
     params.dimensions.game.x / params.dimensions.game.y,
     1,
-    20000
+    params.dimensions.world.x * 3
   );
-  camera.position.set(0, 30, 50);
-  camera.lookAt(new Vector3(0, 5, 0));
+  camera.position.copy(params.camera.startPosition);
+  camera.lookAt(params.camera.pongLookAt);
 
   const renderer = new WebGPURenderer({
     antialias: window.devicePixelRatio < 2,
@@ -150,10 +157,12 @@ export default function PongGame3DPage() {
   });
 
   let delta = 0;
+  let elapsedTime = 0;
   function animate() {
     delta = clock.getDelta();
+    elapsedTime = clock.getElapsedTime();
     stats.update();
-    game.update(delta);
+    game.update(delta, elapsedTime);
   }
 
   /**
@@ -162,6 +171,11 @@ export default function PongGame3DPage() {
   const [isFullScreen, setIsFullScreen] = createSignal(false);
   const [aiEnabled, setAiEnabled] = createSignal(true);
   const [mouseModeEnabled, setMouseModeEnabled] = createSignal(true);
+  const [gameState, setGameState] = createSignal({
+    mode: null,
+    player: null,
+    gameId: null,
+  });
 
   createEffect(() => {
     if (game) {
@@ -170,9 +184,20 @@ export default function PongGame3DPage() {
     }
   });
 
+  createEffect(() => {
+    const state = gameState();
+
+    if (state.mode) {
+      console.log('Starting game with mode:', state.mode);
+
+      game.isTransitioning = true;
+    }
+  });
+
   return createComponent('div', {
     className: `${styles.gameWrapper}`,
     children: [
+      GameMenu({ gameState, setGameState }),
       GameOptionsMenu({
         isFullScreen,
         setIsFullScreen,
@@ -180,6 +205,7 @@ export default function PongGame3DPage() {
         setAiEnabled,
         mouseModeEnabled,
         setMouseModeEnabled,
+        gameState,
         gameRef,
       }),
     ],

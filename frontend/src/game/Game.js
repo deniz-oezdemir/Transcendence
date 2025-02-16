@@ -6,15 +6,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import createPostProcessing from '@/game/utils/createPostProcessing.js';
-import Ball from '@/game/entities/Ball.js';
-import Paddle from '@/game/entities/Paddle.js';
 import AIController from '@/game/entities/AIController.js';
 import FireworkPool from '@/game/effects/FireworkPool.js';
 import NeonRingEffect from '@/game/effects/NeonRingEffect.js';
-import createPongTable from '@/game/environment/createPongTable.js';
-import ScoreDisplay from '@/game/entities/ScoreDisplay.js';
+import PongTable from '@/game/environment/PongTable.js';
 import ScoreMessages from '@/game/effects/ScoreMessages.js';
 import SceneEnvironment from '@/game/environment/SceneEnvironment.js';
+import ScoreDisplay from '@/game/entities/ScoreDisplay.js';
 import lerp from '@/game/utils/lerp.js';
 
 export default class Game {
@@ -29,10 +27,6 @@ export default class Game {
   raycaster;
   keys;
   postProcessing;
-  ScoreDisplay;
-  player1Paddle;
-  player2Paddle;
-  ball;
   AIController;
   sceneEnv;
   fireworkPool;
@@ -45,20 +39,31 @@ export default class Game {
   paddleSpeed;
   isMouseMode;
   isAi;
+  isTransitioning;
+  transitionProgress;
+  targetCameraPosition;
+  targetLookAt;
+  orbitRadius;
+  orbitSpeed;
+  devMode = false;
 
   constructor(scene, camera, renderer, params) {
+    this.timeCount = 0;
+    this.timeMax = 30.0;
     this.isMouseMode = false;
     this.isAiMode = true;
+    this.paddleSpeed = 0.1;
+
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
     this.params = params;
 
-    this.paddleSpeed = 0.1;
     // this.gui = new GUI();
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
+    // this.controls.enabled = false;
 
     this.textureLoader = new TextureLoader();
     this.fontLoader = new FontLoader();
@@ -76,6 +81,26 @@ export default class Game {
 
     this.setGameObjects();
     this.setEffects();
+
+    this.isGameStart = false;
+    this.isTransitioning = false;
+    this.transitionProgress = 0;
+
+    this.orbitRadius = Math.sqrt(
+      Math.pow(
+        this.params.camera.startPosition.x - this.params.camera.pongLookAt.x,
+        2
+      ) +
+        Math.pow(
+          this.params.camera.startPosition.z - this.params.camera.pongLookAt.z,
+          2
+        )
+    );
+    this.orbitAngle = Math.atan2(
+      this.params.camera.startPosition.z - this.params.camera.pongLookAt.z,
+      this.params.camera.startPosition.x - this.params.camera.pongLookAt.x
+    );
+    this.orbitSpeed = 0.2;
   }
 
   setGameObjects() {
@@ -84,36 +109,23 @@ export default class Game {
       this.params,
       this.fontLoader
     );
-    this.player1Paddle = new Paddle(
-      this.scene,
-      this.params.dimensions,
-      this.params.positions.paddleP1,
-      this.params.colors.paddleP1
-    );
-    this.player1Paddle.setBloomEffect(this.params.colors.bloomIntensity);
 
-    this.player2Paddle = new Paddle(
+    this.pongTable = new PongTable(
       this.scene,
-      this.params.dimensions,
-      this.params.positions.paddleP2,
-      this.params.colors.paddleP2
+      this.params,
+      this.textureLoader,
+      this.fontLoader
     );
-    this.player2Paddle.setBloomEffect(this.params.colors.bloomIntensity);
-
-    this.ball = new Ball(
-      this.scene,
-      this.params.dimensions.boundaries,
-      [this.player1Paddle, this.player2Paddle],
-      this.params.colors.ball
-    );
-    this.ball.setBloomEffect(this.params.colors.bloomIntensity);
-
-    this.aiController = new AIController(this.player2Paddle, this.ball);
 
     this.sceneEnv = new SceneEnvironment(
       this.scene,
       this.renderer,
       this.params
+    );
+
+    this.aiController = new AIController(
+      this.pongTable.player2Paddle,
+      this.pongTable.ball
     );
   }
 
@@ -135,25 +147,33 @@ export default class Game {
     await this.renderer.init();
     await RAPIER.init();
 
-    const [pongTable] = await Promise.all([
-      createPongTable(this.params),
+    await Promise.all([
+      this.pongTable.init(),
       this.scoreDisplay.init(),
-      this.scoreMessages.init(),
       this.sceneEnv.init(),
+      this.scoreMessages.init(),
       this.neonRings.init(),
     ]);
 
-    this.pongTable = pongTable;
-    this.scene.add(this.pongTable);
+    this.setEventListeners();
 
     const gravity = new Vector3(0.0, -9.81, 0.0);
 
     this.world = new World(gravity);
     this.eventQueue = new EventQueue(true);
 
-    this.rapierDebugRenderer = new RapierDebugRenderer(this.scene, this.world);
+    this.rapierDebugRenderer = new RapierDebugRenderer(
+      this.scene,
+      this.world,
+      this.devMode
+    );
 
-    this.setEventListeners();
+    this.world.maxVelocityIterations = 8;
+    this.world.maxPositionIterations = 4;
+    this.world.maxVelocityFriction_iterations = 8;
+    this.world.minIslandSize = 32;
+
+    this.pongTable.createPhysics(this.world);
   }
 
   setEventListeners() {
@@ -162,7 +182,7 @@ export default class Game {
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     window.addEventListener('keyup', this.handleKeyUp.bind(this));
 
-    this.ball.addEventListener('onGoal', (e) => {
+    this.pongTable.ball.addEventListener('onGoal', (e) => {
       this.params.score[e.message] += 1;
       this.scoreDisplay.updateScore(
         this.params.score['p1'],
@@ -172,9 +192,9 @@ export default class Game {
       this.scoreMessages.trigger(e.message);
     });
 
-    this.ball.addEventListener('collide', () => {
-      this.fireworks.getAvailableFirework(this.ball.mesh.position);
-      this.neonRings.onCollision(this.ball.mesh.position);
+    this.pongTable.ball.addEventListener('collide', () => {
+      this.fireworks.getAvailableFirework(this.pongTable.ball.mesh.position);
+      this.neonRings.onCollision(this.pongTable.ball.mesh.position);
     });
   }
 
@@ -191,52 +211,115 @@ export default class Game {
     this.keys[event.key] = false;
   }
 
-  update(delta) {
-    const dt = delta * 0.1;
-    let intersection = null;
-    if (this.isMouseMode) {
-      this.raycaster.setFromCamera(this.cursor, this.camera);
-      intersection = this.raycaster.intersectObject(this.sceneEnv.water)?.[0];
+  update(delta, elapsedTime) {
+    this.world.timestep = Math.min(delta, 0.1);
+    this.world.step();
+
+    if (!this.isGameStart && !this.isTransitioning) {
+      this.orbitAngle += delta * this.orbitSpeed;
+
+      this.camera.position.set(
+        Math.cos(this.orbitAngle) * this.orbitRadius +
+          this.params.camera.pongLookAt.x,
+        this.params.camera.startPosition.y,
+        Math.sin(this.orbitAngle) * this.orbitRadius +
+          this.params.camera.pongLookAt.z
+      );
+      // this.camera.lookAt(this.params.camera.pongLookAt);
+    } else if (!this.isGameStart) {
+      this.transitionProgress += delta * 0.01;
+
+      this.camera.position.x = lerp(
+        this.camera.position.x,
+        this.params.camera.pongP1Position.x,
+        this.transitionProgress
+      );
+
+      this.camera.position.y = lerp(
+        this.camera.position.y,
+        this.params.camera.pongP1Position.y,
+        this.transitionProgress
+      );
+
+      this.camera.position.z = lerp(
+        this.camera.position.z,
+        this.params.camera.pongP1Position.z,
+        this.transitionProgress
+      );
+
+      const cameraArrived =
+        Math.abs(this.camera.position.x - this.params.camera.pongP1Position.x) <
+          0.1 &&
+        Math.abs(this.camera.position.y - this.params.camera.pongP1Position.y) <
+          0.1 &&
+        Math.abs(this.camera.position.z - this.params.camera.pongP1Position.z) <
+          0.1;
+
+      if (cameraArrived) {
+        this.isTransitioning = false;
+        this.isGameStart = true;
+        // this.controls.enabled = true;
+      }
     }
 
-    let prevX;
-    let nextX;
-    for (let i = 0; i < 10; i++) {
-      prevX = this.player1Paddle.mesh.position.x;
-      if (intersection) {
-        nextX = intersection.point.x;
-        this.player1Paddle.setX(lerp(prevX, nextX, 0.5));
-      } else {
-        if (this.keys['ArrowLeft']) {
-          nextX = prevX - this.paddleSpeed;
-          this.player1Paddle.setX(lerp(prevX, nextX, 0.5));
-        } else if (this.keys['ArrowRight']) {
-          nextX = prevX + this.paddleSpeed;
-          this.player1Paddle.setX(lerp(prevX, nextX, 0.5));
-        }
+    if (this.isGameStart) {
+      console.log('game start');
+      const dt = delta * 0.1;
+      let intersection = null;
+      if (this.isMouseMode) {
+        this.raycaster.setFromCamera(this.cursor, this.camera);
+        intersection = this.raycaster.intersectObject(this.sceneEnv.water)?.[0];
       }
-      if (this.isAiMode) {
-        this.aiController.update(dt);
-      } else {
-        prevX = this.player2Paddle.mesh.position.x;
-        if (this.keys['a']) {
-          nextX = prevX - this.paddleSpeed;
-          this.player2Paddle.setX(lerp(prevX, nextX, 0.5));
-        } else if (this.keys['d']) {
-          nextX = prevX + this.paddleSpeed;
-          this.player2Paddle.setX(lerp(prevX, nextX, 0.5));
-        }
-      }
-      this.ball.update(dt);
-    }
 
-    this.fireworks.update(delta);
-    this.neonRings.update(delta);
+      let prevX;
+      let nextX;
+      for (let i = 0; i < 10; i++) {
+        prevX = this.pongTable.player1Paddle.mesh.position.x;
+        if (intersection) {
+          nextX = intersection.point.x;
+          this.pongTable.player1Paddle.setX(lerp(prevX, nextX, 0.5));
+        } else {
+          if (this.keys['ArrowLeft']) {
+            nextX = prevX - this.paddleSpeed;
+            this.pongTable.player1Paddle.setX(lerp(prevX, nextX, 0.5));
+          } else if (this.keys['ArrowRight']) {
+            nextX = prevX + this.paddleSpeed;
+            this.pongTable.player1Paddle.setX(lerp(prevX, nextX, 0.5));
+          }
+        }
+        if (this.isAiMode) {
+          this.aiController.update(dt);
+        } else {
+          prevX = this.pongTable.player2Paddle.mesh.position.x;
+          if (this.keys['a']) {
+            nextX = prevX - this.paddleSpeed;
+            this.pongTable.player2Paddle.setX(lerp(prevX, nextX, 0.5));
+          } else if (this.keys['d']) {
+            nextX = prevX + this.paddleSpeed;
+            this.pongTable.player2Paddle.setX(lerp(prevX, nextX, 0.5));
+          }
+        }
+        this.pongTable.ball.update(dt);
+      }
+
+      this.fireworks.update(delta);
+      this.neonRings.update(delta);
+      this.scoreMessages.update();
+    }
 
     this.scoreDisplay.update();
-    this.scoreMessages.update();
+    this.pongTable.update(elapsedTime);
+
+    this.timeCount += delta;
+    if (!this.isGameStart && this.timeCount > this.timeMax) {
+      this.sceneEnv.updateSun(delta);
+      this.timeCount = 0.0;
+    }
+
+    if (this.isDev) this.rapierDebugRenderer.update();
 
     this.controls.update();
+
     this.postProcessing.render();
   }
 

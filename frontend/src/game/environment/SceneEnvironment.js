@@ -70,7 +70,10 @@ export default class SceneEnvironment {
   }
 
   async createWater() {
-    const waterGeometry = new CircleGeometry(2000, 64);
+    const waterGeometry = new CircleGeometry(
+      this.params.dimensions.world.x * 2,
+      64
+    );
     // const waterGeometry = new PlaneGeometry(
     //   this.params.dimensions.world.x,
     //   this.params.dimensions.world.y
@@ -113,7 +116,7 @@ export default class SceneEnvironment {
     this.scene.background = this.renderTarget.texture;
     this.scene.environmentIntensity = 1.2;
     this.scene.backgroundIntensity = 0.7;
-    this.scene.backgroundBlurriness = 0.0;
+    this.scene.backgroundBlurriness = 0.2;
 
     this.scene.add(this.group);
   }
@@ -132,27 +135,45 @@ export default class SceneEnvironment {
     getSkyParams(this.skyParams);
   }
 
-  updateSun() {
-    this.date.setHours(this.date.getHours() + 1);
+  updateSun(delta) {
+    this.date.setMinutes(this.date.getMinutes() + 30);
     this.updateSunParams();
 
     this.sky.sunPosition.value.copy(this.skyParams.sunPosition);
     this.water.sunDirection.value.copy(this.skyParams.sunPosition).normalize();
 
-    if (this.renderTarget) this.renderTarget.dispose();
+    // const texture = this.pmremGenerator.fromScene(this.sky).texture;
+    // this.scene.environment = this.scene.background = texture;
 
-    this.pmremGenerator
-      .fromSceneAsync(this.sceneEnv)
-      .then((newRenderTarget) => {
-        this.renderTarget = newRenderTarget;
-        this.scene.environment = this.renderTarget.texture;
-        this.scene.background = this.renderTarget.texture;
-        this.scene.environmentIntensity = 0.9;
-        this.scene.backgroundIntensity = 0.1;
-        this.scene.backgroundBlurriness = 0.0;
-      })
-      .catch((error) => {
-        console.error('Error generando el render target:', error);
-      });
+    requestIdleCallback(
+      () => {
+        this.pmremGenerator
+          .fromSceneAsync(this.sceneEnv)
+          .then((newRenderTarget) => {
+            if (this.renderTarget) this.renderTarget.dispose();
+            this.scene.environment =
+              this.scene.background =
+              this.renderTarget =
+                newRenderTarget.texture;
+          });
+      },
+      { timeout: 3000 }
+    );
+
+    // if (this.renderTarget) this.renderTarget.dispose();
+
+    // this.pmremGenerator
+    //   .fromSceneAsync(this.sceneEnv)
+    //   .then((newRenderTarget) => {
+    //     this.renderTarget = newRenderTarget;
+    //     this.scene.environment = this.renderTarget.texture;
+    //     this.scene.background = this.renderTarget.texture;
+    //     this.scene.environmentIntensity = 0.9;
+    //     this.scene.backgroundIntensity = 0.1;
+    //     this.scene.backgroundBlurriness = 0.0;
+    //   })
+    //   .catch((error) => {
+    //     console.error('Error generando el render target:', error);
+    //   });
   }
 }

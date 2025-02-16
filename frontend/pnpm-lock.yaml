@@ -26,6 +26,9 @@ importers:
       lil-gui:
         specifier: ^0.20.0
         version: 0.20.0
+      roving-ux:
+        specifier: ^1.0.5
+        version: 1.0.5
       simplex-noise:
         specifier: ^4.0.3
         version: 4.0.3
@@ -96,9 +99,6 @@ importers:
       rollup-plugin-dev:
         specifier: ^2.0.5
         version: 2.0.5
-      rollup-plugin-glsl:
-        specifier: ^1.3.0
-        version: 1.3.0
       rollup-plugin-livereload:
         specifier: ^2.0.5
         version: 2.0.5
@@ -1151,9 +1151,6 @@ packages:
   lodash.uniq@4.5.0:
     resolution: {integrity: sha512-xfBaXQd9ryd9dlSDvnvI0lvxfLJlYAZzXomUYzLKtUeOQvOP5piqAWuGtrhWeqaXK9hhoM/iyJc5AV+XfsX3HQ==}
 
-  magic-string@0.21.3:
-    resolution: {integrity: sha512-U66DN4L1NJsQTCaWbP9MTW+iydrqkYW8Is1QV+1tT44oZYfr0t1BUbtDew40YXrNOZSJAUYPZ8s4gd//2AZBUQ==}
-
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
 
@@ -1605,9 +1602,6 @@ packages:
   rollup-plugin-dev@2.0.5:
     resolution: {integrity: sha512-DV6slBM7wH9tWzlvvT4c+4/klrk7cpdyfxhbYfmdk3/IJjQpcq/uoSZK15VsHl/l4uWdv4rpvrIB8iWx/WY7NQ==}
 
-  rollup-plugin-glsl@1.3.0:
-    resolution: {integrity: sha512-iddxdkQmuo6Hfk5JuT2ntVe8D5hvZ+r3uyPotjIkF2JYNOEdamEWCnieoLGCcxU16pWFoV/tmu74qkeR5Q/ChQ==}
-
   rollup-plugin-livereload@2.0.5:
     resolution: {integrity: sha512-vqQZ/UQowTW7VoiKEM5ouNW90wE5/GZLfdWuR0ELxyKOJUIaj+uismPZZaICU4DnWPVjnpCDDxEqwU7pcKY/PA==}
     engines: {node: '>=8.3'}
@@ -1625,6 +1619,9 @@ packages:
     resolution: {integrity: sha512-RaJ45M/kmJUzSWDs1Nnd5DdV4eerC98idtUOVr6FfKcgxqvjwHmxc5upLF9qZU9EpsVzzhleFahrT3shLuJzIw==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
+
+  roving-ux@1.0.5:
+    resolution: {integrity: sha512-JCvxfcLOhhw8lGP/vrfZzQdsZ0tmM2Z04TPzxPANMOjg3p80cbRyOEhUZdIOwn76bGSJA1S/TfYk+hcNA3jhLA==}
 
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
@@ -1810,9 +1807,6 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
-
-  vlq@0.2.3:
-    resolution: {integrity: sha512-DRibZL6DsNhIgYQ+wNdWDL2SL3bKPlVrRiBqV5yuMm++op8W4kGFtaQfCs4KEJn0wBZcHVHJ3eoywX8983k1ow==}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -2871,10 +2865,6 @@ snapshots:
 
   lodash.uniq@4.5.0: {}
 
-  magic-string@0.21.3:
-    dependencies:
-      vlq: 0.2.3
-
   magic-string@0.30.17:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
@@ -3302,11 +3292,6 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  rollup-plugin-glsl@1.3.0:
-    dependencies:
-      magic-string: 0.21.3
-      rollup-pluginutils: 2.8.2
-
   rollup-plugin-livereload@2.0.5:
     dependencies:
       livereload: 0.9.3
@@ -3361,6 +3346,8 @@ snapshots:
       '@rollup/rollup-win32-ia32-msvc': 4.29.1
       '@rollup/rollup-win32-x64-msvc': 4.29.1
       fsevents: 2.3.3
+
+  roving-ux@1.0.5: {}
 
   run-parallel@1.2.0:
     dependencies:
@@ -3530,8 +3517,6 @@ snapshots:
       punycode: 2.3.1
 
   util-deprecate@1.0.2: {}
-
-  vlq@0.2.3: {}
 
   which@2.0.2:
     dependencies:

@@ -13,10 +13,9 @@ export default class Ball extends EventDispatcher {
   speed = 15;
   velocity = new Vector3(1, 0, 1);
 
-  constructor(scene, boundaries, paddles, color) {
+  constructor(boundaries, paddles, color, bloomIntensity) {
     super();
 
-    this.scene = scene;
     this.boundaries = boundaries;
     this.paddles = paddles;
     this.radius = 0.5;
@@ -24,12 +23,14 @@ export default class Ball extends EventDispatcher {
     this.geometry = new SphereGeometry(this.radius);
     this.material = new MeshBasicNodeMaterial({ color });
     this.mesh = new Mesh(this.geometry, this.material);
+
     this.mesh.castShadow = true;
     // this.mesh.receiveShadow = true;
+    this.mesh.material.mrtNode = mrt({
+      bloomIntensity: uniform(bloomIntensity),
+    });
 
     this.velocity.multiplyScalar(this.speed);
-
-    this.scene.add(this.mesh);
 
     this.raycaster = new Raycaster();
     this.raycaster.near = 0;
@@ -41,7 +42,6 @@ export default class Ball extends EventDispatcher {
     //   new SphereGeometry(0.1),
     //   new MeshBasicMaterial({ color: 'red' })
     // );
-    // this.scene.add(this.pointCollision);
   }
 
   resetVelocity() {
@@ -114,11 +114,5 @@ export default class Ball extends EventDispatcher {
     }
 
     this.mesh.position.copy(tPos);
-  }
-
-  setBloomEffect(bloomIntensity) {
-    this.mesh.material.mrtNode = mrt({
-      bloomIntensity: uniform(bloomIntensity),
-    });
   }
 }

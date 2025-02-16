@@ -1,5 +1,4 @@
 import {
-  Scene,
   LineSegments,
   BufferGeometry,
   LineBasicMaterial,
@@ -9,9 +8,9 @@ import {
 export default class RapierDebugRenderer {
   mesh;
   world;
-  enabled = true;
 
-  constructor(scene, world) {
+  constructor(scene, world, devMode) {
+    this.enabled = devMode;
     this.world = world;
     this.mesh = new LineSegments(
       new BufferGeometry(),
@@ -22,16 +21,30 @@ export default class RapierDebugRenderer {
   }
 
   update() {
-    if (this.enabled) {
-      const { vertices, colors } = this.world.debugRender();
-      this.mesh.geometry.setAttribute(
-        'position',
-        new BufferAttribute(vertices, 3)
-      );
-      this.mesh.geometry.setAttribute('color', new BufferAttribute(colors, 4));
-      this.mesh.visible = true;
-    } else {
-      this.mesh.visible = false;
+    if (!this.enabled) {
+      if (this.mesh.visible) this.mesh.visible = false;
+      return;
     }
+
+    const { vertices, colors } = this.world.debugRender();
+    const geometry = this.mesh.geometry;
+
+    if (vertices.length !== geometry.getAttribute('position')?.array.length) {
+      geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+    } else {
+      const positionAttr = geometry.getAttribute('position');
+      positionAttr.array.set(vertices);
+      positionAttr.needsUpdate = true;
+    }
+
+    if (colors.length !== geometry.getAttribute('color')?.array.length) {
+      geometry.setAttribute('color', new BufferAttribute(colors, 4));
+    } else {
+      const colorAttr = geometry.getAttribute('color');
+      colorAttr.array.set(colors);
+      colorAttr.needsUpdate = true;
+    }
+
+    if (!this.mesh.visible) this.mesh.visible = true;
   }
 }

@@ -28,9 +28,9 @@ export default function Navbar({ location, navigate }) {
   };
 
   const themeButton = createComponent('button', {
-    className: 'btn btn-outline-light me-2',
-    attributes: { type: 'button' },
-    content: theme() !== 'dark' ? '🌙 Dark' : '☀️ Light',
+    className: `btn btn-outline-light me-2 ${styles.customBtn}`,
+    attributes: { type: 'button', role: 'button' },
+    content: theme() !== 'dark' ? '🌙Dark' : '☀️Light',
     events: {
       click: toggleTheme,
     },
@@ -49,10 +49,10 @@ export default function Navbar({ location, navigate }) {
   });
 
   return createComponent('nav', {
-    className: `navbar navbar-expand-lg bg-body-tertiary ${styles.navbarCustom}`,
+    className: `navbar navbar-expand-md bg-body-tertiary ${styles.navbarCustom}`,
     children: [
       createComponent('div', {
-        className: 'container-fluid',
+        className: `container-fluid`,
         children: [
           Link({
             href: '/',
@@ -77,12 +77,22 @@ export default function Navbar({ location, navigate }) {
             ],
           }),
           createComponent('div', {
-            className: 'collapse navbar-collapse',
+            className: `collapse navbar-collapse ${styles.navLinks}`,
             id: 'navbarSupportedContent',
             children: [
               createComponent('ul', {
                 className: 'navbar-nav me-auto mb-2 mb-lg-0',
                 children: [
+                  createComponent('li', {
+                    className: 'nav-item',
+                    children: [
+                      Link({
+                        href: '/',
+                        content: 'Home',
+                        className: `nav-link ${path === '/' ? 'active' : ''}`,
+                      }),
+                    ],
+                  }),
                   createComponent('li', {
                     className: 'nav-item',
                     children: [
@@ -145,7 +155,7 @@ export default function Navbar({ location, navigate }) {
                   themeButton,
                   Link({
                     href: '/login',
-                    className: 'btn btn-outline-success',
+                    className: `btn btn-outline-success ${styles.customBtn}`,
                     attributes: { type: 'button', role: 'button' },
                     content: 'Login',
                   }),

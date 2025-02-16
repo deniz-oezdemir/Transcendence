@@ -1,4 +1,5 @@
 import { createComponent } from '@component';
+import { createEffect } from '@reactivity';
 
 import styles from './GameOptionsMenu.module.css';
 
@@ -19,7 +20,9 @@ function toggleComponent(id, label, state, setState) {
       }),
       createComponent('label', {
         className: `form-check-label`,
-        htmlFor: id,
+        attributes: {
+          for: id,
+        },
         content: label,
       }),
     ],
@@ -37,6 +40,7 @@ export default function GameOptionsMenu({
   setAiEnabled,
   mouseModeEnabled,
   setMouseModeEnabled,
+  gameState,
   gameRef,
 }) {
   const aiToggle = toggleComponent(
@@ -54,7 +58,7 @@ export default function GameOptionsMenu({
 
   const toogleSection = createComponent('div', {
     className: `${styles.toogleSection}`,
-    children: [aiToggle, mouseToggle],
+    children: [mouseToggle],
   });
 
   const handleFullScreen = () => {
@@ -71,10 +75,19 @@ export default function GameOptionsMenu({
 
   const fullScreenButton = createComponent('button', {
     content: 'Go Fullscreen',
-    className: `btn btn-outline-info ${styles.fullScreenBtn}`,
+    className: `btn btn-outline-primary ${styles.fullScreenBtn}`,
     events: {
       click: handleFullScreen,
     },
+  });
+
+  createEffect(() => {
+    const mode = gameState().mode;
+    if (mode == null) {
+      aiToggle.element.remove();
+    } else if (mode == 'practice') {
+      toogleSection.element.insertBefore(aiToggle.element, mouseToggle.element);
+    }
   });
 
   return createComponent('div', {

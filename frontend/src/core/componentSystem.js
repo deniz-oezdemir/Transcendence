@@ -20,9 +20,16 @@ export function onMount(fn) {
 }
 
 function setAttributes(element, attributes) {
-  Object.keys(attributes).forEach((key) =>
-    element.setAttribute(key, attributes[key])
-  );
+  Object.keys(attributes).forEach((key) => {
+    const value = attributes[key];
+    if (typeof value === 'function') {
+      createEffect(() => {
+        element.setAttribute(key, value());
+      });
+    } else {
+      element.setAttribute(key, value);
+    }
+  });
 }
 
 function setEvents(element, events) {
@@ -42,8 +49,7 @@ function setEvents(element, events) {
 
 function setChildren(element, children) {
   children.forEach((child) => {
-    // console.log(child);
-    element.appendChild(child.element);
+    if (child?.element) element.appendChild(child.element);
   });
 }
 

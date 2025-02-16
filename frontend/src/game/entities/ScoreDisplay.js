@@ -1,6 +1,7 @@
 import { AdditiveBlending, Color, Group, Mesh } from 'three';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import HolographicMaterial from '@/game/materials/HolographicMaterial.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
 export default class ScoreDisplay {
   scene;
@@ -15,7 +16,7 @@ export default class ScoreDisplay {
   player2NameMesh;
   group;
 
-  constructor(scene, params, fontLoader) {
+  constructor(scene, params, fontLoader = new FontLoader()) {
     this.scene = scene;
     this.params = params;
     this.loadedFont = null;
@@ -36,15 +37,18 @@ export default class ScoreDisplay {
   }
 
   async init() {
-    try {
-      this.loadedFont = await this.fontLoader.loadAsync(
-        'assets/fonts/helvetiker_bold.typeface.json'
-      );
-      this.createTextMeshes();
-      this.scene.add(this.group);
-    } catch (error) {
-      console.error('Error loading font:', error);
-    }
+    this.loadedFont = await this.fontLoader.loadAsync(
+      'assets/fonts/Exo_2_Regular.json'
+      // 'assets/fonts/helvetiker_bold.typeface.json'
+      // 'assets/fonts/droid_sans_bold.typeface.json'
+      // 'assets/fonts/droid_sans_mono_regular.typeface.json'
+      // 'assets/fonts/droid_sans_regular.typeface.json'
+      // 'assets/fonts/gentilis_bold.typeface.json'
+      // 'assets/fonts/gentilis_regular.typeface.json'
+      // 'assets/fonts/helvetiker_regular.typeface.json'
+    );
+    this.createTextMeshes();
+    this.scene.add(this.group);
   }
 
   createTextMeshes() {
@@ -77,12 +81,12 @@ export default class ScoreDisplay {
   createTextGeometry(text) {
     return new TextGeometry(text, {
       font: this.loadedFont,
-      size: 5,
-      depth: 0.5,
+      size: 7,
+      depth: 1.0,
       curveSegments: 16,
       bevelEnabled: true,
-      bevelThickness: 0.3,
-      bevelSize: 0.15,
+      bevelThickness: 1.0,
+      bevelSize: 0.5,
       bevelOffset: 0,
       bevelSegments: 8,
     });
@@ -91,16 +95,16 @@ export default class ScoreDisplay {
   positionMeshes() {
     const { boundaries } = this.params.dimensions;
     this.player1ScoreMesh.rotation.y = -Math.PI * 0.5;
-    this.player1ScoreMesh.position.set(boundaries.y, 16, boundaries.x - 12);
+    this.player1ScoreMesh.position.set(boundaries.x * 2, 16, boundaries.x - 12);
 
     this.player2ScoreMesh.rotation.y = -Math.PI * 0.5;
-    this.player2ScoreMesh.position.set(boundaries.y, 16, -boundaries.x + 12);
+    this.player2ScoreMesh.position.set(boundaries.x * 2, 16, -boundaries.x + 8);
 
-    this.player1NameMesh.rotation.y = -Math.PI * 0.5;
-    this.player1NameMesh.position.set(boundaries.y, 24, boundaries.x + 2);
+    this.player1NameMesh.rotation.y = -Math.PI;
+    this.player1NameMesh.position.set(0, 4, boundaries.y * 2);
 
-    this.player2NameMesh.rotation.y = -Math.PI * 0.5;
-    this.player2NameMesh.position.set(boundaries.y, 24, -boundaries.x - 2);
+    // this.player2NameMesh.rotation.y = Math.PI;
+    this.player2NameMesh.position.set(0, 4, -boundaries.y * 2);
   }
 
   addToScene() {

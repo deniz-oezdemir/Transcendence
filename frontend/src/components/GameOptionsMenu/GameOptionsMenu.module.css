@@ -1,6 +1,13 @@
 .fullScreenBtn {
-  text-align: center;
-  padding: 0.1 0.75rem !important;
+  width: var(--space-xl-3xl) !important;
+  height: var(--space-l-2xl) !important;
+  text-align: center !important;
+  font-size: var(--step--1) !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: normal;
+  pointer-events: auto;
 }
 
 .controlsContainer {
@@ -11,10 +18,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  pointer-events: none;
+}
+
+.controlsContainer input {
+  pointer-events: auto;
 }
 
 .toogleSection {
-  color: var(--bs-info);
+  color: var(--bs-primary);
 }
 
 :global(.form-check-input) {

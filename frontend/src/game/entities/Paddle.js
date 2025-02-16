@@ -9,8 +9,7 @@ export default class Paddle {
     visible: false,
   });
 
-  constructor(scene, dimensions, position, color) {
-    this.scene = scene;
+  constructor(dimensions, position, color, bloomIntensity) {
     this.boundaries = dimensions.boundaries;
 
     this.geometry = new RoundedBoxGeometry(
@@ -40,7 +39,9 @@ export default class Paddle {
 
     this.mesh.add(this.collisionHelper);
     this.mesh.position.copy(position);
-    this.scene.add(this.mesh);
+    this.mesh.material.mrtNode = mrt({
+      bloomIntensity: uniform(bloomIntensity),
+    });
   }
 
   setX(x) {
@@ -48,11 +49,5 @@ export default class Paddle {
       -this.boundaries.x + this.halfLength,
       Math.min(x, this.boundaries.x - this.halfLength)
     );
-  }
-
-  setBloomEffect(bloomIntensity) {
-    this.mesh.material.mrtNode = mrt({
-      bloomIntensity: uniform(bloomIntensity),
-    });
   }
 }

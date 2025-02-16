@@ -2,10 +2,10 @@
   position: sticky;
   bottom: 0;
   width: 100%;
-  background-color: var(--bs-light-text-emphasis);
-  border-top: 1px solid var(--bs-light-bg-subtle);
+  background-color: var(--bs-highlight-color);
   text-align: center;
-  padding: 0.5rem 0rem;
+  box-shadow: var(--bs-box-shadow-lg);
+  padding: 0.333rem 1rem;
   z-index: 10;
   display: flex;
   justify-content: center;
@@ -19,7 +19,7 @@
   flex-wrap: wrap;
   /* gap: 1rem; */
   align-items: center;
-  justify-content: space-around;
+  justify-content: space-between;
   font-size: 0.9rem;
   color: var(--bs-light-bg-subtle);
 }
