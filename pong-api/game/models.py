@@ -8,6 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class GameState(models.Model):
     # Game configuration
     max_score = models.PositiveIntegerField(default=3)
@@ -72,21 +73,30 @@ class GameState(models.Model):
         }
         packed_data = msgpack.packb(game_state_data)
         cache.set(cache_key, packed_data, timeout=None)
-        logger.info(f"Saved game state to cache with key {cache_key}")
+        logger.debug(f"Saved game state to cache with key {cache_key}: {packed_data}")
 
     def delete(self, *args, **kwargs):
         if settings.USE_REDIS:
             cache_key = f"{self.id}"
             cache.delete(cache_key)
-            logger.info(f"Deleted game state from cache with key {cache_key}")
+            logger.debug(f"Deleted game state from cache with key {cache_key}")
 
     @classmethod
     def from_cache(cls, game_id):
         cache_key = f"{game_id}"
         packed_data = cache.get(cache_key)
+        logger.debug(f"Retrieved packed_data from cache: {packed_data}")
+        logger.debug(f"Type of packed_data: {type(packed_data)}")
         if packed_data:
-            game_state_data = msgpack.unpackb(packed_data, raw=False)
-            return cls(**game_state_data)
+            try:
+                game_state_data = msgpack.unpackb(packed_data, raw=False)
+                logger.debug(
+                    f"Retrieved game state from cache with key {cache_key}: {game_state_data}"
+                )
+                return cls(**game_state_data)
+            except Exception as e:
+                logger.error(f"Error unpacking game_state_data: {e}")
+                raise
         return None
 
     def __str__(self) -> str:

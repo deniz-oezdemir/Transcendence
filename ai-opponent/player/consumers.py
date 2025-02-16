@@ -1,4 +1,6 @@
 import asyncio
+import base64
+import zlib
 import time
 import math
 import websockets
@@ -10,10 +12,12 @@ from websockets.exceptions import ConnectionClosedError, InvalidURI, InvalidHand
 
 logger = logging.getLogger(__name__)
 
+
 class WebSocketConnectionError(Exception):
     def __init__(self, message):
         super().__init__(message)
         self.status_code = 450
+
 
 class WebSocketClient(AsyncWebsocketConsumer):
     def __init__(self, uri, ai_player):
@@ -49,107 +53,121 @@ class WebSocketClient(AsyncWebsocketConsumer):
             while True:
                 message = await self.websocket.recv()
                 data = json.loads(message)
-                state = data.get("state", {})
+                encoded_state = data.get("state", "")
+
+                if encoded_state:
+                    compressed_state = base64.b64decode(encoded_state)
+                    state = json.loads(zlib.decompress(compressed_state).decode())
+                else:
+                    state = {}
+
                 is_game_running = state.get("is_game_running", True)
                 is_game_ended = state.get("is_game_ended", False)
                 if not is_game_running or is_game_ended:
                     self.game_running = False
                 current_time = time.time()
                 if current_time - self.last_update_time >= 1:  # Only once per second
-                    logger.debug(f"Received message: {data}")
-                    await self.handle_game_update(data)
+                    logger.debug(f"Received message: {state}")
+                    if data.get("type") == "game_state_update":
+                        await self.handle_game_update(state)
                     self.last_update_time = current_time
         except websockets.ConnectionClosed:
             logger.warning("Connection closed")
             self.delete_ai_player()
 
-    async def handle_game_update(self, data):
-        if data.get("type") == "game_state_update":
-            state = data.get("state", {})
-            ball_x_position = state.get("ball_x_position")
-            ball_y_position = state.get("ball_y_position")
-            new_ball_x_direction = state.get("ball_x_direction")
-            ball_y_direction = state.get("ball_y_direction")
-            game_width = state.get("game_width")
-            game_height = state.get("game_height")
-            paddle_height = state.get("paddle_height")
-            player_1_id = state.get("player_1_id")
-            player_2_id = state.get("player_2_id")
-            player_1_position = state.get("player_1_position")
-            player_2_position = state.get("player_2_position")
-            is_game_running = state.get("is_game_running", True)
-            is_game_ended = state.get("is_game_ended", False)
-            self.move_step = state.get("move_step")
+    async def handle_game_update(self, state):
+        ball_x_position = state.get("ball_x_position")
+        ball_y_position = state.get("ball_y_position")
+        new_ball_x_direction = state.get("ball_x_direction")
+        ball_y_direction = state.get("ball_y_direction")
+        game_width = state.get("game_width")
+        game_height = state.get("game_height")
+        paddle_height = state.get("paddle_height")
+        player_1_id = state.get("player_1_id")
+        player_2_id = state.get("player_2_id")
+        player_1_position = state.get("player_1_position")
+        player_2_position = state.get("player_2_position")
+        is_game_running = state.get("is_game_running", True)
+        is_game_ended = state.get("is_game_ended", False)
+        self.move_step = state.get("move_step")
 
-            if self.predicted_ball_y is None:
-                logger.debug("handle_game_update: predicted_y is None, setting to middle of board")
-                self.predicted_ball_y = game_height / 2
+        if self.predicted_ball_y is None:
+            logger.debug(
+                "handle_game_update: predicted_y is None, setting to middle of board"
+            )
+            self.predicted_ball_y = game_height / 2
 
-            if not is_game_running or is_game_ended:
-                logger.info("Game has ended or is paused. Stopping AI.")
-                self.game_running = False
+        if not is_game_running or is_game_ended:
+            logger.debug("Game has ended or is paused. Stopping AI.")
+            self.game_running = False
+            if self.move_task is not None:
+                self.move_task.cancel()
+            return
+        else:
+            self.game_running = True
+
+        ai_player_position = None
+
+        # Find the AI player's position
+        if self.ai_player.ai_player_id == player_1_id:
+            ai_player_position = player_1_position
+        elif self.ai_player.ai_player_id == player_2_id:
+            ai_player_position = player_2_position
+        # Because in game engine position is top of paddle, set it to middle:
+        ai_player_position += paddle_height / 2
+
+        if ai_player_position is None:
+            logger.error(
+                f"ai_player_position is None. AI-Player ID: {self.ai_player.ai_player_id}. ai-opponent will not move. Player_1_id: {player_1_id}, player_2_id: {player_2_id}"
+            )
+            return
+
+        if (
+            ai_player_position is not None
+            and ball_x_position is not None
+            and ball_y_position is not None
+        ):
+            new_ball_x_direction_sign = 1 if new_ball_x_direction > 0 else -1
+            if new_ball_x_direction_sign != self.ball_x_direction_sign:
+                self.ball_x_direction_sign = new_ball_x_direction_sign
+                logger.debug("Ball direction sign changed, updating prediction")
+                if (
+                    self.ai_player.ai_player_id == player_1_id
+                    and self.ball_x_direction_sign < 0
+                ) or (
+                    self.ai_player.ai_player_id == player_2_id
+                    and self.ball_x_direction_sign > 0
+                ):
+                    # Ball is moving towards the AI player
+                    new_predicted_y = self.predict_ball_y(
+                        ball_x_position,
+                        ball_y_position,
+                        new_ball_x_direction,
+                        ball_y_direction,
+                        game_width,
+                        game_height,
+                    )
+                    if math.fabs(self.predicted_ball_y - new_predicted_y) > 10:
+                        self.predicted_ball_y = new_predicted_y
+                else:
+                    # Ball is moving away from the AI player, move towards the center
+                    self.predicted_ball_y = game_height / 2
+                    logger.debug(
+                        f"Ball is moving away, go to middle: {self.predicted_ball_y}"
+                    )
+
+                # Cancel any existing move task
                 if self.move_task is not None:
                     self.move_task.cancel()
-                return
-            else:
-                self.game_running = True
 
-            ai_player_position = None
-
-            # Find the AI player's position
-            if self.ai_player.ai_player_id == player_1_id:
-                ai_player_position = player_1_position
-            elif self.ai_player.ai_player_id == player_2_id:
-                ai_player_position = player_2_position
-            # Because in game engine position is top of paddle, set it to middle:
-            ai_player_position += paddle_height / 2
-
-            if ai_player_position is None:
-                logger.error(
-                    f"ai_player_position is None. AI-Player ID: {self.ai_player.ai_player_id}. ai-opponent will not move. Player_1_id: {player_1_id}, player_2_id: {player_2_id}"
+                # Start a new move task
+                self.move_task = asyncio.create_task(
+                    self.continuous_move(ai_player_position)
                 )
-                return
-
-            if (
-                ai_player_position is not None
-                and ball_x_position is not None
-                and ball_y_position is not None
-            ):
-                new_ball_x_direction_sign = 1 if new_ball_x_direction > 0 else -1
-                if new_ball_x_direction_sign != self.ball_x_direction_sign:
-                    self.ball_x_direction_sign = new_ball_x_direction_sign
-                    logger.debug("Ball direction sign changed, updating prediction")
-                    if (
-                        self.ai_player.ai_player_id == player_1_id and self.ball_x_direction_sign < 0
-                    ) or (
-                        self.ai_player.ai_player_id == player_2_id and self.ball_x_direction_sign > 0
-                    ):
-                        # Ball is moving towards the AI player
-                        new_predicted_y = self.predict_ball_y(
-                            ball_x_position,
-                            ball_y_position,
-                            new_ball_x_direction,
-                            ball_y_direction,
-                            game_width,
-                            game_height,
-                        )
-                        if math.fabs(self.predicted_ball_y - new_predicted_y) > 10:
-                            self.predicted_ball_y = new_predicted_y
-                    else:
-                        # Ball is moving away from the AI player, move towards the center
-                        self.predicted_ball_y = game_height / 2
-                        logger.debug(f"Ball is moving away, go to middle: {self.predicted_ball_y}")
-
-                    # Cancel any existing move task
-                    if self.move_task is not None:
-                        self.move_task.cancel()
-
-                    # Start a new move task
-                    self.move_task = asyncio.create_task(self.continuous_move(ai_player_position))
-            else:
-                logger.error(
-                    f"ai-player cannot move because one of these is null:\nai_player_position: {ai_player_position}\nball_x_position: {ball_x_position}\nball_y_position: {ball_y_position}"
-                )
+        else:
+            logger.error(
+                f"ai-player cannot move because one of these is null:\nai_player_position: {ai_player_position}\nball_x_position: {ball_x_position}\nball_y_position: {ball_y_position}"
+            )
 
     def predict_ball_y(
         self,
@@ -175,7 +193,9 @@ class WebSocketClient(AsyncWebsocketConsumer):
     async def continuous_move(self, ai_player_position):
         try:
             while self.game_running:
-                if math.fabs(ai_player_position - self.predicted_ball_y) < 10: # TODO: remove magic number
+                if (
+                    math.fabs(ai_player_position - self.predicted_ball_y) < 10
+                ):  # TODO: remove magic number
                     break
                 elif ai_player_position < self.predicted_ball_y:
                     await self.send_move_command(1)  # Move down
@@ -193,6 +213,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
     async def send_move_command(self, direction):
         if not self.game_running:
+            logger.debug("send move cancelled, game not running")
             return
         move_command = {
             "action": "move",
@@ -221,4 +242,3 @@ class WebSocketClient(AsyncWebsocketConsumer):
         thread = threading.Thread(target=self.run)
         thread.start()
         return self.connection_error
-
