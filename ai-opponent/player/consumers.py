@@ -56,6 +56,9 @@ class WebSocketClient(AsyncWebsocketConsumer):
                 data = json.loads(message)
                 encoded_state = data.get("state", "")
 
+                if data.get("type") == "connection_closed":
+                    await self.handle_connection_closed(data)
+
                 if encoded_state:
                     compressed_state = base64.b64decode(encoded_state)
                     partial_state = json.loads(
@@ -233,9 +236,18 @@ class WebSocketClient(AsyncWebsocketConsumer):
         await self.websocket.send(json.dumps(move_command))
         logger.debug(f"Sent move command: {move_command}")
 
+    async def handle_connection_closed(self, data):
+        logger.debug("Connection closed by server.")
+        self.game_running = False
+        if self.move_task is not None:
+            self.move_task.cancel()
+        self.delete_ai_player()
+        await self.websocket.close()
+        logger.info("Connection closed")
+
     def delete_ai_player(self):
         self.ai_player.delete()
-        logger.debug(
+        logger.info(
             f"AI player {self.ai_player.ai_player_id} deleted from database and Redis"
         )
 

@@ -49,6 +49,31 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.game_state_manager.stop_periodic_updates()
             logger.debug(f"Stopped periodic updates for game: {self.game_id}")
 
+        # Notify all clients that the connection has ended
+        await self.channel_layer.group_send(
+            self.game_group_name,
+            {"type": "connection_closed", "message": "Connection closed by server."},
+        )
+
+    async def connection_closed(self, event):
+        # Handle the connection closed event
+        logger.info("connection_closed message received")
+        await self.send(text_data=json.dumps({"type": "connection_closed"}))
+        await self.close_all_connections()
+
+    async def close_all_connections(self):
+        # Notify all clients that the connection has ended
+        logger.info("Closing all connections")
+        await self.channel_layer.group_send(
+            self.game_group_name,
+            {
+                "type": "connection_closed",
+            },
+        )
+
+        # Disconnect all clients
+        await self.disconnect(0)
+
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         action = text_data_json["action"]
@@ -85,7 +110,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.debug(f"Game state update sent to client: {self.channel_name}")
         try:
             if self.game_state_manager.game_state.is_game_ended:
-                await self.disconnect(0)
+                await self.close_all_connections()
         except Exception as e:
             logger.error(
                 f"Error disconnecting and sending game to matchmaking: {str(e)}",

@@ -63,7 +63,7 @@ class GameStateManager:
                 self.game_state = engine.move_player(player_id, direction)
                 logger.debug(f"Moved player {player_id} for game_id: {self.game_id}")
 
-    async def update_game_state(self):
+    async def update_game_state(self, channel_layer, game_group_name):
         async with self.lock:
             if self.game_state.is_game_running:
                 engine = PongGameEngine(self.game_state)
@@ -71,6 +71,7 @@ class GameStateManager:
                 logger.debug(f"Updated game state for game_id: {self.game_id}")
             if self.game_state.is_game_ended:
                 logger.info(f"Ending game state for game_id: {self.game_id}")
+                await self.send_connection_close(channel_layer, game_group_name)
                 await self.send_game_result_to_matchmaking()
 
     def calculate_diffs(self, current_state, previous_state):
@@ -131,10 +132,19 @@ class GameStateManager:
             )
             logger.debug(f"Started periodic updates for game_id: {self.game_id}")
 
+    async def send_connection_close(self, channel_layer, game_group_name):
+        await channel_layer.group_send(
+            game_group_name,
+            {"type": "connection_closed"},
+        )
+        logger.info(
+            f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
+        )
+
     async def _periodic_updates(self, channel_layer, game_group_name):
         try:
             while True:
-                await self.update_game_state()
+                await self.update_game_state(channel_layer, game_group_name)
                 logger.debug("Game updated now send")
                 await self.send_partial_game_state(channel_layer, game_group_name)
                 await asyncio.sleep(1 / 20)

@@ -10,7 +10,7 @@ while ! redis-cli ping; do
 done
 
 # Configure Redis settings
-redis-cli CONFIG SET maxclients 10000
+redis-cli CONFIG SET maxclients 10
 redis-cli CONFIG SET maxmemory 2gb
 redis-cli CONFIG SET maxmemory-policy allkeys-lru
 redis-cli CONFIG SET save ""

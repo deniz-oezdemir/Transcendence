@@ -199,7 +199,7 @@ CHANNEL_LAYERS = {
         "CONFIG": {
             "hosts": [("localhost", 6379)],
             "capacity": 10000,
-            "expiry": 10,
+            "expiry": 2,
         },
     }
 }
