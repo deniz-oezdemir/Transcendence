@@ -35,7 +35,8 @@
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-dev": "^2.0.5",
     "rollup-plugin-livereload": "^2.0.5",
-    "rollup-plugin-postcss": "^4.0.2"
+    "rollup-plugin-postcss": "^4.0.2",
+    "pako": "^2.0.4"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
