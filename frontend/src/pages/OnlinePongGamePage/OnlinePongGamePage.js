@@ -185,7 +185,7 @@ export default function OnlinePongGamePage({ navigate }) {
           );
           // Merge partial update into the current game state
           currentGameState = { ...currentGameState, ...partialGameState };
-          console.log('Data from server game_state now:', currentGameState);
+          // console.log('Data from server game_state now:', currentGameState);
 
           const { scaleFactor } = gameDimensions();
           setGamePositions((prevPositions) => ({
@@ -199,8 +199,7 @@ export default function OnlinePongGamePage({ navigate }) {
           }));
           const currentScore = gameScore();
           if (
-            currentGameState.player_1_score !==
-              currentScore.player1.score ||
+            currentGameState.player_1_score !== currentScore.player1.score ||
             currentGameState.player_2_score !== currentScore.player2.score
           ) {
             setGameScore((prevScore) => ({
@@ -212,6 +211,9 @@ export default function OnlinePongGamePage({ navigate }) {
         } catch (error) {
           console.error('Error processing game state update:', error);
         }
+      } else if (data.type === 'connection_closed') {
+        console.log('Connection closed by server.');
+        ws.close();
       }
     };
 

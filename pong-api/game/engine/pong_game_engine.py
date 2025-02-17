@@ -322,8 +322,14 @@ class PongGameEngine:
         # Reset the game positions
         self.game_state.ball_x_position = self.game_width // 2
         self.game_state.ball_y_position = self.game_height // 2
-        self.game_state.ball_x_direction = self.game_state.ball_x_direction / -2
-        self.game_state.ball_y_direction = self.game_state.ball_y_direction / -2
+        self.game_state.ball_x_direction = self.game_state.ball_speed / 4
+        self.game_state.ball_y_direction = self.game_state.ball_y_direction / 4
+        self.game_state.ball_x_direction *= (
+            -1 if self.game_state.ball_x_direction < 0 else 1
+        )
+        self.game_state.ball_y_direction *= (
+            1 if self.game_state.ball_y_direction < 0 else -1
+        )
         self.game_state.is_game_running = False
         new_players_position = (
             self.game_state.game_height / 2
