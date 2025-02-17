@@ -64,6 +64,9 @@ class WebSocketClient(AsyncWebsocketConsumer):
                     self.current_game_state.update(
                         partial_state
                     )  # Merge partial update
+                    logger.debug(
+                        f"partial_state merge into self.current_game_state: {self.current_game_state}"
+                    )
                 else:
                     partial_state = {}
 
@@ -213,7 +216,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
                     break  # Target position reached
 
                 # Wait for a short interval before sending the next move command
-                await asyncio.sleep(0.15)
+                await asyncio.sleep(0.2)
         except asyncio.CancelledError:
             pass
 

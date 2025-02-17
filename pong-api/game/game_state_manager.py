@@ -83,7 +83,25 @@ class GameStateManager:
                     logger.debug(f"Detected change in {key}: {prev_value} -> {value}")
         return diffs
 
-    async def send_game_state(self, channel_layer, game_group_name):
+    async def send_full_game_state(self, channel_layer, game_group_name):
+        async with self.lock:
+            game_state_data = {
+                key: value
+                for key, value in self.game_state.__dict__.items()
+                if not key.startswith("_")
+            }
+            compressed_data = zlib.compress(json.dumps(game_state_data).encode())
+            encoded_data = base64.b64encode(compressed_data).decode()
+
+            await channel_layer.group_send(
+                game_group_name,
+                {"type": "game_state_update", "state": encoded_data},
+            )
+            logger.info(
+                f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
+            )
+
+    async def send_partial_game_state(self, channel_layer, game_group_name):
         async with self.lock:
             if self.previous_game_state is None:
                 self.previous_game_state = copy.deepcopy(
@@ -118,7 +136,7 @@ class GameStateManager:
             while True:
                 await self.update_game_state()
                 logger.debug("Game updated now send")
-                await self.send_game_state(channel_layer, game_group_name)
+                await self.send_partial_game_state(channel_layer, game_group_name)
                 await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
             pass

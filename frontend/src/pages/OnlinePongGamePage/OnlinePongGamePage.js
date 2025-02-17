@@ -185,7 +185,7 @@ export default function OnlinePongGamePage({ navigate }) {
           );
           // Merge partial update into the current game state
           currentGameState = { ...currentGameState, ...partialGameState };
-          // console.log('Data from server:', gameStateData);
+          console.log('Data from server game_state now:', currentGameState);
 
           const { scaleFactor } = gameDimensions();
           setGamePositions((prevPositions) => ({
@@ -197,11 +197,11 @@ export default function OnlinePongGamePage({ navigate }) {
               y: currentGameState.ball_y_position * scaleFactor,
             },
           }));
-          const currentGameState = gameScore();
+          const currentScore = gameScore();
           if (
             currentGameState.player_1_score !==
-              currentGameState.player1.score ||
-            currentGameState.player_2_score !== currentGameState.player2.score
+              currentScore.player1.score ||
+            currentGameState.player_2_score !== currentScore.player2.score
           ) {
             setGameScore((prevScore) => ({
               ...prevScore,

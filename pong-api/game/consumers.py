@@ -26,6 +26,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.info(
             f"Client connected: {self.channel_name}, Total connected clients: {connected_clients}"
         )
+        await self.game_state_manager.send_full_game_state(
+            self.channel_layer, self.game_group_name
+        )
 
         if connected_clients == 1:
             await self.game_state_manager.start_periodic_updates(
