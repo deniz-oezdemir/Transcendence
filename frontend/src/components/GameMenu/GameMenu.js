@@ -7,6 +7,8 @@ import { rovingIndex } from 'roving-ux';
 
 import styles from './GameMenu.module.css';
 
+import { getUser } from '@/auth.js';
+
 export default function GameMenu({ gameState, setGameState, network }) {
   let gameMenuRef = { current: null };
   let menuRect = null;

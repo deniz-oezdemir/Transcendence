@@ -37,7 +37,7 @@ export default class NetworkManager {
     try {
       const hostname = window.location.hostname;
       const protocol = window.location.protocol === 'htttps:' ? 'wss:' : 'ws:';
-      const port = 8801;
+      const port = 8001;
       const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
 
       this.matchmakingSocket = new WebSocket(wsUrl);

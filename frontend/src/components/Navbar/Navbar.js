@@ -1,7 +1,7 @@
 import { createComponent, Link } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import { setTheme, getPreferredTheme } from '@themeManager';
-import { isAuthenticated, login, logout } from '../../auth.js';
+import { checkAuth, logout } from '../../auth.js';
 
 import styles from './Navbar.module.css';
 
@@ -16,7 +16,7 @@ export default function Navbar({ location, navigate }) {
   };
 
   const handleAuthButtonClick = () => {
-    if (isAuthenticated()) {
+    if (!checkAuth()) {
       try {
         logout();
         router.navigate('/login');
@@ -41,14 +41,14 @@ export default function Navbar({ location, navigate }) {
   const authButton = createComponent('button', {
     className: `btn btn-outline-success ${styles.customBtn}`,
     attributes: { type: 'button', role: 'button' },
-    content: isAuthenticated() ? 'Logout' : 'Login',
+    content: !checkAuth() ? 'Logout' : 'Login',
     events: {
       click: handleAuthButtonClick,
     },
   });
 
   createEffect(() => {
-    authButton.element.textContent = isAuthenticated() ? 'Logout' : 'Login';
+    authButton.element.textContent = !checkAuth() ? 'Logout' : 'Login';
   });
 
   createEffect(() => {

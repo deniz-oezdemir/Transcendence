@@ -28,24 +28,31 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 import '@styles/global.css';
 import { checkAuth } from './auth';
 
-// TODO: remove the return
 // Authentication Middleware
 const authentication = async (path, context) => {
-  return true;
-  const isAuthenticated = checkAuth();
-  console.log('isAuthenticated in middleware:', isAuthenticated);
-  if (
-    context.nextPath === '/' ||
-    context.nextPath === '/login' ||
-    context.nextPath === '/signup'
-  ) {
+  const isAuthenticated = await checkAuth();
+  // console.log('isAuthenticated in middleware:', isAuthenticated);
+
+  const publicRoutes = ['/', '/login', '/signup'];
+
+  if (publicRoutes.includes(context.nextPath)) {
+    if (
+      isAuthenticated &&
+      (context.nextPath === '/login' || context.nextPath === '/signup')
+    ) {
+      // console.log('User already authenticated, redirecting to home...');
+      router.navigate('/');
+      return false;
+    }
     return true;
   }
+
   if (!isAuthenticated) {
-    console.log('Unauthorized access. Redirecting to login page...');
+    // console.log('Unauthorized access. Redirecting to login page...');
     router.navigate('/login');
     return false;
   }
+
   return true;
 };
 
@@ -82,13 +89,8 @@ const router = new Router({
   errorComponent: ErrorPage,
 });
 
-// // Run the middleware on initial page load
-const initialPath = window.location.pathname;
-authentication(initialPath, {}).then((allowed) => {
-  if (!allowed) {
-    router.navigate('/login');
-  }
-});
+// // Run the Auth middleware on initial page load
+authentication({}, { next: window.location.pathname });
 
 // Expose router to the window object
 window.router = router;
