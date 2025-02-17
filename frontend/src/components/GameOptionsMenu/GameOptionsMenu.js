@@ -58,7 +58,7 @@ export default function GameOptionsMenu({
 
   const toogleSection = createComponent('div', {
     className: `${styles.toogleSection}`,
-    children: [mouseToggle],
+    children: [mouseToggle, aiToggle],
   });
 
   const handleFullScreen = () => {
@@ -84,9 +84,10 @@ export default function GameOptionsMenu({
   createEffect(() => {
     const mode = gameState().mode;
     if (mode == null) {
-      aiToggle.element.remove();
+      aiToggle.element.style.display = 'none';
     } else if (mode == 'practice') {
-      toogleSection.element.insertBefore(aiToggle.element, mouseToggle.element);
+      aiToggle.element.style.display = 'block';
+      // toogleSection.element.insertBefore(aiToggle.element, mouseToggle.element);
     }
   });
 

@@ -14,6 +14,7 @@ import ScoreMessages from '@/game/effects/ScoreMessages.js';
 import SceneEnvironment from '@/game/environment/SceneEnvironment.js';
 import ScoreDisplay from '@/game/entities/ScoreDisplay.js';
 import lerp from '@/game/utils/lerp.js';
+import NetworkManager from '@/game/NetworkManager.js';
 
 export default class Game {
   scene;
@@ -101,6 +102,9 @@ export default class Game {
       this.params.camera.startPosition.x - this.params.camera.pongLookAt.x
     );
     this.orbitSpeed = 0.2;
+
+    // Websocket connections
+    this.network = new NetworkManager();
   }
 
   setGameObjects() {
@@ -153,6 +157,9 @@ export default class Game {
       this.sceneEnv.init(),
       this.scoreMessages.init(),
       this.neonRings.init(),
+      this.network.initMatchmaking().catch((error) => {
+        console.error('Matchmaking initialization failed:', error);
+      }),
     ]);
 
     this.setEventListeners();
@@ -325,6 +332,8 @@ export default class Game {
 
   dispose() {
     window.removeEventListener('mousemove', this.handleMouseMove);
+
+    this.network.disconnect();
 
     this.fireworks.dispose();
     this.neonRings.dispose();

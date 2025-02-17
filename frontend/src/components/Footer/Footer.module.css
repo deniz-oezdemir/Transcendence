@@ -4,7 +4,6 @@
   width: 100%;
   background-color: var(--bs-highlight-color);
   text-align: center;
-  box-shadow: var(--bs-box-shadow-lg);
   padding: 0.333rem 1rem;
   z-index: 10;
   display: flex;

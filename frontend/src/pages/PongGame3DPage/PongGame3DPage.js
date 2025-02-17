@@ -197,7 +197,7 @@ export default function PongGame3DPage() {
   return createComponent('div', {
     className: `${styles.gameWrapper}`,
     children: [
-      GameMenu({ gameState, setGameState }),
+      GameMenu({ gameState, setGameState, network: game.network }),
       GameOptionsMenu({
         isFullScreen,
         setIsFullScreen,

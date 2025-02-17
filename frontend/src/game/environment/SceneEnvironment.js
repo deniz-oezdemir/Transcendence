@@ -58,6 +58,7 @@ export default class SceneEnvironment {
 
   createSky() {
     this.sky = new SkyMesh();
+    // this.sky.geometry = this.sky.geometry.toNonIndexed();
     this.sky.scale.setScalar(this.params.dimensions.world.x);
 
     this.sky.turbidity.value = this.skyParams.turbidity;
@@ -70,10 +71,11 @@ export default class SceneEnvironment {
   }
 
   async createWater() {
-    const waterGeometry = new CircleGeometry(
+    let waterGeometry = new CircleGeometry(
       this.params.dimensions.world.x * 2,
       64
     );
+    // waterGeometry = waterGeometry.toNonIndexed();
     // const waterGeometry = new PlaneGeometry(
     //   this.params.dimensions.world.x,
     //   this.params.dimensions.world.y
