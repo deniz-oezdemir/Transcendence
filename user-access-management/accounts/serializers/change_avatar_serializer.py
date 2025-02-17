@@ -1,4 +1,6 @@
 import os
+import time
+import shutil
 from django.conf import settings
 from rest_framework import serializers
 from .register_serializer import RegisterSerializer
@@ -13,13 +15,10 @@ class ChangeAvatarSerializer(serializers.ModelSerializer):
 
     def validate_new_avatar(self, file):
         return RegisterSerializer().validate_avatar(file)
-        # if not value.startswith('https://the-nginx-server.com/avatars/'):
-        #     raise serializers.ValidationError('Invalid avatar URL.')
-        # return value
 
     def update(self, instance, validated_data):
         # instance.avatar_url(validated_data['new_avatar'])
-        file = validated_data['new_avatar']
+        avatar_file = validated_data['new_avatar']
 
         # # Define storage path (nginx serves from `/media/avatars/`)
         # avatar_filename = f"user_{instance.id}_{file.name}"
@@ -35,19 +34,25 @@ class ChangeAvatarSerializer(serializers.ModelSerializer):
         # instance.avatar_url = settings.MEDIA_URL + avatar_path
         # instance.save(update_fields=["avatar_url"])
 
-        # Step 3: Save the file to Nginx
-        avatar_filename = f"user_{request.user.id}_{file.name}"
-        avatar_path = os.path.join("/usr/share/nginx/media/avatars/", avatar_filename)
+        # generate unique name
+        avatar_filename = f"user_{instance.id}_{int(time.time())}{os.path.splitext(avatar_file.name)[1]}"
 
-        with open(avatar_path, "wb+") as destination:
-            for chunk in file.chunks():
+        # temporary save the file
+        temp_path = os.path.join('/tmp', avatar_filename)
+        with open(temp_path, 'wb+') as destination:
+            for chunk in avatar_file.chunks():
                 destination.write(chunk)
 
-        # Step 4: Return the file URL
-        avatar_url = f"/media/avatars/{avatar_filename}"
+        # copy file to NGINX container using Docker volume
+        nginx_image_path = f"/usr/share/nginx/images/{avatar_filename}"
+        shutil.copy(temp_path, nginx_image_path)
+
+        os.remove(temp_path)
         
-        # Step 5: Save URL to the database
-        request.user.avatar_url = avatar_url
-        request.user.save(update_fields=["avatar_url"])
+        # generate public URL and store in db
+        avatar_url = f"http://nginx:80/images/{avatar_filename}"
+
+        instance.avatar_url = avatar_url
+        instance.save(update_fields=["avatar_url"])
         
         return instance
