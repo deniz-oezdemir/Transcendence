@@ -1,6 +1,5 @@
 import { createComponent } from '@component';
 import { createSignal, createEffect } from '@reactivity';
-// import isAuthenticated from '../main.js';
 
 export class Router {
   constructor({
@@ -80,8 +79,8 @@ export class Router {
         const queryString = window.location.search;
         const queryParams = this.parseQueryString(queryString);
 
-        console.log('Params:', params);
-        console.log('Query Params:', queryParams);
+        // console.log('Params:', params);
+        // console.log('Query Params:', queryParams);
 
         const context = {
           params,
@@ -221,7 +220,7 @@ export class Router {
     const context = { currentPath: window.location.pathname, nextPath: path };
     const proceed = await this.executeMiddlewares(path, context);
     if (!proceed) {
-      console.log('Middleware blocked navigation');
+      // console.log('Middleware blocked navigation');
       // history.pushState(null, '', '/login');
       return;
     }
