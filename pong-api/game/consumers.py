@@ -1,4 +1,5 @@
 import json
+import datetime
 import aiohttp
 from django.utils import timezone
 import zlib
@@ -82,9 +83,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         if action == "move":
             player_id = text_data_json["player_id"]
             direction = text_data_json["direction"]
+
             logger.debug(
-                f"Move action received: player_id={player_id}, direction={direction}"
+                f"{datetime.datetime.now()} - Move action received: player_id={player_id}, direction={direction}"
             )
+
             await self.game_state_manager.move_player(player_id, direction)
             logger.debug(
                 f"Game state updated and sent for move action: player_id={player_id}, direction={direction}"

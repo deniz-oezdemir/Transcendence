@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import base64
 import zlib
 import time
@@ -234,7 +235,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
         }
         logger.debug("Sending move command")
         await self.websocket.send(json.dumps(move_command))
-        logger.debug(f"Sent move command: {move_command}")
+        logger.debug(f"{datetime.datetime.now()} - Sent move command")
 
     async def handle_connection_closed(self, data):
         logger.debug("Connection closed by server.")
