@@ -5,6 +5,7 @@ import WaitingRoom from '@/components/WaitingRoom/WaitingRoom';
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
 import GameControls from '@/components/GameControls/GameControls';
+import pako from 'pako';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // Use HTTP(S) for fetch requests
@@ -136,7 +137,7 @@ export default function OnlinePongGamePage({ navigate }) {
       console.error('Toggle game failed:', error);
     }
   }
- 
+
   /**
    * Ends the game session and cleans up WebSocket connection
    * @param {number} id - Game ID to end
@@ -151,11 +152,10 @@ export default function OnlinePongGamePage({ navigate }) {
     }
     console.log('End Game Is Waiting Room:', isWaitingRoom());
     if (!isWaitingRoom()) {
-        setWaitingRoom(true);
-      }
-      return true;
+      setWaitingRoom(true);
     }
-
+    return true;
+  }
 
   /**
    * Establishes WebSocket connection for real-time game updates
@@ -167,32 +167,53 @@ export default function OnlinePongGamePage({ navigate }) {
       console.log('WebSocket connected.');
       setWebsocket(ws);
     };
+    let currentGameState = {}; // Maintain the current game state
 
     ws.onmessage = function (event) {
       const data = JSON.parse(event.data);
-      // console.log('Data from server:', data);
       if (data.type === 'game_state_update') {
-        const { scaleFactor } = gameDimensions();
-        setGamePositions((prevPositions) => ({
-          ...prevPositions,
-          player1Position: data.state.player_1_position * scaleFactor,
-          player2Position: data.state.player_2_position * scaleFactor,
-          ball: {
-            x: data.state.ball_x_position * scaleFactor,
-            y: data.state.ball_y_position * scaleFactor,
-          },
-        }));
-        const currentGameScore = gameScore();
-        if (
-          data.state.player_1_score !== currentGameScore.player1.score ||
-          data.state.player_2_score !== currentGameScore.player2.score
-        ) {
-          setGameScore((prevScore) => ({
-            ...prevScore,
-            player1: { score: data.state.player_1_score },
-            player2: { score: data.state.player_2_score },
+        try {
+          // console.log('Received encoded data: ', data)
+          const binaryString = atob(data.state);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const partialGameState = JSON.parse(
+            pako.inflate(bytes, { to: 'string' })
+          );
+          // Merge partial update into the current game state
+          currentGameState = { ...currentGameState, ...partialGameState };
+          // console.log('Data from server game_state now:', currentGameState);
+
+          const { scaleFactor } = gameDimensions();
+          setGamePositions((prevPositions) => ({
+            ...prevPositions,
+            player1Position: currentGameState.player_1_position * scaleFactor,
+            player2Position: currentGameState.player_2_position * scaleFactor,
+            ball: {
+              x: currentGameState.ball_x_position * scaleFactor,
+              y: currentGameState.ball_y_position * scaleFactor,
+            },
           }));
+          const currentScore = gameScore();
+          if (
+            currentGameState.player_1_score !== currentScore.player1.score ||
+            currentGameState.player_2_score !== currentScore.player2.score
+          ) {
+            setGameScore((prevScore) => ({
+              ...prevScore,
+              player1: { score: currentGameState.player_1_score },
+              player2: { score: currentGameState.player_2_score },
+            }));
+          }
+        } catch (error) {
+          console.error('Error processing game state update:', error);
         }
+      } else if (data.type === 'connection_closed') {
+        console.log('Connection closed by server.');
+        ws.close();
       }
     };
 
@@ -317,7 +338,10 @@ export default function OnlinePongGamePage({ navigate }) {
           setWaitingRoom(false);
           initializeGame();
           toogleGame();
-        }, setGameId, setCreatorId, setCreatorName
+        },
+        setGameId,
+        setCreatorId,
+        setCreatorName,
       });
       content.element.appendChild(waitingroom.element);
     } else {
