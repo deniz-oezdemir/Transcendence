@@ -61,19 +61,20 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.info("connection_closed message received")
         await self.send(text_data=json.dumps({"type": "connection_closed"}))
         await self.close_all_connections()
+        await self.close()
 
     async def close_all_connections(self):
         # Notify all clients that the connection has ended
         logger.info("Closing all connections")
+        self.game_state_manager.game_state.delete()
         await self.channel_layer.group_send(
             self.game_group_name,
             {
                 "type": "connection_closed",
             },
         )
-
-        # Disconnect all clients
         await self.disconnect(0)
+        await self.close()
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
