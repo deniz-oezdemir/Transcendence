@@ -281,6 +281,8 @@ curl -X DELETE http://localhost:8002/game/delete_game/1/
 
 - **Game State Update:**
 
+Usually the whole state will be broadcasted everytime a clients joins the channel and when the game ends.
+
 ```json
 {
 "type": "game_state_update",
@@ -311,3 +313,27 @@ curl -X DELETE http://localhost:8002/game/delete_game/1/
 }
 }
   ```
+
+- **Partial Game State Update:**
+
+`pong-api` will now send only the variables in game_state that have changed, for example:
+
+  ```json
+  {
+    "type": "game_state_update",
+    "state": {
+      "ball_x_position": 410,
+      "ball_y_position": 210
+    }
+  }
+  ```
+
+The client must join the new partiall game_state with the previous chached game_state it holded.
+
+- **Connection Closed:**
+
+  ```json
+  {
+    "type": "connection_closed",
+    "message": "Connection closed by server."
+  }
