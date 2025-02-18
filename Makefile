@@ -9,19 +9,18 @@ up:
 	@echo " $(CONTAINERS_STARTED)"
 
 down:
-	@docker compose -p $(NAME) down
+	@docker compose -p $(NAME) -f $(COMPOSE) down
 	@echo " $(CONTAINERS_STOPPED)"
 
 show:
 	@docker image ls -a && echo "\n" && docker ps && echo "\n"
 
 clean:
-	@docker compose -f $(COMPOSE) down --volumes --remove-orphans
+	@docker compose -p $(NAME) -f $(COMPOSE) down --volumes --remove-orphans
 	@echo " $(CLEANED)"
 
 fclean:
 	@docker compose -p $(NAME) -f $(COMPOSE) down --rmi all --volumes --remove-orphans
-	@docker system prune --all --force --volumes
 	@echo " $(FULLY_CLEANED)"
 
 status:
@@ -34,17 +33,18 @@ status:
 
 logs:
 	@echo "\n--- FRONTEND SERVICE LOGS ---\n"
-	@docker compose logs $(NAME)-frontend
+	@docker compose -p $(NAME) logs $(NAME)-frontend
 	@echo "\n--- PONG API SERVICE LOGS ---\n"
-	@docker compose logs $(NAME)-pong-api
+	@docker compose -p $(NAME) logs $(NAME)-pong-api
 	@echo "\n--- MATCHMAKING SERVICE LOGS ---\n"
-	@docker compose logs $(NAME)-matchmaking-1
+	@docker compose -p $(NAME) logs $(NAME)-matchmaking-1
 	@echo "\n--- AI OPPONENT SERVICE LOGS ---\n"
-	@docker compose logs $(NAME)-ai-opponent-1
+	@docker compose -p $(NAME) logs $(NAME)-ai-opponent-1
 	@echo "\n--- AI MESSAGES SERVICE LOGS ---\n"
-	@docker compose logs $(NAME)-ai-messages-1
+	@docker compose -p $(NAME) logs $(NAME)-ai-messages-1
 
 re: fclean all
+
 
 BUILD_INTERRUPTED   = $(YELLOW)[WARNING] Docker build interrupted$(RESET)
 CONTAINERS_STARTED  = $(GREEN)[SUCCESS] Containers started successfully$(RESET)
