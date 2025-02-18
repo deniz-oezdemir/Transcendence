@@ -20,7 +20,7 @@ clean:
 	@echo " $(CLEANED)"
 
 fclean:
-	@docker compose -f $(COMPOSE) down --rmi all --volumes --remove-orphans
+	@docker compose -p $(NAME) -f $(COMPOSE) down --rmi all --volumes --remove-orphans
 	@docker system prune --all --force --volumes
 	@echo " $(FULLY_CLEANED)"
 
