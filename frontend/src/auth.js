@@ -1,61 +1,75 @@
+import { createSignal } from '@reactivity';
+
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
 const port = 8007;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
 let userData = null;
-let isAuth = false;
+const [isAuth, setIsAuth] = createSignal(false);
 
 async function validateToken(token) {
-  if (!token) return false;
+  if (!token) return Promise.resolve(false);
 
-  try {
-    // console.log('Validating token...');
-    const response = await fetch(`${apiUrl}/profile/`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Token ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      console.warn('Invalid token, logging out...');
+  return fetch(`${apiUrl}/profile/`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Token ${token}`,
+      'Content-Type': 'application/json',
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        console.warn('Invalid token, logging out...');
+        localStorage.removeItem('authToken');
+        userData = null;
+        setIsAuth(false);
+        return false;
+      }
+      return response.json();
+    })
+    .then((data) => {
+      userData = { id: data.id, user: data.username };
+      setIsAuth(true);
+      return true;
+    })
+    .catch((error) => {
+      console.error('Token validation failed:', error);
       localStorage.removeItem('authToken');
       userData = null;
-      isAuth = false;
-      window.router.navigate('/login');
+      setIsAuth(false);
       return false;
-    }
-
-    const data = await response.json();
-    userData = { id: data.id, user: data.username };
-    isAuth = true;
-    return true;
-  } catch (error) {
-    console.error('Token validation failed:', error);
-    localStorage.removeItem('authToken');
-    userData = null;
-    isAuth = false;
-    window.router.navigate('/login');
-    return false;
-  }
+    });
 }
 
-async function getUser() {
+function getUser() {
   if (userData) return userData;
+
   const token = localStorage.getItem('authToken');
-  if (await validateToken(token)) return userData;
-  return null;
+  if (!token) return null;
+
+  let user = null;
+  validateToken(token).then((isValid) => {
+    if (isValid) {
+      user = userData;
+    }
+  });
+
+  return user;
 }
 
-async function checkAuth() {
-  if (isAuth) return true;
+function checkAuth() {
+  if (isAuth()) return true;
 
   const token = localStorage.getItem('authToken');
   if (!token) return false;
 
-  return await validateToken(token);
+  let isAuthenticated = false;
+  validateToken(token).then((isValid) => {
+    isAuthenticated = isValid;
+  });
+
+  return isAuthenticated;
 }
 
 async function login(username, password) {
@@ -68,12 +82,14 @@ async function login(username, password) {
       body: JSON.stringify({ username, password }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Logout failed');
+    }
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Login failed');
-
     userData = { id: data.id, user: data.username };
     localStorage.setItem('authToken', data.token);
-    isAuth = true;
+    setIsAuth(true);
     return { success: true };
   } catch (error) {
     console.error('Login error:', error);
@@ -83,6 +99,7 @@ async function login(username, password) {
 
 async function logout() {
   try {
+    console.log('logging out');
     const response = await fetch(`${apiUrl}/logout/`, {
       method: 'POST',
       headers: {
@@ -100,9 +117,12 @@ async function logout() {
   } finally {
     localStorage.removeItem('authToken');
     userData = null;
-    isAuth = false;
-    window.router.navigate('/login');
+    setIsAuth(false);
   }
 }
 
-export { logout, login, checkAuth, getUser };
+function getIsAuth() {
+  return { isAuth, setIsAuth };
+}
+
+export { logout, login, checkAuth, getUser, getIsAuth };
