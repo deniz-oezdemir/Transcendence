@@ -17,6 +17,7 @@ export default function GameMenu({ gameState, setGameState, network }) {
   const [activeMenu, setActiveMenu] = createSignal(null);
   const [currentButton, setCurrentButton] = createSignal(null);
   const matchesSig = network.matches;
+  const matchReadySig = network.matchReady;
   const tournamentsSig = network.tournaments;
   const connectionStatusSig = network.connectionStatus;
 
@@ -31,7 +32,9 @@ export default function GameMenu({ gameState, setGameState, network }) {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('resize', updateMenuRect);
             if (rafId) cancelAnimationFrame(rafId);
-            gameMenuRef.current.remove();
+            if (gameMenuRef.current) {
+              gameMenuRef.current.style.display = 'none';
+            }
           },
         },
       ],
@@ -53,6 +56,7 @@ export default function GameMenu({ gameState, setGameState, network }) {
     },
     {
       label: 'Online 1 vs 1',
+      action: () => network.getGames(),
       submenu: [
         {
           label: 'Create a Match',
@@ -62,11 +66,28 @@ export default function GameMenu({ gameState, setGameState, network }) {
         },
         {
           label: 'Refresh',
+          action: () => network.getGames(),
+        },
+        {
+          label: 'Delete all',
+          action: () => network.deleteAllGames(),
+        },
+        {
+          label: 'Start',
           action: () => {
-            network.getGames();
+            setGameState({
+              mode: 'Online 1 vs 1',
+              player: network.userState.player,
+              gameId: network.userState.userId,
+            });
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('resize', updateMenuRect);
+            if (rafId) cancelAnimationFrame(rafId);
+            if (gameMenuRef.current) {
+              gameMenuRef.current.style.display = 'none';
+            }
           },
         },
-        { label: 'Start', action: () => {} },
       ],
     },
     {
@@ -106,7 +127,10 @@ export default function GameMenu({ gameState, setGameState, network }) {
           createComponent('button', {
             content: option.label,
             events: {
-              click: (event) => handleMenuSetClick(event, option),
+              click: (event) => {
+                handleMenuSetClick(event, option);
+                option.action ? option.action(event) : null;
+              },
             },
           }),
         ],
@@ -132,6 +156,7 @@ export default function GameMenu({ gameState, setGameState, network }) {
           className: `${styles.threeDButtonSet}`,
           children: [
             createComponent('button', {
+              id: option.label === 'Start' ? 'Start' : '',
               className:
                 section.label === 'Online 1 vs 1' && option.label === 'Start'
                   ? styles.disabledButton
@@ -145,23 +170,36 @@ export default function GameMenu({ gameState, setGameState, network }) {
         });
         submenuSet.element.appendChild(li.element);
       });
+
       rovingIndex({ element: submenuSet.element, target: 'button' });
+
       if (section.label === 'Online 1 vs 1') {
-        const handleJoin = (match) => {
-          console.log('Join match', match);
-          setGameState({
-            mode: 'online',
-            player: 'p1',
-            gameId: match.match_id,
-          });
-          gameMenuRef.current.remove();
+        const handleJoin = (matchId) => {
+          network.joinMatch(matchId);
         };
 
         const matchListComponent = MatchList({
           matches: matchesSig[0],
+          readySignal: matchReadySig,
+          network: network,
           onJoin: handleJoin,
         });
+
         submenuSet.element.appendChild(matchListComponent.element);
+      }
+    }
+  });
+
+  createEffect(() => {
+    if (matchReadySig[0]() && network.userState.matchId) {
+      const startButton = submenuSet.element.querySelector('#Start');
+      if (startButton) {
+        startButton.classList.remove(styles.disabledButton);
+      }
+    } else {
+      const startButton = submenuSet.element.querySelector('#Start');
+      if (startButton) {
+        startButton.classList.add(styles.disabledButton);
       }
     }
   });

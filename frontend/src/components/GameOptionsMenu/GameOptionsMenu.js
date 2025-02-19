@@ -87,7 +87,6 @@ export default function GameOptionsMenu({
       aiToggle.element.style.display = 'none';
     } else if (mode == 'practice') {
       aiToggle.element.style.display = 'block';
-      // toogleSection.element.insertBefore(aiToggle.element, mouseToggle.element);
     }
   });
 

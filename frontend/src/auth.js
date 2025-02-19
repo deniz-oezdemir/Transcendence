@@ -7,6 +7,7 @@ const apiUrl = `${protocol}//${hostname}:${port}`;
 
 let userData = null;
 const [isAuth, setIsAuth] = createSignal(false);
+setIsAuth(await checkAuth());
 
 async function validateToken(token) {
   if (!token) return Promise.resolve(false);
@@ -29,7 +30,7 @@ async function validateToken(token) {
       return response.json();
     })
     .then((data) => {
-      userData = { id: data.id, user: data.username };
+      userData = { id: data.id, username: data.username };
       setIsAuth(true);
       return true;
     })
@@ -39,37 +40,29 @@ async function validateToken(token) {
       userData = null;
       setIsAuth(false);
       return false;
+    })
+    .finally(() => {
+      return true;
     });
 }
 
-function getUser() {
+async function getUser() {
   if (userData) return userData;
 
   const token = localStorage.getItem('authToken');
   if (!token) return null;
 
-  let user = null;
-  validateToken(token).then((isValid) => {
-    if (isValid) {
-      user = userData;
-    }
-  });
-
-  return user;
+  await validateToken(token);
+  return userData;
 }
 
-function checkAuth() {
+async function checkAuth() {
   if (isAuth()) return true;
 
   const token = localStorage.getItem('authToken');
   if (!token) return false;
 
-  let isAuthenticated = false;
-  validateToken(token).then((isValid) => {
-    isAuthenticated = isValid;
-  });
-
-  return isAuthenticated;
+  return await validateToken(token);
 }
 
 async function login(username, password) {
@@ -87,7 +80,7 @@ async function login(username, password) {
       throw new Error(errorData.message || 'Logout failed');
     }
     const data = await response.json();
-    userData = { id: data.id, user: data.username };
+    userData = { id: data.id, username: data.username };
     localStorage.setItem('authToken', data.token);
     setIsAuth(true);
     return { success: true };
