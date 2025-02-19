@@ -10,7 +10,6 @@ export default function Navbar({ location, navigate }) {
 
   const [theme, setThemeState] = createSignal(getPreferredTheme());
   const { isAuth, setIsAuth } = getIsAuth();
-  console.log(isAuth());
 
   const toggleTheme = () => {
     const newTheme = theme() === 'dark' ? 'light' : 'dark';

@@ -1,12 +1,26 @@
 import { createSignal } from '@reactivity';
+import pako from 'pako';
 
 export default class NetworkManager {
-  constructor() {
+  constructor(params) {
+    this.hostname = window.location.hostname;
+    this.protocol = window.location.protocol === 'htttps:' ? 'wss:' : 'ws:';
+
+    this.params = params;
+    this.userState = {
+      userId: null,
+      username: null,
+      matchId: null,
+      player: null,
+    };
     this.matchmakingSocket = null;
     this.gameEngineSocket = null;
     this.matchmakingState = {
       matches: [],
       tournaments: [],
+      connected: false,
+    };
+    this.gameEngineState = {
       connected: false,
     };
     this.gameId = null;
@@ -31,14 +45,21 @@ export default class NetworkManager {
     this.tournaments = createSignal([]);
     this.connectionStatus = createSignal('disconnected');
     this.currentGameId = createSignal(null);
+    this.matchReady = createSignal(false);
+  }
+
+  updateUserData() {
+    if (this.userState.userId !== this.params.user.id) {
+      this.userState.userId = this.params.user.id;
+      this.userState.username = this.params.user;
+    }
   }
 
   initMatchmaking(timeout = 5000) {
+    this.updateUserData();
     try {
-      const hostname = window.location.hostname;
-      const protocol = window.location.protocol === 'htttps:' ? 'wss:' : 'ws:';
       const port = 8001;
-      const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
+      const wsUrl = `${this.protocol}//${this.hostname}:${port}/ws/waiting-room/`;
 
       this.matchmakingSocket = new WebSocket(wsUrl);
       this.setupMatchmakingListeners();
@@ -68,7 +89,7 @@ export default class NetworkManager {
         const data = JSON.parse(event.data);
         this.handleMatchmakingMessage(data);
       } catch (error) {
-        this.handleError('Error parsing message', error);
+        this.handleError('Error parsing Match Making message', error);
       }
     };
 
@@ -83,12 +104,22 @@ export default class NetworkManager {
     switch (data.type) {
       case 'initial_games':
         this.updateGameLists(data.games);
+        break;
       case 'match_created':
+        if (this.userId === data.creator_id) {
+          this.currentGameId[1](data.id);
+          this.userState.matchId = data.id;
+          this.userState.player = 'p1';
+        }
+        this.updateGameLists(data.available_games);
+        break;
       case 'player_joined':
         this.handlePlayerJoined(data);
         break;
       case 'tournament_created':
+        break;
       case 'tournament_started':
+        break;
       case 'games_deleted':
         this.updateGameLists(data.available_games);
         break;
@@ -113,35 +144,19 @@ export default class NetworkManager {
   }
 
   handlePlayerJoined(data) {
-    if (!data.available_games) return;
-
-    const { matches, tournaments } = data.available_games;
-    const activeMatch = matches?.find((m) => m.status === 'active');
-    const activeTournament = tournaments?.find((t) => t.status === 'active');
-
-    if (activeMatch) {
-      this.currentGameId[1](activeMatch.match_id);
-      this.callbacks.onMatchFound?.({
-        gameId: activeMatch.match_id,
-        gameType: 'match',
-        creatorId: localStorage.getItem('userId'),
-        creatorName: localStorage.getItem('username'),
-      });
+    if (
+      data.game_type === 'match' &&
+      data.player_id === this.userState.userId
+    ) {
+      console.log('from player joined');
+      this.matchReady[1](true);
+      this.userState.player = 'p2';
+      this.userState.matchId = data.game_id;
     }
-
-    if (activeTournament) {
-      this.currentGameId[1](activeTournament.tournament_id);
-      this.callbacks.onTournamentFound?.({
-        gameId: activeTournament.tournament_id,
-        gameType: 'tournament',
-        maxPlayers: activeTournament.max_players,
-      });
-    }
-
     this.updateGameLists(data.available_games);
   }
 
-  sendMessage(message) {
+  sendMatchMakingMessage(message) {
     if (!this.matchmakingState.connected) {
       this.handleError('Not connected to matchmaking server');
       return;
@@ -164,34 +179,132 @@ export default class NetworkManager {
       this.matchmakingSocket.close();
       this.matchmakingSocket = null;
     }
-    this.connectionStatus[1]('disconnected');
     this.matchmakingState.connected = false;
-  }
-
-  initGameEngine(gameId) {
-    // Initialize connection to game engine with specific gameId
+    if (this.gameEngineSocket) {
+      this.gameEngineSocket.close();
+      this.gameEngineSocket = null;
+    }
+    this.gameEngineState.connected = false;
+    this.connectionStatus[1]('disconnected');
   }
 
   createMatch(type, playerId) {
     if (!this.matchmakingSocket) return;
-    this.sendMessage({
+    this.sendMatchMakingMessage({
       type: 'create_match',
       gameType: type,
       player_id: playerId,
     });
   }
 
-  joinMatch(gameId, playerId) {
+  joinMatch(matchId) {
     if (!this.matchmakingSocket) return;
-    this.sendMessage({
+    this.sendMatchMakingMessage({
       type: 'join_match',
-      match_id: gameId,
-      player_id: playerId,
+      match_id: matchId,
+      player_id: this.userState.userId,
     });
   }
 
   getGames() {
     if (!this.matchmakingSocket) return;
-    this.sendMessage({ type: 'get_games' });
+    this.sendMatchMakingMessage({ type: 'get_games' });
+  }
+
+  deleteAllGames() {
+    if (!this.matchmakingSocket) return;
+    this.sendMatchMakingMessage({ type: 'delete_all_games' });
+  }
+
+  initGameEngine(timeout = 5000) {
+    if (this.userState.matchId === null) {
+      this.handleError('No match found');
+      return;
+    }
+    try {
+      const port = 8002;
+      const wsUrl = `${this.protocol}//${this.hostname}:${port}/ws/game/${this.userState.matchId}/`;
+
+      this.gameEngineSocket = new WebSocket(wsUrl);
+      this.setupGameEngineListeners();
+
+      return Promise.race([
+        new Promise((resolve, reject) => {
+          this.gameEngineSocket.onopen = () => {
+            this.connectionStatus[1]('connected');
+            this.gameEngineState.connected = true;
+            resolve();
+          };
+          this.gameEngineSocket.onerror = reject;
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Connection timeout')), timeout)
+        ),
+      ]);
+    } catch (error) {
+      this.handleError('afailed to initialize matchmaking', error);
+      throw error;
+    }
+  }
+
+  setupGameEngineListeners() {
+    this.gameEngineSocket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        this.handleGameEngineMessage(data);
+      } catch (error) {
+        this.handleError('Error parsing Game Engine message', error);
+      }
+    };
+    this.gameEngineSocket.onclose = () => {
+      this.connectionStatus[1]('disconnected');
+      this.gameEngineState.connected = false;
+      this.callbacks.onStateChange?.({ status: 'disconnected' });
+    };
+  }
+
+  handleGameEngineMessage(data) {
+    switch (data.type) {
+      case 'game_state_update':
+        const binaryString = atob(data.state);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        const partialGameState = JSON.parse(
+          pako.inflate(bytes, { to: 'string' })
+        );
+
+        this.gameEngineState.state = {
+          ...this.gameEngineState.state,
+          ...partialGameState,
+        };
+        break;
+      default:
+        console.warn('Unknown message type:', data.type);
+    }
+  }
+
+  sendGameEngineMessage(message) {
+    if (!this.gameEngineState.connected) {
+      this.handleError('Not connected to matchmaking server');
+      return;
+    }
+    try {
+      this.gameEngineSocket.send(JSON.stringify(message));
+    } catch (error) {
+      this.handleError('Error sending message', error);
+    }
+  }
+
+  move(direction) {
+    if (!this.gameEngineSocket) return;
+    this.sendMatchMakingMessage({
+      type: 'move',
+      player_id: this.userState.userId,
+      direction: direction,
+    });
   }
 }

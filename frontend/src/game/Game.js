@@ -46,6 +46,8 @@ export default class Game {
   targetLookAt;
   orbitRadius;
   orbitSpeed;
+  userId;
+  isOnline;
   devMode = false;
 
   constructor(scene, camera, renderer, params) {
@@ -54,6 +56,10 @@ export default class Game {
     this.isMouseMode = false;
     this.isAiMode = true;
     this.paddleSpeed = 0.1;
+    this.isOnline = false;
+    this.lastSent = 0;
+    this.sendInterval = 50;
+    this.lastDirection = 0;
 
     this.scene = scene;
     this.camera = camera;
@@ -104,7 +110,7 @@ export default class Game {
     this.orbitSpeed = 0.2;
 
     // Websocket connections
-    this.network = new NetworkManager();
+    this.network = new NetworkManager(this.params);
   }
 
   setGameObjects() {
@@ -270,43 +276,113 @@ export default class Game {
     }
 
     if (this.isGameStart) {
-      console.log('game start');
-      const dt = delta * 0.1;
       let intersection = null;
       if (this.isMouseMode) {
         this.raycaster.setFromCamera(this.cursor, this.camera);
         intersection = this.raycaster.intersectObject(this.sceneEnv.water)?.[0];
       }
 
+      const dt = delta * 0.1;
       let prevX;
       let nextX;
-      for (let i = 0; i < 10; i++) {
-        prevX = this.pongTable.player1Paddle.mesh.position.x;
-        if (intersection) {
-          nextX = intersection.point.x;
+      if (!this.isOnline) {
+        for (let i = 0; i < 10; i++) {
+          prevX = this.pongTable.player1Paddle.mesh.position.x;
+          if (intersection) {
+            nextX = intersection.point.x;
+          } else {
+            if (this.keys['ArrowLeft']) {
+              nextX = prevX - this.paddleSpeed;
+            } else if (this.keys['ArrowRight']) {
+              nextX = prevX + this.paddleSpeed;
+            }
+          }
           this.pongTable.player1Paddle.setX(lerp(prevX, nextX, 0.5));
-        } else {
-          if (this.keys['ArrowLeft']) {
-            nextX = prevX - this.paddleSpeed;
-            this.pongTable.player1Paddle.setX(lerp(prevX, nextX, 0.5));
-          } else if (this.keys['ArrowRight']) {
-            nextX = prevX + this.paddleSpeed;
+
+          if (this.isAiMode) {
+            this.aiController.update(dt);
+          } else {
+            prevX = this.pongTable.player2Paddle.mesh.position.x;
+            if (this.keys['a']) {
+              nextX = prevX - this.paddleSpeed;
+              this.pongTable.player2Paddle.setX(lerp(prevX, nextX, 0.5));
+            } else if (this.keys['d']) {
+              nextX = prevX + this.paddleSpeed;
+              this.pongTable.player2Paddle.setX(lerp(prevX, nextX, 0.5));
+            }
+          }
+          this.pongTable.ball.update(dt);
+        }
+      } else {
+        console.log(this.network.gameEngineState);
+        for (let i = 0; i < 10; i++) {
+          let direction = 0;
+          prevX = this.pongTable.player1Paddle.mesh.position.x;
+          if (intersection) {
+            nextX = intersection.point.x;
+          } else {
+            if (this.keys['ArrowLeft']) {
+              nextX = prevX - this.paddleSpeed;
+              direction = -1;
+            } else if (this.keys['ArrowRight']) {
+              nextX = prevX + this.paddleSpeed;
+              direction = 1;
+            }
             this.pongTable.player1Paddle.setX(lerp(prevX, nextX, 0.5));
           }
-        }
-        if (this.isAiMode) {
-          this.aiController.update(dt);
-        } else {
-          prevX = this.pongTable.player2Paddle.mesh.position.x;
-          if (this.keys['a']) {
-            nextX = prevX - this.paddleSpeed;
+          if (
+            this.network.gameEngineState.state &&
+            elapsedTime - this.lastSent >= this.sendInterval
+          ) {
+            const serverX =
+              this.network.gameEngineState.state.players[0].player_position -
+              this.params.dimensions.boundaries.x;
+            this.pongTable.player1Paddle.setX(
+              lerp(this.pongTable.player1Paddle.mesh.position.x, serverX, 0.2)
+            );
+          }
+          if (
+            direction !== this.lastDirection ||
+            elapsedTime - this.lastSent >= this.sendInterval
+          ) {
+            this.network.move(direction);
+            this.lastDirection = direction;
+            this.lastSent = elapsedTime;
+          }
+
+          if (this.isAiMode) {
+            prevX = this.pongTable.player2Paddle.mesh.position.x;
+            nextX =
+              this.network.gameEngineState.state.player_1_position -
+              this.params.dimensions.boundaries.x;
             this.pongTable.player2Paddle.setX(lerp(prevX, nextX, 0.5));
-          } else if (this.keys['d']) {
-            nextX = prevX + this.paddleSpeed;
+          } else {
+            if (this.keys['a']) {
+              nextX = prevX - this.paddleSpeed;
+            } else if (this.keys['d']) {
+              nextX = prevX + this.paddleSpeed;
+            }
             this.pongTable.player2Paddle.setX(lerp(prevX, nextX, 0.5));
           }
+          if (this.gameState) {
+            this.pongTable.ball.setX(
+              lerp(
+                this.pongTable.ball.mesh.position.x,
+                this.network.gameEngineState.state.ball_x_position -
+                  this.params.dimensions.boundaries.x,
+                0.2
+              )
+            );
+            this.pongTable.ball.setZ(
+              lerp(
+                this.pongTable.ball.mesh.position.z,
+                this.network.gameEngineState.state.ball_y_position -
+                  this.params.dimensions.boundaries.y,
+                0.2
+              )
+            );
+          }
         }
-        this.pongTable.ball.update(dt);
       }
 
       this.fireworks.update(delta);
@@ -333,11 +409,11 @@ export default class Game {
   dispose() {
     window.removeEventListener('mousemove', this.handleMouseMove);
 
-    this.network.disconnect();
+    if (this.network) this.network.disconnect();
 
-    this.fireworks.dispose();
-    this.neonRings.dispose();
+    if (this.fireworks) this.fireworks.dispose();
+    if (this.neonRings) this.neonRings.dispose();
 
-    this.renderer.dispose();
+    // if (this.renderer) this.renderer.dispose();
   }
 }

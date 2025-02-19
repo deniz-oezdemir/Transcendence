@@ -22,14 +22,13 @@ import Stats from 'three/addons/libs/stats.module.js';
 import Game from '@/game/Game.js';
 import GameOptionsMenu from '@/components/GameOptionsMenu/GameOptionsMenu.js';
 import GameMenu from '@/components/GameMenu/GameMenu.js';
+import { getUser } from '@/auth.js';
 
 import styles from './PongGame3DPage.module.css';
 
 export default function PongGame3DPage() {
   const cleanup = createCleanupContext();
   const mount = createMountContext();
-  const gameRef = { current: null };
-  const clock = new Clock();
   const container = window.document.querySelector('.container');
 
   // Config params
@@ -91,7 +90,20 @@ export default function PongGame3DPage() {
       pongLookAt: new Vector3(0, 0, 0),
       startPosition: new Vector3(-256, 96, 0),
     },
+    user: {
+      id: null,
+      name: null,
+    },
   };
+
+  createEffect(async () => {
+    const user = await getUser();
+    params.user.id = user.id;
+    params.user.name = user.username;
+  });
+
+  const gameRef = { current: null };
+  const clock = new Clock();
 
   const scene = new Scene();
   scene.fog = new FogExp2(params.environment.fog.color, 0.001);
@@ -184,13 +196,17 @@ export default function PongGame3DPage() {
     }
   });
 
-  createEffect(() => {
+  createEffect(async () => {
     const state = gameState();
 
-    if (state.mode) {
-      console.log('Starting game with mode:', state.mode);
-
+    if (state.mode == 'practice') {
       game.isTransitioning = true;
+      game.isOnline = false;
+    } else if (state.mode == 'Online 1 vs 1') {
+      await game.network.initGameEngine();
+      game.isTransitioning = true;
+      game.isOnline = true;
+      game.isAiMode = true;
     }
   });
 
