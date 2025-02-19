@@ -28,7 +28,7 @@ export default function OnlinePongGamePage({ navigate }) {
     game: { width: 60, height: 40 },
     paddle: { width: 1, height: 5, offset: 2 },
     ball: { radius: 1 },
-    scaleFactor: 10, // TODO: what is this variable supposed to do??
+    scaleFactor: 10,
   });
   const [gamePositions, setGamePositions] = createSignal({
     ball: { x: 30, y: 20 },
