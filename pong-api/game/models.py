@@ -14,12 +14,12 @@ class GameState(models.Model):
     max_score = models.PositiveIntegerField(default=3)
     is_game_running = models.BooleanField(default=False)
     is_game_ended = models.BooleanField(default=False)
-    game_height = models.IntegerField(default=400)
-    game_width = models.IntegerField(default=600)
-    paddle_height = models.IntegerField(default=80)
-    paddle_width = models.IntegerField(default=15)
-    paddle_offset = models.IntegerField(default=20)
-    move_step = models.IntegerField(default=10)
+    game_height = models.IntegerField(default=40)
+    game_width = models.IntegerField(default=60)
+    paddle_height = models.IntegerField(default=5)
+    paddle_width = models.IntegerField(default=1)
+    paddle_offset = models.IntegerField(default=2)
+    move_step = models.IntegerField(default=1)
 
     # Players
     player_1_id = models.IntegerField(null=True, blank=True)
@@ -28,16 +28,16 @@ class GameState(models.Model):
     player_2_name = models.CharField(max_length=100, default="Player 2")
     player_1_score = models.IntegerField(default=0)
     player_2_score = models.IntegerField(default=0)
-    player_1_position = models.FloatField(default=160)
-    player_2_position = models.FloatField(default=160)
+    player_1_position = models.FloatField(default=15)
+    player_2_position = models.FloatField(default=15)
 
     # Ball state
-    ball_radius = models.IntegerField(default=10)
-    ball_x_position = models.FloatField(default=290)
-    ball_y_position = models.FloatField(default=190)
-    ball_x_direction = models.FloatField(default=3)
-    ball_y_direction = models.FloatField(default=3)
-    ball_speed = models.FloatField(default=12)
+    ball_radius = models.IntegerField(default=1)
+    ball_x_position = models.FloatField(default=30)
+    ball_y_position = models.FloatField(default=20)
+    ball_x_direction = models.FloatField(default=0.3)
+    ball_y_direction = models.FloatField(default=0.3)
+    ball_speed = models.FloatField(default=1.2)
 
     objects = GameStateManager()
 
