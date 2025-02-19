@@ -20,10 +20,10 @@ export default function Navbar({ location, navigate }) {
         router.navigate('/login');
       } catch (error) {
         console.error('Error logging out:', error);
-        navigate('/profile');
+        router.navigate('/profile');
       }
     } else {
-      navigate('/login');
+      router.navigate('/login');
     }
   };
 
