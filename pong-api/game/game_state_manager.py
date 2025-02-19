@@ -71,8 +71,8 @@ class GameStateManager:
                 logger.debug(f"Updated game state for game_id: {self.game_id}")
             if self.game_state.is_game_ended:
                 logger.info(f"Ending game state for game_id: {self.game_id}")
-                await self.send_connection_close(channel_layer, game_group_name)
                 await self.send_game_result_to_matchmaking()
+                await self.send_connection_close(channel_layer, game_group_name)
 
     def calculate_diffs(self, current_state, previous_state):
         diffs = {}
@@ -162,7 +162,7 @@ class GameStateManager:
         """Sends game result to matchmaking service when game ends"""
         if not self.match_result_sent:
             self.match_result_sent = True
-            logger.debug(f"Preparing to send game result for game {self.game_id}")
+            logger.info(f"Preparing to send game result for game {self.game_id}")
             matchmaking_url = (
                 f"http://matchmaking:8000/api/match/{self.game_id}/result/"
             )
@@ -194,7 +194,7 @@ class GameStateManager:
                         response_text = await response.text()
                         logger.debug(f"Matchmaking response: {response_text}")
                         if response.status == 200:
-                            logger.debug(
+                            logger.info(
                                 f"Game {self.game_id} result successfully sent to matchmaking. Response: {response_text}"
                             )
                             try:
