@@ -2,24 +2,23 @@ import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
 import styles from './WaitingRoom.module.css';
 
-export default function WaitingRoom({ onStartGame }) {
+export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType }) {
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
-  const [hasGames, setHasGames] = createSignal(false);
   const [socket, setSocket] = createSignal(null);
   
   const hostname = window.location.hostname;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
   const port = 8001;
   const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
-  const ws = new WebSocket(wsUrl);
 
   createEffect(() => {
     const ws = new WebSocket(wsUrl);
-    //const ws = new WebSocket('ws://matchmaking:8001/ws/waiting-room/');
   
     ws.onopen = () => {
       console.log('Connected to matchmaking service');
+      console.log('username:', localStorage.getItem('username'));
+      console.log('userId:', localStorage.getItem('userId'));
       setSocket(ws);
     };
   
@@ -33,13 +32,31 @@ export default function WaitingRoom({ onStartGame }) {
             setMatches(data.games.matches || []);
             setTournaments(data.games.tournaments || []);
             break;
-
+          
           case 'match_created':
           case 'tournament_created':
-          case 'tournament_started':
           case 'games_deleted':
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
+            if (data.is_local_match === true) {
+              console.log('Local match created:', data);
+              setGameId(data.id);
+              setCreatorId(data.creator_id);
+              setCreatorName(data.creator_name);
+              setPlayerId(data.guest_id);
+              setPlayerName(data.guest_name);
+              setGameType('local_match');
+              onStartGame(data.game, data.id);
+            } else if (data.is_ai_match === true) {
+              console.log('AI match created:', data);
+              setGameId(data.id);
+              setCreatorId(data.available_games.matches[0].player_1_id);
+              setCreatorName(data.available_games.matches[0].player_1_name);
+              setPlayerId(data.available_games.matches[0].player_2_id);
+              setPlayerName(data.available_games.matches[0].player_2_name);
+              setGameType('AI_match');
+              onStartGame(data.game, data.id);
+            }
             break;
           
             case 'player_joined':
@@ -50,7 +67,14 @@ export default function WaitingRoom({ onStartGame }) {
                   switch (data.available_games.matches[0].status) {
                     case 'active':
                       console.log('Match Started');
-                      onStartGame(data.game);
+                      setGameId(data.game_id);
+                      setCreatorId(data.available_games.matches[0].player_1_id);
+                      setCreatorName(data.available_games.matches[0].player_1_name);
+                      setPlayerId(data.available_games.matches[0].player_2_id);
+                      setPlayerName(data.available_games.matches[0].player_2_name);
+                      setGameType('match');
+                      onStartGame(data.game, data.game_id);
+
                       break;
                     case 'pending':
                       console.log('Match Pending');
@@ -64,10 +88,6 @@ export default function WaitingRoom({ onStartGame }) {
             
                 if (data.available_games.tournaments && data.available_games.tournaments.length > 0) {
                   switch (data.available_games.tournaments[0].status) {
-                    case 'active':
-                      console.log('Tournament Started');
-                      onStartGame(data.game);
-                      break;
                     case 'pending':
                       console.log('Tournament Pending');
                       break;
@@ -81,6 +101,11 @@ export default function WaitingRoom({ onStartGame }) {
                 console.log('No available games data found');
               }
             
+              break;
+            
+            case 'tournament_started':
+              console.log('Tournament Started TEST');
+              
               break;
 
           case 'error':
@@ -119,12 +144,31 @@ export default function WaitingRoom({ onStartGame }) {
     }));
   };
 
+  const aiGame = () => {
+    if (!socket()) return;
+    socket().send(JSON.stringify({
+      type: 'create_AI_match',
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
+    }));
+  };
+
+  const createLocalMatch = () => {
+    if (!socket()) return;
+    socket().send(JSON.stringify({
+      type: 'create_local_match',
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
+    }));
+  };
+
   const createRegularMatch = () => {
     if (!socket()) return;
     socket().send(JSON.stringify({
       gameType: 'match',
       type: 'create_match',
-      player_id: 1
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -133,7 +177,8 @@ export default function WaitingRoom({ onStartGame }) {
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 4,
-      player_id: 2
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -142,7 +187,8 @@ export default function WaitingRoom({ onStartGame }) {
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 8,
-      player_id: 1
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -151,7 +197,8 @@ export default function WaitingRoom({ onStartGame }) {
     socket().send(JSON.stringify({
       type: 'join_match',
       match_id: matches()[0].match_id,
-      player_id: 2
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -160,6 +207,8 @@ export default function WaitingRoom({ onStartGame }) {
     socket().send(JSON.stringify({
       type: 'join_tournament',
       tournament_id: tournaments()[0].tournament_id,
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
       player_id: 4
     }));
   };
@@ -217,6 +266,7 @@ export default function WaitingRoom({ onStartGame }) {
       }).element);
   });
 
+  // dropdown for game creation type
   const creatGame = createComponent("ul");
   createEffect(() => {
     creatGame.element.innerHTML = '';
@@ -258,6 +308,26 @@ export default function WaitingRoom({ onStartGame }) {
     }).element);
   });
 
+  const botMatch = createComponent("ul");
+  createEffect(() => {
+    botMatch.element.innerHTML = '';
+    botMatch.element.appendChild(createComponent('button', {
+      className: styles.createButton,
+      content: 'Bot Match',
+      events: { click: aiGame }
+    }).element);
+  });
+
+  const localGame = createComponent("ul");
+  createEffect(() => {
+    localGame.element.innerHTML = '';
+    localGame.element.appendChild(createComponent('button', {
+      className: styles.createButton,
+      content: 'Local Game',
+      events: { click: createLocalMatch }
+    }).element);
+  });
+
   const checkAvailableGames = createComponent("ul");
   createEffect(() => {
     checkAvailableGames.element.innerHTML = '';
@@ -273,6 +343,8 @@ export default function WaitingRoom({ onStartGame }) {
     className: styles.waitingRoom,
     children: [
       creatGame,
+      localGame,
+      botMatch,
       checkAvailableGames,
       deleteAllGames,
       createComponent('div', {

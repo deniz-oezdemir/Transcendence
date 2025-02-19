@@ -5,6 +5,7 @@ import WaitingRoom from '@/components/WaitingRoom/WaitingRoom';
 import Score from '@/components/Score/Score';
 import GameBoard from '@/components/GameBoard/GameBoard';
 import GameControls from '@/components/GameControls/GameControls';
+import pako from 'pako';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // Use HTTP(S) for fetch requests
@@ -19,17 +20,22 @@ export default function OnlinePongGamePage({ navigate }) {
   const [isLoading, setIsLoading] = createSignal(true);
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameId, setGameId] = createSignal(-1);
+  const [CreatorId, setCreatorId] = createSignal(-1);
+  const [playerId, setPlayerId] = createSignal(-1);
+  const [CreatorName, setCreatorName] = createSignal('');
+  const [playerName, setPlayerName] = createSignal('');
+  const [gameType, setGameType] = createSignal('');
   const [gameDimensions, setGameDimensions] = createSignal({
-    game: { width: 600, height: 400 },
-    paddle: { width: 15, height: 80, offset: 20 },
-    ball: { radius: 10 },
-    scaleFactor: 1,
+    game: { width: 60, height: 40 },
+    paddle: { width: 1, height: 5, offset: 2 },
+    ball: { radius: 1 },
+    scaleFactor: 10,
   });
   const [gamePositions, setGamePositions] = createSignal({
-    ball: { x: 290, y: 190 },
-    ballDirection: { x: 3, y: 3 },
-    player1Position: 160,
-    player2Position: 160,
+    ball: { x: 30, y: 20 },
+    ballDirection: { x: 0.3, y: 0.3 },
+    player1Position: 15,
+    player2Position: 15,
   });
   const [gameScore, setGameScore] = createSignal({
     player1: { score: 0 },
@@ -87,98 +93,17 @@ export default function OnlinePongGamePage({ navigate }) {
    * Sets up initial game state and dimensions
    */
   async function initializeGame() {
-    // if (!checkAuth()) {
-    //   window.router.navigate('/login');
-    // }
-    // const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${apiUrl}/game/create_game/`, {
-        method: 'POST',
-        headers: {
-          // 'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: 1,
-          max_score: 3,
-          player_1_id: 1,
-          player_1_name: 'Player One',
-          player_2_id: 2,
-          player_2_name: 'Player Two',
-        }),
-      });
-
-      if (!response.ok) {
-        await endGame(1);
-        throw new Error(
-          `Failure to create game: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const gameData = await response.json();
-
-      // Calculate Responsive Dimensions
-      const responsiveDimensions = calculateResponsiveDimensions({
-        game: {
-          width: gameData.game_width,
-          height: gameData.game_height,
-        },
-        paddle: {
-          width: gameData.paddle_width,
-          height: gameData.paddle_height,
-          offset: gameData.paddle_width,
-        },
-        ball: {
-          radius: gameData.ball_radius,
-        },
-        scaleFactor: 1,
-      });
-
-      // Update Game State
-      setGameId(gameData.id);
-      setGameDimensions(responsiveDimensions);
-
-      setGamePositions({
-        ball: {
-          x: Math.floor(
-            gameData.ball_x_position * responsiveDimensions.scaleFactor
-          ),
-          y: Math.floor(
-            gameData.ball_y_position * responsiveDimensions.scaleFactor
-          ),
-        },
-        ballDirection: {
-          x: gameData.ball_x_direction,
-          y: gameData.ball_y_direction,
-        },
-        player1Position: Math.floor(
-          gameData.player_1_position * responsiveDimensions.scaleFactor
-        ),
-        player2Position: Math.floor(
-          gameData.player_2_position * responsiveDimensions.scaleFactor
-        ),
-      });
-
-      setGameScore({
-        player1: { score: 0 },
-        player2: { score: 0 },
-        maxScore: gameData.max_score,
-        players: {
-          player1: {
-            id: gameData.player_1_id,
-            name: gameData.player_1_name,
-          },
-          player2: {
-            id: gameData.player_2_id,
-            name: gameData.player_2_name,
-          },
-        },
-      });
-      console.log('Create Game: Success:', gameData);
-    } catch (error) {
-      console.error('Game initialization failed:', error);
-      navigate('/');
-    }
+    console.log('Initializing Game...');
+    setGameScore({
+      player1: { score: 0 },
+      player2: { score: 0 },
+      maxScore: 3,
+      players: {
+        player1: { id: parseInt(CreatorId()), name: CreatorName() },
+        player2: { id: parseInt(playerId()), name: playerName() },
+      },
+    });
+    console.log('Game Initialized:', gameId(), CreatorId(), CreatorName(), playerId(), playerName(), gameType());
   }
 
   /**
@@ -187,26 +112,28 @@ export default function OnlinePongGamePage({ navigate }) {
    */
   async function toogleGame() {
     try {
-      const response = await fetch(
-        `${apiUrl}/game/toggle_game/${gameId()}/`,
-        {
-          method: 'PUT',
-        }
+      console.log('Toggling Game...', gameId());
+      if (websocket() === null) connectWebSocket();
+      const ws = websocket();
+      if (ws === null) return;
+
+      ws.send(
+        JSON.stringify({
+          action: 'toggle',
+        })
       );
+      console.log('Toggle Game: Success:', ws);
+      /*ws.onopen = () => {
+        console.log('Connected to matchmaking service');
+        connectWebSocket();
+        const updatedGameState = {
+          is_game_running: true,
+        };
+        setIsGameRunning(updatedGameState.is_game_running);
+        console.log('Toggle Game: Success:', updatedGameState);
 
-      if (!response.ok) {
-        throw new Error(
-          `Failure to toggle game: ${response.status} ${response.statusText}`
-        );
-      }
 
-      const updatedGameState = await response.json();
-      setIsGameRunning(updatedGameState.is_game_running);
-      console.log('Toggle Game: Success:', updatedGameState);
-
-      if (updatedGameState.is_game_running) {
-        if (websocket() === null) connectWebSocket();
-      }
+      };*/
     } catch (error) {
       console.error('Toggle game failed:', error);
     }
@@ -218,32 +145,17 @@ export default function OnlinePongGamePage({ navigate }) {
    * @returns {Promise<boolean>} Success status of game deletion
    */
   async function endGame(id) {
-    try {
-      const response = await fetch(
-        `${apiUrl}/game/delete_game/${id}/`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (response.ok) {
-        console.log('Delete Game: Success:', response);
-      } else {
-        throw new Error(
-          `Failure to delete game: ${response.status} ${response.statusText}`
-        );
-      }
-
-      if (websocket()) {
-        websocket().close();
-        setWebsocket(null);
-      }
-      console.log('WebSocket closed.');
-
-      return true;
-    } catch (error) {
-      console.error('Game deletion failed:', error);
-      return false;
+    if (id < 0) return false;
+    console.log('Ending Game:', id);
+    if (websocket()) {
+      websocket().close();
+      setWebsocket(null);
     }
+    console.log('End Game Is Waiting Room:', isWaitingRoom());
+    if (!isWaitingRoom()) {
+      setWaitingRoom(true);
+    }
+    return true;
   }
 
   /**
@@ -256,32 +168,72 @@ export default function OnlinePongGamePage({ navigate }) {
       console.log('WebSocket connected.');
       setWebsocket(ws);
     };
+    let currentGameState = {}; // Maintain the current game state
 
     ws.onmessage = function (event) {
       const data = JSON.parse(event.data);
-      // console.log('Data from server:', data);
       if (data.type === 'game_state_update') {
-        const { scaleFactor } = gameDimensions();
-        setGamePositions((prevPositions) => ({
-          ...prevPositions,
-          player1Position: data.state.player_1_position * scaleFactor,
-          player2Position: data.state.player_2_position * scaleFactor,
-          ball: {
-            x: data.state.ball_x_position * scaleFactor,
-            y: data.state.ball_y_position * scaleFactor,
-          },
-        }));
-        const currentGameScore = gameScore();
-        if (
-          data.state.player_1_score !== currentGameScore.player1.score ||
-          data.state.player_2_score !== currentGameScore.player2.score
-        ) {
-          setGameScore((prevScore) => ({
-            ...prevScore,
-            player1: { score: data.state.player_1_score },
-            player2: { score: data.state.player_2_score },
+        try {
+          // console.log('Received encoded data: ', data)
+          const binaryString = atob(data.state);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const partialGameState = JSON.parse(
+            pako.inflate(bytes, { to: 'string' })
+          );
+          // Merge partial update into the current game state
+          currentGameState = { ...currentGameState, ...partialGameState };
+          // console.log('Data from server game_state now:', currentGameState);
+
+          const { scaleFactor } = gameDimensions();
+          setGamePositions((prevPositions) => ({
+            ...prevPositions,
+            player1Position: currentGameState.player_1_position * scaleFactor,
+            player2Position: currentGameState.player_2_position * scaleFactor,
+            ball: {
+              x: currentGameState.ball_x_position * scaleFactor,
+              y: currentGameState.ball_y_position * scaleFactor,
+            },
+            ballDirection: {
+              x: currentGameState.ball_x_direction * scaleFactor,
+              y: currentGameState.ball_y_direction * scaleFactor,
+            },
           }));
+          setGameDimensions((prevDimensions) => ({
+            ...prevDimensions,
+            game: {
+              width: currentGameState.game_width * scaleFactor,
+              height: currentGameState.game_height * scaleFactor,
+            },
+            paddle: {
+              width: currentGameState.paddle_width * scaleFactor,
+              height: currentGameState.paddle_height * scaleFactor,
+              offset: currentGameState.paddle_offset * scaleFactor,
+            },
+            ball: {
+              radius: currentGameState.ball_radius * scaleFactor,
+            },
+          }));
+          const currentScore = gameScore();
+          if (
+            currentGameState.player_1_score !== currentScore.player1.score ||
+            currentGameState.player_2_score !== currentScore.player2.score
+          ) {
+            setGameScore((prevScore) => ({
+              ...prevScore,
+              player1: { score: currentGameState.player_1_score },
+              player2: { score: currentGameState.player_2_score },
+            }));
+          }
+        } catch (error) {
+          console.error('Error processing game state update:', error);
         }
+      } else if (data.type === 'connection_closed') {
+        console.log('Connection closed by server.');
+        ws.close();
       }
     };
 
@@ -305,7 +257,7 @@ export default function OnlinePongGamePage({ navigate }) {
   createEffect(() => {
     if (gameId() >= 0) return;
     setIsLoading(true);
-    initializeGame();
+    //initializeGame();
     setIsLoading(false);
   });
 
@@ -323,6 +275,7 @@ export default function OnlinePongGamePage({ navigate }) {
     let now = performance.now();
     if (now - lastSentTime < sendRate) return;
     lastSentTime = now;
+    //const ws = websocket();
 
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();
@@ -403,8 +356,9 @@ export default function OnlinePongGamePage({ navigate }) {
       const waitingroom = WaitingRoom({
         onStartGame: () => {
           setWaitingRoom(false);
+          initializeGame();
           toogleGame();
-        },
+        }, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType
       });
       content.element.appendChild(waitingroom.element);
     } else {
@@ -417,18 +371,6 @@ export default function OnlinePongGamePage({ navigate }) {
       content.element.appendChild(score.element);
       content.element.appendChild(board.element);
       content.element.appendChild(controls.element);
-
-      /*const waitingroom = WaitingRoom();
-      const score = Score({ gameScore });
-      const board = GameBoard({
-        gameDimensions: gameDimensions,
-        gamePositions: gamePositions,
-      });
-      const controls = GameControls();
-      content.element.appendChild(waitingroom.element);
-      content.element.appendChild(score.element);
-      content.element.appendChild(board.element);
-      content.element.appendChild(controls.element);*/
     }
     return content;
   };

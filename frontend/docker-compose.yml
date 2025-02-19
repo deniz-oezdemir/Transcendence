@@ -13,6 +13,7 @@ services:
     ports:
       - '8005:${PORT:-80}'
       - '4430:443'
+      - '35729:35729' # Livereload port
     stdin_open: ${STDIN_ENABLED:-true}
     tty: ${TTY_ENABLED:-true}
     networks:

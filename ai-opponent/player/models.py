@@ -17,7 +17,7 @@ class AIPlayer(models.Model):
 
     # Overloaded functions for Redis use
     def save(self, *args, **kwargs):
-        cache_key = f"ai_player_{self.ai_player_id}"
+        cache_key = f"{self.ai_player_id}"
         ai_player_data = {
             "ai_player_id": self.ai_player_id,
             "target_game_id": self.target_game_id,
@@ -27,13 +27,13 @@ class AIPlayer(models.Model):
 
     def delete(self, *args, **kwargs):
         if settings.USE_REDIS:
-            cache_key = f"ai_player_{self.ai_player_id}"
+            cache_key = f"{self.ai_player_id}"
             cache.delete(cache_key)
             logger.info(f"Deleted AI player from cache with key {cache_key}")
 
     @classmethod
     def from_cache(cls, player_id):
-        cache_key = f"ai_player_{player_id}"
+        cache_key = f"{player_id}"
         ai_player_data = cache.get(cache_key)
         if ai_player_data:
             if isinstance(ai_player_data, str):

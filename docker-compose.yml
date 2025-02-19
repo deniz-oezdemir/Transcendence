@@ -32,7 +32,7 @@ services:
     restart: on-failure
     depends_on:
       - accounts-postgres
-  
+
   accounts-postgres:
     extends:
       file: ./user-access-management/docker/docker-compose.yml
@@ -40,6 +40,8 @@ services:
     networks:
       - accounts-internal
     restart: on-failure
+    depends_on:
+      - accounts-postgres
 
   # Frontend
   frontend:
@@ -127,7 +129,6 @@ services:
     networks:
       - matchmaking_internal
     restart: on-failure
-
   # AI messages service (DistilGPT2)
   # ai-messages:
   #   extends:

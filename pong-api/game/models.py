@@ -1,3 +1,4 @@
+import msgpack
 import json
 from django.db import models
 from django.conf import settings
@@ -13,12 +14,12 @@ class GameState(models.Model):
     max_score = models.PositiveIntegerField(default=3)
     is_game_running = models.BooleanField(default=False)
     is_game_ended = models.BooleanField(default=False)
-    game_height = models.IntegerField(default=400)
-    game_width = models.IntegerField(default=600)
-    paddle_height = models.IntegerField(default=80)
-    paddle_width = models.IntegerField(default=15)
-    paddle_offset = models.IntegerField(default=20)
-    move_step = models.IntegerField(default=10)
+    game_height = models.IntegerField(default=40)
+    game_width = models.IntegerField(default=60)
+    paddle_height = models.IntegerField(default=5)
+    paddle_width = models.IntegerField(default=1)
+    paddle_offset = models.IntegerField(default=2)
+    move_step = models.IntegerField(default=1)
 
     # Players
     player_1_id = models.IntegerField(null=True, blank=True)
@@ -27,16 +28,16 @@ class GameState(models.Model):
     player_2_name = models.CharField(max_length=100, default="Player 2")
     player_1_score = models.IntegerField(default=0)
     player_2_score = models.IntegerField(default=0)
-    player_1_position = models.FloatField(default=160)
-    player_2_position = models.FloatField(default=160)
+    player_1_position = models.FloatField(default=15)
+    player_2_position = models.FloatField(default=15)
 
     # Ball state
-    ball_radius = models.IntegerField(default=10)
-    ball_x_position = models.FloatField(default=290)
-    ball_y_position = models.FloatField(default=190)
-    ball_x_direction = models.FloatField(default=3)
-    ball_y_direction = models.FloatField(default=3)
-    ball_speed = models.FloatField(default=12)
+    ball_radius = models.IntegerField(default=1)
+    ball_x_position = models.FloatField(default=30)
+    ball_y_position = models.FloatField(default=20)
+    ball_x_direction = models.FloatField(default=0.3)
+    ball_y_direction = models.FloatField(default=0.3)
+    ball_speed = models.FloatField(default=1.2)
 
     objects = GameStateManager()
 
@@ -70,8 +71,9 @@ class GameState(models.Model):
             "paddle_offset": self.paddle_offset,
             "move_step": self.move_step,
         }
-        cache.set(cache_key, json.dumps(game_state_data), timeout=None)
-        logger.info(f"Saved game state to cache with key {cache_key}")
+        packed_data = msgpack.packb(game_state_data)
+        cache.set(cache_key, packed_data, timeout=None)
+        logger.debug(f"Saved game state to cache with key {cache_key}: {packed_data}")
 
     def delete(self, *args, **kwargs):
         if settings.USE_REDIS:
@@ -82,32 +84,46 @@ class GameState(models.Model):
     @classmethod
     def from_cache(cls, game_id):
         cache_key = f"{game_id}"
-        game_state_data = cache.get(cache_key)
-        if game_state_data:
-            if isinstance(game_state_data, str):
-                game_state_dict = json.loads(game_state_data)
-            else:
-                game_state_dict = {
-                    k: v
-                    for k, v in game_state_data.__dict__.items()
-                    if not k.startswith("_")
-                }
-            return cls(**game_state_dict)
+        packed_data = cache.get(cache_key)
+        logger.debug(f"Retrieved packed_data from cache: {packed_data}")
+        logger.debug(f"Type of packed_data: {type(packed_data)}")
+        if packed_data:
+            try:
+                game_state_data = msgpack.unpackb(packed_data, raw=False)
+                logger.debug(
+                    f"Retrieved game state from cache with key {cache_key}: {game_state_data}"
+                )
+                return cls(**game_state_data)
+            except Exception as e:
+                logger.error(f"Error unpacking game_state_data: {e}")
+                raise
         return None
 
     def __str__(self) -> str:
         return (
-            f"Ball at position:\n"
-            f"  x: {self.ball_x_position}\n"
-            f"  y: {self.ball_y_position}\n"
-            f"With direction:\n"
-            f"  x: {self.ball_x_direction}\n"
-            f"  y: {self.ball_y_direction}\n"
-            f"And speed:\n"
-            f"  y: {self.ball_speed}\n"
-            f"Player 1 at position: {self.player_1_name} (ID: {self.player_1_id}, Position: {self.player_1_position}, Score: {self.player_1_score})\n"
-            f"Player 2 at position: {self.player_2_name} (ID: {self.player_2_id}, Position: {self.player_2_position}, Score: {self.player_2_score})\n"
-            f"Game status:\n"
-            f"  is_game_running: {self.is_game_running}\n"
-            f"  is_game_ended: {self.is_game_ended}"
+            "game_state_data = {\n"
+            f'    "id": {self.id},\n'
+            f'    "max_score": {self.max_score},\n'
+            f'    "is_game_running": {self.is_game_running},\n'
+            f'    "is_game_ended": {self.is_game_ended},\n'
+            f'    "player_1_id": {self.player_1_id},\n'
+            f'    "player_2_id": {self.player_2_id},\n'
+            f'    "player_1_name": {self.player_1_name},\n'
+            f'    "player_2_name": {self.player_2_name},\n'
+            f'    "player_1_score": {self.player_1_score},\n'
+            f'    "player_2_score": {self.player_2_score},\n'
+            f'    "player_1_position": {self.player_1_position},\n'
+            f'    "player_2_position": {self.player_2_position},\n'
+            f'    "ball_x_position": {self.ball_x_position},\n'
+            f'    "ball_y_position": {self.ball_y_position},\n'
+            f'    "ball_speed": {self.ball_speed},\n'
+            f'    "ball_x_direction": {self.ball_x_direction},\n'
+            f'    "ball_y_direction": {self.ball_y_direction},\n'
+            f'    "ball_radius": {self.ball_radius},\n'
+            f'    "game_height": {self.game_height},\n'
+            f'    "game_width": {self.game_width},\n'
+            f'    "paddle_height": {self.paddle_height},\n'
+            f'    "paddle_width": {self.paddle_width},\n'
+            f'    "paddle_offset": {self.paddle_offset},\n'
+            "}"
         )
