@@ -21,9 +21,10 @@ export default function OnlinePongGamePage({ navigate }) {
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameId, setGameId] = createSignal(-1);
   const [CreatorId, setCreatorId] = createSignal(-1);
-  const [player2Id, setPlayer2Id] = createSignal(-1);
+  const [playerId, setPlayerId] = createSignal(-1);
   const [CreatorName, setCreatorName] = createSignal('');
-  const [player2Name, setPlayer2Name] = createSignal('');
+  const [playerName, setPlayerName] = createSignal('');
+  const [gameType, setGameType] = createSignal('');
   const [gameDimensions, setGameDimensions] = createSignal({
     game: { width: 60, height: 40 },
     paddle: { width: 1, height: 5, offset: 2 },
@@ -99,10 +100,10 @@ export default function OnlinePongGamePage({ navigate }) {
       maxScore: 3,
       players: {
         player1: { id: parseInt(CreatorId()), name: CreatorName() },
-        player2: { id: -1, name: 'Player Two' },
+        player2: { id: parseInt(playerId()), name: playerName() },
       },
     });
-    console.log('Game Initialized:', gameId(), CreatorId(), CreatorName());
+    console.log('Game Initialized:', gameId(), CreatorId(), CreatorName(), playerId(), playerName(), gameType());
   }
 
   /**
@@ -357,10 +358,7 @@ export default function OnlinePongGamePage({ navigate }) {
           setWaitingRoom(false);
           initializeGame();
           toogleGame();
-        },
-        setGameId,
-        setCreatorId,
-        setCreatorName,
+        }, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType
       });
       content.element.appendChild(waitingroom.element);
     } else {
