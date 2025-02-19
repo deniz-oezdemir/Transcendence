@@ -273,11 +273,19 @@ function dynamicData(user_data, user_stats, setReload) {
         children: [
           createComponent('h2', { content: 'Game Stats' }),
           createComponent('ul', {
-            children: [
-              user_stats
-                ? console.log('user_stats ', user_stats)
-                : createComponent('p', { content: 'No games played yet' }),
-            ],
+            children: user_stats
+              ? [
+                  createComponent('p', {
+                    content: `Wins: ${user_stats.games_won}`,
+                  }),
+                  createComponent('p', {
+                    content: `Loses: ${user_stats.games_won}`,
+                  }),
+                  createComponent('p', {
+                    content: `Time played: ${user_stats.total_time_played} seconds`,
+                  }),
+                ]
+              : [createComponent('p', { content: 'No games played yet' })],
           }),
         ],
       }),
@@ -311,9 +319,10 @@ export default function ProfilePage({ params, query }) {
         throw new Error('Failed to fetch user data');
       }
       const data = await response.json();
-      setContent(dynamicData(data, stats, setReload));
+      const userStats = await fetchStats(data.id);
+      console.log('userStats:', userStats);
+      setContent(dynamicData(data, userStats, setReload));
       console.log('Friends List Data:', data.friends);
-      fetchStats(data.id);
     } catch (error) {
       console.error(error);
       setError(error.message);
@@ -346,7 +355,7 @@ export default function ProfilePage({ params, query }) {
       }
       const data = await response.json();
       setStats(data);
-      console.log('stats:', data);
+      return data;
     } catch (error) {
       console.error(error);
       setError(error.message);
