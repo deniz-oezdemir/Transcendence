@@ -34,6 +34,7 @@ async function handleDeleteAccount() {
     } else {
       const data = await response.json();
       alert("Error: " + (data.error || "Failed to delete account."));
+      throw new Error(data.error);
     }
   } catch (error) {
     console.error("Delete account error:", error);
@@ -64,14 +65,14 @@ function friendRequestForm(setReload) {
       });
 
       const data = await response.json();
-      // alert(data.message); // Show success or error message
-      if (response.ok) {
-        setUsername(""); // Reset input on success
-        setReload(true);
+      if (!response.ok) {
+        throw new Error(data.error);
       }
+      setUsername("");
+      setReload(true);
     } catch (error) {
       console.error("Error sending friend request:", error);
-      alert("Failed to send request.");
+      alert("Error: " + error.message);
     }
   }
 
@@ -120,14 +121,13 @@ function friendListComponent(user_data, setReload) {
       });
   
       const data = await response.json();
-      // alert(data.message); // Show success or error message
-  
-      if (response.ok) {
-        setReload(true);
+      if (!response.ok) {
+        throw new Error(data.error);
       }
+      setReload(true);
     } catch (error) {
       console.error("Error unfollowing friend:", error);
-      alert("Failed to unfollow friend.");
+      alert("Something went wrong.");
     }
   }
 
@@ -200,18 +200,15 @@ function changeUsernameComponent(user_data, setReload) {
         body: JSON.stringify({ new_username }),
       });
   
-      if (response.ok) {
-        setUsernameButtonPressed(false);
-        setReload(true);
-      } else {
-        setUsernameButtonPressed(false);
-        setReload(true);
-        const data = await response.json();
-        alert("Error: " + (data.error || "Failed to change username."));
+      const data = await response.json();
+      setUsernameButtonPressed(false);
+      setReload(true);
+      if (!response.ok) {
+        throw new Error(data.error);
       }
     } catch (error) {
-      setUsernameButtonPressed(false);
       console.error("Change username error:", error);
+      alert("Something went wrong.");
     }
   }
 
@@ -288,19 +285,16 @@ function changePasswordComponent(user_data, setReload) {
         body: JSON.stringify({ new_password }),
       });
   
-      if (response.ok) {
-        alert("Password changed successfully.");
-        setPasswordButtonPressed(false);
-        setReload(true);
-      } else {
-        setPasswordButtonPressed(false);
-        setReload(true);
-        const data = await response.json();
-        alert("Error: " + (data.error || "Failed to change password."));
-      }
-    } catch (error) {
+      const data = await response.json();
       setPasswordButtonPressed(false);
+      setReload(true);
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      alert("Password changed successfully.");
+    } catch (error) {
       console.error("Change password error:", error);
+      alert("Something went wrong.");
     }
   }
 
@@ -368,8 +362,6 @@ function changePasswordComponent(user_data, setReload) {
 
 function changeAvatarComponent(user_data, setReload) {
   const[avatar, setAvatar] = createSignal("");
-  const[avatarUrl, setAvatarUrl] = createSignal(user_data.avatar_url);
-  const[avatarError, setAvatarError] = createSignal("");
 
   function validateImage(file) {
     const allowedTypes = ["image/jpeg", "image/png"];
@@ -389,28 +381,29 @@ function changeAvatarComponent(user_data, setReload) {
   const handleChangeAvatar = async (file, setReload) => {
 
     try {
-      // console.log("Uploading avatar...", file);
-      console.log(file);
+      console.log("Uploading avatar...", file);
+
       const formData = new FormData();
       formData.append("avatar", file);
-    
+
       const response = await fetch(`${apiUrl}/change-avatar/`, {
-          method: "PUT",
-          headers: {
-            "Authorization": `Token ${localStorage.getItem("authToken")}`,
-          },
-          body: formData,
+        method: "PUT",
+        headers: {
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+        },
+        body: formData,
       });
       
-      if (response.ok) {
-        console.log("Avatar changed successfully!");
-        setReload((prev) => !prev);
-      } else {
-        console.error("Change avatar error:", data.error);
-      }
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      console.log("Avatar changed successfully!");
+      setReload((prev) => !prev);
     } catch (error) {
       console.error("Change avatar error:", error);
+      setReload((prev) => !prev);
+      alert("Something went wrong.");
     }
   };
 
@@ -444,7 +437,7 @@ function changeAvatarComponent(user_data, setReload) {
                 alert("Please select an image first.");
                 return;
               }
-              console.log("Uploading avatar...");
+              console.log("Calling avatar handler...");
               await handleChangeAvatar(avatar(), setReload);
             },
           },

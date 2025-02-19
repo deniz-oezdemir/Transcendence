@@ -75,11 +75,10 @@ async function login(username, password) {
       body: JSON.stringify({ username, password }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Logout failed');
-    }
     const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error);
+    }
     userData = { id: data.id, username: data.username };
     localStorage.setItem('authToken', data.token);
     setIsAuth(true);
@@ -92,7 +91,7 @@ async function login(username, password) {
 
 async function logout() {
   try {
-    console.log('logging out');
+    console.log('loggin out');
     const response = await fetch(`${apiUrl}/logout/`, {
       method: 'POST',
       headers: {

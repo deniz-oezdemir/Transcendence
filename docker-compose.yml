@@ -40,8 +40,6 @@ services:
     networks:
       - accounts-internal
     restart: on-failure
-    depends_on:
-      - accounts-postgres
 
   # Frontend
   frontend:

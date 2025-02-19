@@ -36,28 +36,11 @@ export default function SignupPage() {
       return;
     }
 
-    // // Get CSRF token from cookies
-    // function getCookie(name) {
-    //   let cookieValue = null;
-    //   if (document.cookie && document.cookie !== '') {
-    //     const cookies = document.cookie.split(';');
-    //     for (let i = 0; i < cookies.length; i++) {
-    //       const cookie = cookies[i].trim();
-    //       if (cookie.substring(0, name.length + 1) === (name + '=')) {
-    //         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-    //         break;
-    //       }
-    //     }
-    //   }
-    //   return cookieValue;
-    // }
-
     try {
       const response = await fetch(`${apiUrl}/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // 'X-CSRFToken': getCookie('csrftoken'),
         },
         body: JSON.stringify({
           username: username(),
@@ -78,8 +61,8 @@ export default function SignupPage() {
       }, 2000);
     } catch (error) {
       setIsSigningUp(false);
-      console.error('Registration error:', error);
       setSubmitError(error.message);
+      console.error('Registration error:', error);
     }
   }
 
@@ -157,7 +140,6 @@ export default function SignupPage() {
                 className: styles.formGroupInput,
                 attributes: {
                   type: "password",
-                  // placeholder: "Password...",
                   required: true,
                 },
                 events: {
@@ -172,7 +154,6 @@ export default function SignupPage() {
                 className: styles.formGroupInput,
                 attributes: {
                   type: "password",
-                  // placeholder: "Repeat password...",
                   required: true,
                 },
                 events: {

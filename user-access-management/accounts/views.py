@@ -1,6 +1,7 @@
 import os
 import time
 import shutil
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -82,10 +83,13 @@ class ProfileView(APIView):
 class ChangeAvatarView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
     def put(self, request):
         try:
             file = request.FILES.get('avatar')
+            if not file:
+                return Response({"error": "Where is the fucking file??"}, status=status.HTTP_400_BAD_REQUEST)
             max_file_size = 2 * 1024 * 1024
             allowed_extensions = ['jpg', 'jpeg', 'png']
             if file:
@@ -142,44 +146,6 @@ class ChangePasswordView(APIView):
         error_message = serializer.errors[first_field][0]
         return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
-class ChangePasswordView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request):
-        pass
-        # user = request.user
-        # user.username = request.data['username']
-        # user.save(update_fields=['username'])
-
-        #return Response({"message": "Username changed successfully."}, status=status.HTTP_200_OK)
-
-class ChangeAvatarView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request):
-        serializer = ChangeUsernameSerializer(data=request.data, instance=request.user)
-        if serializer.is_valid():
-            serializer.update(request.user, serializer.validated_data)
-            return Response({"message": "Username changed successfully."}, status=status.HTTP_200_OK)
-        first_field = list(serializer.errors.keys())[0]
-        error_message = serializer.errors[first_field][0]
-        return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
-
-class ChangePasswordView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request):
-        serializer = ChangePasswordSerializer(data=request.data, instance = request.user)
-        if serializer.is_valid():
-            serializer.update(request.user, serializer.validated_data)
-            return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
-        first_field = list(serializer.errors.keys())[0]
-        error_message = serializer.errors[first_field][0]
-        return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
-
 class FriendRequestView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -191,7 +157,7 @@ class FriendRequestView(APIView):
             return Response({"message": "Friend added."}, status=status.HTTP_201_CREATED)
         first_field = list(serializer.errors.keys())[0]
         error_message = serializer.errors[first_field][0]
-        return Response({"message": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request):
         serializer = FriendRequestDeleteSerializer(data=request.data, context={"request": request})
@@ -200,4 +166,4 @@ class FriendRequestView(APIView):
             return Response({"message": "Friend removed."}, status=status.HTTP_200_OK)
         first_field = list(serializer.errors.keys())[0]
         error_message = serializer.errors[first_field][0]
-        return Response({"message": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
