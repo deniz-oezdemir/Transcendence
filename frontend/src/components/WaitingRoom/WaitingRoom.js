@@ -40,22 +40,22 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
             setTournaments(data.available_games?.tournaments || []);
             if (data.is_local_match === true) {
               console.log('Local match created:', data);
-              setGameId(data.available_games.matches[0].match_id);
-              setCreatorId(data.available_games.matches[0].player_1_id);
-              setCreatorName(data.available_games.matches[0].player_1_name);
-              setPlayerId(data.available_games.matches[0].player_2_id);
-              setPlayerName('Guest');
+              setGameId(data.id);
+              setCreatorId(data.creator_id);
+              setCreatorName(data.creator_name);
+              setPlayerId(data.guest_id);
+              setPlayerName(data.guest_name);
               setGameType('local_match');
-              onStartGame(data.game, data.available_games.matches[0].match_id);
+              onStartGame(data.game, data.id);
             } else if (data.is_ai_match === true) {
               console.log('AI match created:', data);
-              setGameId(data.available_games.matches[0].match_id);
+              setGameId(data.id);
               setCreatorId(data.available_games.matches[0].player_1_id);
               setCreatorName(data.available_games.matches[0].player_1_name);
               setPlayerId(data.available_games.matches[0].player_2_id);
-              setPlayerName('Bot');
+              setPlayerName(data.available_games.matches[0].player_2_name);
               setGameType('AI_match');
-              onStartGame(data.game, data.available_games.matches[0].match_id);
+              onStartGame(data.game, data.id);
             }
             break;
           
@@ -67,13 +67,13 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                   switch (data.available_games.matches[0].status) {
                     case 'active':
                       console.log('Match Started');
-                      setGameId(data.available_games.matches[0].match_id);
-                      setCreatorId(localStorage.getItem('userId'));
-                      setCreatorName(localStorage.getItem('username'));
-                      setPlayerId(data.available_games.matches[0].player_id);
-                      setPlayerName(data.available_games.matches[0].player_name);
+                      setGameId(data.game_id);
+                      setCreatorId(data.available_games.matches[0].player_1_id);
+                      setCreatorName(data.available_games.matches[0].player_1_name);
+                      setPlayerId(data.available_games.matches[0].player_2_id);
+                      setPlayerName(data.available_games.matches[0].player_2_name);
                       setGameType('match');
-                      onStartGame(data.game, data.available_games.matches[0].match_id);
+                      onStartGame(data.game, data.game_id);
 
                       break;
                     case 'pending':
@@ -149,6 +149,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_AI_match',
       player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -157,6 +158,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_local_match',
       player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -165,7 +167,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       gameType: 'match',
       type: 'create_match',
-      player_id: localStorage.getItem('userId')
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -174,7 +177,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 4,
-      player_id: localStorage.getItem('userId')
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -183,7 +187,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 8,
-      player_id: localStorage.getItem('userId')
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -192,7 +197,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'join_match',
       match_id: matches()[0].match_id,
-      player_id: localStorage.getItem('userId')
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
     }));
   };
 
@@ -201,6 +207,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'join_tournament',
       tournament_id: tournaments()[0].tournament_id,
+      player_id: localStorage.getItem('userId'),
+      player_name: localStorage.getItem('username'),
       player_id: 4
     }));
   };
