@@ -4,14 +4,16 @@ This guide explains how the Docker Compose files work together in this project a
 
 ## Table of Contents
 
-- [Example Docker Compose Structure](#example-docker-compose-structure)
-  - [Main Compose File: `./docker-compose.yml`](#main-compose-file-docker-composeyml)
-  - [Microservice Compose File](#microservice-compose-file)
-- [How it Works](#how-it-works)
-- [How to Structure Other Services](#how-to-structure-other-services)
-- [Benefits](#benefits)
-- [Managing Services](#managing-services)
-- [Current Port Usage](#current-port-usage)
+- [Docker Compose Setup Guide](#docker-compose-setup-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Example Docker Compose Structure](#example-docker-compose-structure)
+    - [Main Compose File: `./docker-compose.yml`](#main-compose-file-docker-composeyml)
+    - [Microservice Compose File: e.g., `./matchmaking/docker/docker-compose.yml`](#microservice-compose-file-eg-matchmakingdockerdocker-composeyml)
+  - [How it Works](#how-it-works)
+  - [How to Structure Other Services](#how-to-structure-other-services)
+  - [Benefits](#benefits)
+  - [Managing Services](#managing-services)
+  - [Current Port Usage](#current-port-usage)
 
 ## Example Docker Compose Structure
 
@@ -106,6 +108,7 @@ make clean   # Clean up Docker resources
 
 | Service                | Port |
 | ---------------------- | ---- |
+| Nginx                  | 8000 |
 | Matchmaking            | 8001 |
 | Game engine            | 8002 |
 | AI messages DistilGPT2 | 8003 |
@@ -114,3 +117,4 @@ make clean   # Clean up Docker resources
 | Game history           | 8006 |
 | UAM                    | 8007 |
 | AI messages Deepseek   | 8008 |
+

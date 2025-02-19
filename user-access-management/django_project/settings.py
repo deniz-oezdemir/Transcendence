@@ -137,7 +137,7 @@ DATABASES = {
         "NAME": os.getenv("POSTGRES_DB", "accounts"),
         "USER": os.getenv("POSTGRES_USER", "accounts"),
         "PASSWORD": os.getenv("POSTGRES_PASSWORD", "accounts"),
-        "HOST": os.getenv("POSTGRES_HOST", "accounts-postgres"),  # Container name
+        "HOST": os.getenv("POSTGRES_HOST", "accounts-postgres"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
     }
 }
@@ -194,5 +194,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media') #The 'media' folder in your project
 # MEDIA_ROOT = '/usr/share/nginx/static/'  # physical directory where files are stored. 
 MEDIA_URL = '/media/'  # public URL where Nginx will serve the media files
 
+NGINX_STORAGE_URL = "http://nginx:80"
+NGINX_PUBLIC_URL = "http://localhost:8080"
 
 # APPEND_SLASH=False

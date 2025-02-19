@@ -1,5 +1,6 @@
 import os
-from django.conf import settings
+import time
+import shutil
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -68,10 +69,11 @@ class ProfileView(APIView):
     def delete(self, request):
         try:
             user = request.user
-            # Delete the user's avatar file if it's not the default one
-        #     if user.avatar_url and user.avatar_url.name != 'avatars/default.png':
-        #         if default_storage.exists(user.avatar_url.name):  # Check if file exists
-        #             default_storage.delete(user.avatar_url.name)  # Delete file
+            if user.avatar_url and user.avatar_url.name != 'http://localhost:8000/avatars/default.png':
+                filename = user.avatar_url.name.split('/')[-1]
+                avatar_path = os.path.join('/usr/share/nginx/images', filename)
+                if os.path.exists(avatar_path):
+                    os.remove(avatar_path)
             user.delete()
             return Response({"message": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
@@ -83,24 +85,33 @@ class ChangeAvatarView(APIView):
 
     def put(self, request):
         try:
-            # file = request.FILES.get('avatar')
-            serializer = ChangeAvatarSerializer(data=request.data, instance=request.user, context={"request": request})
-            if not serializer.is_valid():
-                first_field = list(serializer.errors.keys())[0]
-                error_message = serializer.errors[first_field][0]
-                return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # #Save file in /usr/share/nginx/media/avatars/
-            # avatar_path = os.path.join("avatars", f"user_{request.user.id}_{file.name}")
-            # file_path = os.path.join(settings.MEDIA_ROOT, avatar_path)
-
-            # with open(file_path, "wb+") as destination:
-            #     for chunk in file.chunks():
-            #         destination.write(chunk)
-            # avatar_url = settings.MEDIA_URL + avatar_path
-
-            serializer.update()
-            return Response({"message": "avatar changed successfully."}, status=status.HTTP_200_OK)
+            file = request.FILES.get('avatar')
+            max_file_size = 2 * 1024 * 1024
+            allowed_extensions = ['jpg', 'jpeg', 'png']
+            if file:
+                nginx_dir = "/usr/share/nginx/images"
+                if file.size > max_file_size:
+                    raise Exception("Avatar file size must not exceed 2MB.")
+                file_extension = file.name.split('.')[-1].lower()
+                if file_extension not in allowed_extensions:
+                    raise Exception("Only JPG, JPEG, and PNG files are allowed.")
+                filename = f"user_{request.user.id}_{int(time.time())}{os.path.splitext(file.name)[1]}"
+                temp_path = os.path.join('/tmp', filename)
+                with open(temp_path, 'wb+') as destination_file:
+                    for chunk in file.chunks():
+                        destination_file.write(chunk)
+                nginx_image_path = f"/usr/share/nginx/images/{filename}"
+                try:
+                    shutil.copy(temp_path, nginx_image_path)
+                except Exception as e:
+                    raise Exception(f"Failed to copy file to NGINX container: {str(e)}")
+                os.remove(temp_path)
+                avatar_url = f"http://localhost:8000/avatars/{filename}"
+                serializer = ChangeAvatarSerializer(data=request.data, instance=request.user, context={"request": request})
+                serializer.update(instance=request.user, avatar_url=avatar_url)
+                return Response({"message": "avatar changed successfully."}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Please upload a valid image file."}, status=status.HTTP_400_BAD_REQUEST)
         
         except Exception as e:
             return Response({"error": f"Change avatar failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
