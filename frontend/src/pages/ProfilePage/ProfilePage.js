@@ -269,23 +269,35 @@ function dynamicData(user_data, user_stats, setReload) {
 
       // Stats Section
       createComponent('div', {
-        className: styles.statsBox,
+        className: `${styles.statsBox} card`,
         children: [
-          createComponent('h2', { content: 'Game Stats' }),
+          createComponent('div', {
+            className: 'card-header',
+            content: 'Game Stats',
+          }),
           createComponent('ul', {
+            className: 'list-group list-group-flush',
             children: user_stats
               ? [
-                  createComponent('p', {
+                  createComponent('li', {
+                    className: 'list-group-item',
                     content: `Wins: ${user_stats.games_won}`,
                   }),
-                  createComponent('p', {
-                    content: `Loses: ${user_stats.games_won}`,
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: `Losses: ${user_stats.games_lost}`,
                   }),
-                  createComponent('p', {
-                    content: `Time played: ${user_stats.total_time_played} seconds`,
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: `Total Play Time: ${user_stats.total_time_played}`,
                   }),
                 ]
-              : [createComponent('p', { content: 'No games played yet' })],
+              : [
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: 'No games played yet',
+                  }),
+                ],
           }),
         ],
       }),
