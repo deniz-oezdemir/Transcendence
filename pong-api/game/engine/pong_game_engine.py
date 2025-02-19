@@ -74,13 +74,13 @@ class PongGameEngine:
         return self.game_state
 
     def move_player(self, player_id, direction):
-        logger.info(
+        logger.debug(
             "Game Engine: Moving player: player_id=%s, direction=%s",
             player_id,
             direction,
         )
         if not self.game_state.is_game_running or self.game_state.is_game_ended:
-            logger.info("Game is not running or has ended")
+            logger.debug("Game is not running or has ended")
             return self.game_state
 
         if player_id == self.game_state.player_1_id:
@@ -96,20 +96,20 @@ class PongGameEngine:
         elif direction == -1:
             player_position -= self.player_move_step
 
-        logger.info(f"direction: {direction}")
+        logger.debug(f"direction: {direction}")
 
         # Ensure the player doesn't move out of bounds
         player_position = max(
             0, min(self.game_height - self.paddle_height, player_position)
         )
-        logger.info(f"player position: {player_position}")
+        logger.debug(f"player position: {player_position}")
 
         if player_id == self.game_state.player_1_id:
             self.game_state.player_1_position = player_position
         elif player_id == self.game_state.player_2_id:
             self.game_state.player_2_position = player_position
 
-        logger.info(
+        logger.debug(
             "Player position updated and saved: player_id=%s, position=%s",
             player_id,
             player_position,
@@ -319,11 +319,23 @@ class PongGameEngine:
             self.game_state.player_2_score,
         )
 
-        # Reset the ball position and direction
+        # Reset the game positions
         self.game_state.ball_x_position = self.game_width // 2
         self.game_state.ball_y_position = self.game_height // 2
-        self.game_state.ball_x_direction *= -1
-        self.game_state.ball_y_direction *= -1
+        self.game_state.ball_x_direction = self.game_state.ball_speed / 4
+        self.game_state.ball_y_direction = self.game_state.ball_y_direction / 4
+        self.game_state.ball_x_direction *= (
+            -1 if self.game_state.ball_x_direction < 0 else 1
+        )
+        self.game_state.ball_y_direction *= (
+            1 if self.game_state.ball_y_direction < 0 else -1
+        )
+        self.game_state.is_game_running = False
+        new_players_position = (
+            self.game_state.game_height / 2
+        ) - self.game_state.paddle_height / 2
+        self.game_state.player_1_position = new_players_position
+        self.game_state.player_2_position = new_players_position
 
         # Check if the game has ended
         if self.game_state.player_1_score >= self.game_state.max_score:

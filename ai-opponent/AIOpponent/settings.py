@@ -26,11 +26,7 @@ SECRET_KEY = "django-insecure-f5$8bw6tz#39))c@bw@$0g#k7ly)-ik)9w4d2abwd8-zrhxhm!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'localhost',
-    'ai-opponent',
-    '127.0.0.1'
-]
+ALLOWED_HOSTS = ["localhost", "ai-opponent", "127.0.0.1"]
 
 
 # Application definition
@@ -192,6 +188,8 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [("127.0.0.1", 6379)],
+            "capacity": 10000,
+            "expiry": 2,
         },
     },
 }

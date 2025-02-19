@@ -1,26 +1,30 @@
 import { createComponent, Link } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import { setTheme, getPreferredTheme } from '@themeManager';
-import { isAuthenticated, login, logout } from '../../auth.js';
+import { logout, getIsAuth } from '../../auth.js';
+
+import styles from './Navbar.module.css';
 
 export default function Navbar({ location, navigate }) {
   const path = location();
 
   const [theme, setThemeState] = createSignal(getPreferredTheme());
+  const { isAuth, setIsAuth } = getIsAuth();
 
   const toggleTheme = () => {
     const newTheme = theme() === 'dark' ? 'light' : 'dark';
     setThemeState(newTheme);
   };
 
-  const handleAuthButtonClick = () => {
-    if (isAuthenticated()) {
+  const handleAuthButtonClick = (event) => {
+    if (event.target.textContent === 'Logout') {
       try {
         logout();
-        router.navigate('/login');
+        setIsAuth((prev) => !prev);
+        navigate('/login');
       } catch (error) {
         console.error('Error logging out:', error);
-        navigate('/profile');
+        navigate('/');
       }
     } else {
       navigate('/login');
@@ -28,40 +32,53 @@ export default function Navbar({ location, navigate }) {
   };
 
   const themeButton = createComponent('button', {
-    className: 'btn btn-outline-light me-2',
-    attributes: { type: 'button' },
-    content: theme() !== 'dark' ? '🌙 Dark' : '☀️ Light',
+    className: `btn btn-outline-light me-2 ${styles.customBtn}`,
+    attributes: { type: 'button', role: 'button' },
+    content: theme() !== 'dark' ? '🌙Dark' : '☀️Light',
     events: {
       click: toggleTheme,
     },
   });
 
   const authButton = createComponent('button', {
-    className: 'btn btn-outline-success',
+    className: `btn btn-outline-success ${styles.customBtn}`,
     attributes: { type: 'button', role: 'button' },
-    content: isAuthenticated() ? 'Logout' : 'Login',
+    content: isAuth() ? 'Logout' : 'Login',
     events: {
       click: handleAuthButtonClick,
     },
   });
 
   createEffect(() => {
-    authButton.element.textContent = isAuthenticated() ? 'Logout' : 'Login';
+    authButton.element.textContent = isAuth() ? 'Logout' : 'Login';
+  });
+
+  createEffect(() => {
+    const currentPath = location();
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach((link) => {
+      const href = link.getAttribute('href');
+      if (href === currentPath) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
   });
 
   createEffect(() => {
     const th = theme();
     setTheme(th);
-    themeButton.element.textContent = th !== 'dark' ? '🌙 Dark' : '☀️ Light';
+    themeButton.element.textContent = th !== 'dark' ? '🌙Dark' : '☀️Light';
     themeButton.element.classList.toggle('btn-outline-light', th === 'dark');
     themeButton.element.classList.toggle('btn-outline-dark', th === 'light');
   });
 
   return createComponent('nav', {
-    className: 'navbar navbar-expand-lg bg-body-tertiary',
+    className: `navbar navbar-expand-md bg-body-tertiary ${styles.navbarCustom}`,
     children: [
       createComponent('div', {
-        className: 'container-fluid',
+        className: `container-fluid`,
         children: [
           Link({
             href: '/',
@@ -86,12 +103,22 @@ export default function Navbar({ location, navigate }) {
             ],
           }),
           createComponent('div', {
-            className: 'collapse navbar-collapse',
+            className: `collapse navbar-collapse ${styles.navLinks}`,
             id: 'navbarSupportedContent',
             children: [
               createComponent('ul', {
                 className: 'navbar-nav me-auto mb-2 mb-lg-0',
                 children: [
+                  createComponent('li', {
+                    className: 'nav-item',
+                    children: [
+                      Link({
+                        href: '/',
+                        content: 'Home',
+                        className: `nav-link ${path === '/' ? 'active' : ''}`,
+                      }),
+                    ],
+                  }),
                   createComponent('li', {
                     className: 'nav-item',
                     children: [
@@ -124,17 +151,17 @@ export default function Navbar({ location, navigate }) {
                       }),
                     ],
                   }),
-                  // createComponent('li', {
-                  //   className: 'nav-item',
-                  //   children: [
-                  //     Link({
-                  //       href: '/admin',
-                  //       content: 'Admin',
-                  //       className: `nav-link ${path === '/admin' ? 'active' : ''}`,
-                  //       attributes: { 'aria-current': 'page' },
-                  //     }),
-                  //   ],
-                  // }),
+                  createComponent('li', {
+                    className: 'nav-item',
+                    children: [
+                      Link({
+                        href: '/pong-game-3d',
+                        content: 'Pong Game 3D',
+                        className: `nav-link ${path === '/pong-game-3d' ? 'active' : ''}`,
+                        attributes: { 'aria-current': 'page' },
+                      }),
+                    ],
+                  }),
                 ],
               }),
               createComponent('div', {
@@ -142,6 +169,12 @@ export default function Navbar({ location, navigate }) {
                 children: [
                   themeButton,
                   authButton,
+                  // Link({
+                  //   href: '/login',
+                  //   className: `btn btn-outline-success ${styles.customBtn}`,
+                  //   attributes: { type: 'button', role: 'button' },
+                  //   content: 'Login',
+                  // }),
                 ],
               }),
             ],

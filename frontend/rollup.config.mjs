@@ -1,4 +1,3 @@
-import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import postcss from 'rollup-plugin-postcss';
 import postcssImport from 'postcss-import';
@@ -56,6 +55,28 @@ export default {
           find: '@styles',
           replacement: path.resolve(__dirname, 'src/assets/styles'),
         },
+        // To use directly WebGPU in the browser
+        {
+          find: /^three$/,
+          replacement: path.resolve(
+            __dirname,
+            'node_modules/three/build/three.webgpu.js'
+          ),
+        },
+        {
+          find: /^three\/tsl$/,
+          replacement: path.resolve(
+            __dirname,
+            'node_modules/three/build/three.tsl.js'
+          ),
+        },
+        {
+          find: /^three\/addons$/,
+          replacement: path.resolve(
+            __dirname,
+            'node_modules/three/examples/jsm'
+          ),
+        },
       ],
     }),
     nodeResolve({
@@ -65,7 +86,6 @@ export default {
       include: /node_modules/,
       requireReturnsDefault: 'auto',
     }),
-    // resolve(),
     postcss({
       plugins: [postcssImport()],
       modules: false,
@@ -84,6 +104,8 @@ export default {
         { src: 'src/index.html', dest: 'dist' },
         { src: 'src/assets/icons/favicon.ico', dest: 'dist' },
         { src: 'src/assets/images', dest: 'dist/assets' },
+        { src: 'src/assets/models', dest: 'dist/assets' },
+        { src: 'src/assets/textures', dest: 'dist/assets' },
         { src: 'src/assets/fonts', dest: 'dist/assets' },
       ],
     }),
