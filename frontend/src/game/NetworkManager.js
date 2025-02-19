@@ -10,8 +10,13 @@ export default class NetworkManager {
     this.userState = {
       userId: null,
       username: null,
-      matchId: null,
-      player: null,
+      match: {
+        id: null,
+        player1Id: null,
+        player1Name: null,
+        player2Id: null,
+        player2Name: null,
+      },
     };
     this.matchmakingSocket = null;
     this.gameEngineSocket = null;
@@ -108,8 +113,9 @@ export default class NetworkManager {
       case 'match_created':
         if (this.userId === data.creator_id) {
           this.currentGameId[1](data.id);
-          this.userState.matchId = data.id;
-          this.userState.player = 'p1';
+          this.userState.match.id = data.id;
+          this.userState.match.player1Id = data.creator_id;
+          this.userState.match.player1Name = data.creator_name;
         }
         this.updateGameLists(data.available_games);
         break;
@@ -146,12 +152,19 @@ export default class NetworkManager {
   handlePlayerJoined(data) {
     if (
       data.game_type === 'match' &&
-      data.player_id === this.userState.userId
+      data.game_id === this.userState.match.id
     ) {
-      console.log('from player joined');
+      const match = data.available_games.matches.find(
+        (match) => match.match_id === this.userState.match.id
+      );
+      if (!match) this.handleError("On Player Joined, game doesn't exist");
+      this.userState.match.id = match.match_id;
+      this.userState.match.player2Id = match.player_2_id;
+      this.userState.match.player2Name = data.player_2_name;
+      this.userState.match.player1Id = match.player_1_id;
+      this.userState.match.player1Name = match.player_1_name;
       this.matchReady[1](true);
-      this.userState.player = 'p2';
-      this.userState.matchId = data.game_id;
+      this.callbacks.onPlayerJoined?.(this.userState);
     }
     this.updateGameLists(data.available_games);
   }

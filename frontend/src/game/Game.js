@@ -111,6 +111,24 @@ export default class Game {
 
     // Websocket connections
     this.network = new NetworkManager(this.params);
+    this.network.callbacks.onPlayerJoined = this.updatePlayerInfo;
+    this.gameData = {
+      userPaddle: null,
+      opponentPaddle: null,
+      startPosition: this.params.camera.offlinePosition,
+    };
+  }
+
+  updatePlayerInfo() {
+    if (this.network.userState.userId === this.network.match.player1Id) {
+      this.gameData.userPaddle = this.pongTable.player1Paddle;
+      this.gameData.opponentPaddle = this.pongTable.player2Paddle;
+      this.gameData.startPosition = this.params.camera.pongP1Position;
+    } else {
+      this.gameData.userPaddle = this.pongTable.player2Paddle;
+      this.gameData.opponentPaddle = this.pongTable.player1Paddle;
+      this.gameData.startPosition = this.params.camera.pongP2Position;
+    }
   }
 
   setGameObjects() {
@@ -244,29 +262,28 @@ export default class Game {
 
       this.camera.position.x = lerp(
         this.camera.position.x,
-        this.params.camera.pongP1Position.x,
+        this.gameData.startPosition.x,
         this.transitionProgress
       );
 
       this.camera.position.y = lerp(
         this.camera.position.y,
-        this.params.camera.pongP1Position.y,
+        this.gameData.startPosition.y,
         this.transitionProgress
       );
 
       this.camera.position.z = lerp(
         this.camera.position.z,
-        this.params.camera.pongP1Position.z,
+        this.gameData.startPosition.z,
         this.transitionProgress
       );
 
       const cameraArrived =
-        Math.abs(this.camera.position.x - this.params.camera.pongP1Position.x) <
+        Math.abs(this.camera.position.x - this.gameData.startPosition.x) <
           0.1 &&
-        Math.abs(this.camera.position.y - this.params.camera.pongP1Position.y) <
+        Math.abs(this.camera.position.y - this.gameData.startPosition.y) <
           0.1 &&
-        Math.abs(this.camera.position.z - this.params.camera.pongP1Position.z) <
-          0.1;
+        Math.abs(this.camera.position.z - this.gameData.startPosition.z) < 0.1;
 
       if (cameraArrived) {
         this.isTransitioning = false;
@@ -317,7 +334,7 @@ export default class Game {
         console.log(this.network.gameEngineState);
         for (let i = 0; i < 10; i++) {
           let direction = 0;
-          prevX = this.pongTable.player1Paddle.mesh.position.x;
+          prevX = this.gameData.userPaddle.mesh.position.x;
           if (intersection) {
             nextX = intersection.point.x;
           } else {
@@ -328,7 +345,7 @@ export default class Game {
               nextX = prevX + this.paddleSpeed;
               direction = 1;
             }
-            this.pongTable.player1Paddle.setX(lerp(prevX, nextX, 0.5));
+            this.gameData.userPaddle.setX(lerp(prevX, nextX, 0.5));
           }
           if (
             this.network.gameEngineState.state &&
@@ -337,8 +354,8 @@ export default class Game {
             const serverX =
               this.network.gameEngineState.state.players[0].player_position -
               this.params.dimensions.boundaries.x;
-            this.pongTable.player1Paddle.setX(
-              lerp(this.pongTable.player1Paddle.mesh.position.x, serverX, 0.2)
+            this.gameData.userPaddle.setX(
+              lerp(this.gameData.userPaddle.mesh.position.x, serverX, 0.2)
             );
           }
           if (
@@ -351,18 +368,18 @@ export default class Game {
           }
 
           if (this.isAiMode) {
-            prevX = this.pongTable.player2Paddle.mesh.position.x;
+            prevX = this.gameData.opponentPaddle.mesh.position.x;
             nextX =
               this.network.gameEngineState.state.player_1_position -
               this.params.dimensions.boundaries.x;
-            this.pongTable.player2Paddle.setX(lerp(prevX, nextX, 0.5));
+            this.gameData.opponentPaddle.setX(lerp(prevX, nextX, 0.5));
           } else {
             if (this.keys['a']) {
               nextX = prevX - this.paddleSpeed;
             } else if (this.keys['d']) {
               nextX = prevX + this.paddleSpeed;
             }
-            this.pongTable.player2Paddle.setX(lerp(prevX, nextX, 0.5));
+            this.gameData.opponentPaddle.setX(lerp(prevX, nextX, 0.5));
           }
           if (this.gameState) {
             this.pongTable.ball.setX(
