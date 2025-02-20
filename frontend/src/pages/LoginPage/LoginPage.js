@@ -2,6 +2,7 @@ import { createComponent, Link, createCleanupContext } from '@component';
 import styles from './LoginPage.module.css';
 import { createSignal, createEffect } from '@reactivity';
 import { login } from '../../auth';
+import { validateUsername, validatePassword } from '../../core/utils';
 
 export default function LoginPage() {
   const cleanup = createCleanupContext();
@@ -14,35 +15,6 @@ export default function LoginPage() {
   const [submitSuccess, setSubmitSuccess] = createSignal('');
   const [isLoggingIn, setIsLoggingIn] = createSignal(false);
 
-  function validateUsername(value) {
-    const isValid = 
-      value.length >= 3 && 
-      value.length <= 20 &&
-      /^[a-zA-Z0-9_]+$/.test(value);
-
-    setUsernameError(
-      isValid 
-        ? '' 
-        : 'Username must be 3-20 alphanumeric characters and/or underscores'
-    );
-
-    return isValid;
-  }
-
-  function validatePassword(value) {
-    const isValid =
-      value.length >= 8 &&
-      value.length <= 20 &&
-      !/[ /\\]/.test(value);
-
-      setPasswordError(
-      isValid
-        ? ''
-        : 'Password must be 8-20 characters and cannot contain spaces, /, or \\'
-    );
-    return isValid;
-  }
-
   async function handleLogin(event) {
     event.preventDefault();
     setSubmitError('');
@@ -52,7 +24,7 @@ export default function LoginPage() {
 
     setIsLoggingIn(true);
 
-    if (!validateUsername(username()) || !validatePassword(password())) {
+    if (!validateUsername(username(), setUsernameError) || !validatePassword(password(), setPasswordError)) {
       setIsLoggingIn(false);
       return;
     }
@@ -70,6 +42,7 @@ export default function LoginPage() {
     } catch (error) {
       setIsLoggingIn(false);
       setSubmitError(error.message);
+      
     }
   }
 
@@ -99,7 +72,7 @@ export default function LoginPage() {
                   input: (event) => {
                     const value = event.target.value;
                     setUsername(value);
-                    validateUsername(value);
+                    validateUsername(username(), setUsernameError);
                   }
                 }
               }),
@@ -118,15 +91,16 @@ export default function LoginPage() {
               }),
               createComponent('input', {
                 className: styles.formGroupInput,
-                type: 'password',
-                id: 'password',
-                name: 'password',
-                required: true,
+                attributes: {
+                  type: "password",
+                  // placeholder: "Password...",
+                  required: true,
+                },
                 events: {
                   input: (event) => {
                     const value = event.target.value;
                     setPassword(value);
-                    validatePassword(value);
+                    validatePassword(password(), setPasswordError);
                   }
                 }
               }),
