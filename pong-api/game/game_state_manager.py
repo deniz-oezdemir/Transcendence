@@ -1,12 +1,8 @@
 import asyncio
 import copy
-import json
 import aiohttp
 from django.utils import timezone
-import base64
-import zlib
 import logging
-from django.core.cache import cache
 from .models import GameState
 from .engine.pong_game_engine import PongGameEngine
 
@@ -59,11 +55,10 @@ class GameStateManager:
         async with self.lock:
             if self.game_state.is_game_running:
                 engine = PongGameEngine(self.game_state)
-
                 self.game_state = engine.move_player(player_id, direction)
                 logger.debug(f"Moved player {player_id} for game_id: {self.game_id}")
 
-    async def update_game_state(self, channel_layer, game_group_name):
+    async def update_game_state(self):
         async with self.lock:
             if self.game_state.is_game_running:
                 engine = PongGameEngine(self.game_state)
@@ -72,7 +67,6 @@ class GameStateManager:
             if self.game_state.is_game_ended:
                 logger.info(f"Ending game state for game_id: {self.game_id}")
                 await self.send_game_result_to_matchmaking()
-                await self.send_connection_close(channel_layer, game_group_name)
 
     def calculate_diffs(self, current_state, previous_state):
         diffs = {}
@@ -108,28 +102,18 @@ class GameStateManager:
                 )
             self.previous_game_state = copy.deepcopy(self.game_state)
 
-    async def start_periodic_updates(self, channel_layer, game_group_name):
+    async def start_periodic_updates(self, sio, game_group_name):
         if self.periodic_task is None:
             self.periodic_task = asyncio.create_task(
-                self._periodic_updates(channel_layer, game_group_name)
+                self._periodic_updates(sio, game_group_name)
             )
             logger.debug(f"Started periodic updates for game_id: {self.game_id}")
 
-    async def send_connection_close(self, channel_layer, game_group_name):
-        await channel_layer.group_send(
-            game_group_name,
-            {"type": "connection_closed"},
-        )
-        logger.info(
-            f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
-        )
-
-    async def _periodic_updates(self, channel_layer, game_group_name):
+    async def _periodic_updates(self, sio, game_group_name):
         try:
             while True:
-                await self.update_game_state(channel_layer, game_group_name)
-                logger.debug("Game updated now send")
-                await self.send_partial_game_state(channel_layer, game_group_name)
+                await self.update_game_state()
+                await self.send_partial_game_state(sio, game_group_name)
                 await asyncio.sleep(1 / 20)
         except asyncio.CancelledError:
             pass
