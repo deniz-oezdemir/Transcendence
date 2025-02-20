@@ -1,5 +1,6 @@
 import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
+import { getUser } from '@/auth.js';
 import styles from './WaitingRoom.module.css';
 
 export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType }) {
@@ -12,13 +13,20 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   const port = 8001;
   const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
 
+  let userData = { id: null, username: null };
+  createEffect(async () => {
+    const user = await getUser();
+    userData.id = user.id;
+    userData.name = user.username;
+  });
+
   createEffect(() => {
     const ws = new WebSocket(wsUrl);
   
     ws.onopen = () => {
       console.log('Connected to matchmaking service');
-      console.log('username:', localStorage.getItem('username'));
-      console.log('userId:', localStorage.getItem('userId'));
+      console.log('username:', userData.name);
+      console.log('userId:', userData.id);
       setSocket(ws);
     };
   
@@ -38,7 +46,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
           case 'games_deleted':
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
-            if (data.is_local_match === true) {
+            if (data.is_local_match === true && userData.id === data.creator_id) {
               console.log('Local match created:', data);
               setGameId(data.id);
               setCreatorId(data.creator_id);
@@ -47,7 +55,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
               setPlayerName(data.guest_name);
               setGameType('local_match');
               onStartGame(data.game, data.id);
-            } else if (data.is_ai_match === true) {
+            } else if (data.is_ai_match === true && userData.id === data.creator_id) {
               console.log('AI match created:', data);
               setGameId(data.id);
               setCreatorId(data.available_games.matches[0].player_1_id);
@@ -66,15 +74,16 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                 if (data.available_games.matches && data.available_games.matches.length > 0) {
                   switch (data.available_games.matches[0].status) {
                     case 'active':
-                      console.log('Match Started');
-                      setGameId(data.game_id);
-                      setCreatorId(data.available_games.matches[0].player_1_id);
-                      setCreatorName(data.available_games.matches[0].player_1_name);
-                      setPlayerId(data.available_games.matches[0].player_2_id);
-                      setPlayerName(data.available_games.matches[0].player_2_name);
-                      setGameType('match');
-                      onStartGame(data.game, data.game_id);
-
+                      if (data.available_games.matches[0].player_1_id === userData.id || data.available_games.matches[0].player_2_id === userData.id) {
+                        console.log('Match Started');
+                        setGameId(data.game_id);
+                        setCreatorId(data.available_games.matches[0].player_1_id);
+                        setCreatorName(data.available_games.matches[0].player_1_name);
+                        setPlayerId(data.available_games.matches[0].player_2_id);
+                        setPlayerName(data.available_games.matches[0].player_2_name);
+                        setGameType('match');
+                        onStartGame(data.game, data.game_id);
+                      }
                       break;
                     case 'pending':
                       console.log('Match Pending');
@@ -158,8 +167,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     if (!socket()) return;
     socket().send(JSON.stringify({
       type: 'create_AI_match',
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -167,8 +176,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     if (!socket()) return;
     socket().send(JSON.stringify({
       type: 'create_local_match',
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -177,8 +186,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       gameType: 'match',
       type: 'create_match',
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -187,8 +196,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 4,
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -197,8 +206,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 8,
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -207,8 +216,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'join_match',
       match_id: matches()[0].match_id,
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -217,8 +226,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'join_tournament',
       tournament_id: tournaments()[0].tournament_id,
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
       player_id: 4
     }));
   };
