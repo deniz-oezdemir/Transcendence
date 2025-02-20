@@ -33,7 +33,8 @@ export default function GameMenu({ gameState, setGameState, network }) {
             window.removeEventListener('resize', updateMenuRect);
             if (rafId) cancelAnimationFrame(rafId);
             if (gameMenuRef.current) {
-              gameMenuRef.current.style.display = 'none';
+              gameMenuRef.current.remove();
+              // gameMenuRef.current.style.display = 'none';
             }
           },
         },
@@ -45,68 +46,71 @@ export default function GameMenu({ gameState, setGameState, network }) {
         {
           label: 'Player vs Player',
           action: () => {
-            setGameState({ mode: 'offline', player: 'p1', gameId: -1 });
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('resize', updateMenuRect);
-            if (rafId) cancelAnimationFrame(rafId);
-            gameMenuRef.current.remove();
-          },
-        },
-      ],
-    },
-    {
-      label: 'Online 1 vs 1',
-      action: () => network.getGames(),
-      submenu: [
-        {
-          label: 'Create a Match',
-          action: () => {
-            network.createMatch();
-          },
-        },
-        {
-          label: 'Refresh',
-          action: () => network.getGames(),
-        },
-        {
-          label: 'Delete all',
-          action: () => network.deleteAllGames(),
-        },
-        {
-          label: 'Start',
-          action: () => {
-            setGameState({
-              mode: 'Online 1 vs 1',
-            });
+            setGameState({ mode: 'offline 1 vs 1', player: 'p1', gameId: -1 });
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('resize', updateMenuRect);
             if (rafId) cancelAnimationFrame(rafId);
             if (gameMenuRef.current) {
-              gameMenuRef.current.style.display = 'none';
+              gameMenuRef.current.remove();
+              // gameMenuRef.current.style.display = 'none';
             }
           },
         },
       ],
     },
-    {
-      label: 'AI vs You',
-      submenu: [
-        { label: 'Easy', action: () => {} },
-        { label: 'Medium', action: () => {} },
-        { label: 'Hard', action: () => {} },
-      ],
-    },
-    {
-      label: 'Tournament',
-      submenu: [
-        { label: 'Local', action: () => {} },
-        { label: 'Online', action: () => {} },
-      ],
-    },
-    {
-      label: 'Quit',
-      submenu: [{ label: 'Sure?', action: () => {} }],
-    },
+    // {
+    //   label: 'Online 1 vs 1',
+    //   action: () => network.getGames(),
+    //   submenu: [
+    //     {
+    //       label: 'Create a Match',
+    //       action: () => {
+    //         network.createMatch();
+    //       },
+    //     },
+    //     {
+    //       label: 'Refresh',
+    //       action: () => network.getGames(),
+    //     },
+    //     {
+    //       label: 'Delete all',
+    //       action: () => network.deleteAllGames(),
+    //     },
+    //     {
+    //       label: 'Start',
+    //       action: () => {
+    //         setGameState({
+    //           mode: 'Online 1 vs 1',
+    //         });
+    //         window.removeEventListener('mousemove', handleMouseMove);
+    //         window.removeEventListener('resize', updateMenuRect);
+    //         if (rafId) cancelAnimationFrame(rafId);
+    //         if (gameMenuRef.current) {
+    //           gameMenuRef.current.style.display = 'none';
+    //         }
+    //       },
+    //     },
+    //   ],
+    // },
+    // {
+    //   label: 'AI vs You',
+    //   submenu: [
+    //     { label: 'Easy', action: () => {} },
+    //     { label: 'Medium', action: () => {} },
+    //     { label: 'Hard', action: () => {} },
+    //   ],
+    // },
+    // {
+    //   label: 'Tournament',
+    //   submenu: [
+    //     { label: 'Local', action: () => {} },
+    //     { label: 'Online', action: () => {} },
+    //   ],
+    // },
+    // {
+    //   label: 'Quit',
+    //   submenu: [{ label: 'Sure?', action: () => {} }],
+    // },
   ];
 
   const handleMenuSetClick = (event, option) => {
