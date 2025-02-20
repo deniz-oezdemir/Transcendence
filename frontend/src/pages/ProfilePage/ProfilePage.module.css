@@ -37,6 +37,7 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
   margin-top: 10px;
@@ -62,8 +63,16 @@
   max-width: 500px;
   background: rgb(121, 58, 150);
   padding: 15px;
+  margin: 2rem 0;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.friendsBoxWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 .statsBox h2 {
@@ -107,3 +116,12 @@
 .offline {
   background: red;
 }
+
+.friendRequestBox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+

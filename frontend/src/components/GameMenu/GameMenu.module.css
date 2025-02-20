@@ -174,8 +174,8 @@
   flex-direction: row;
   animation: openMenu 0.6s ease-out forwards;
   height: 35vh;
-  align-items: start;
-  justify-content: start;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
 }
 

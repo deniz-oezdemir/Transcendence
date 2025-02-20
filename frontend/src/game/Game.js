@@ -420,7 +420,7 @@ export default class Game {
       if (intersection) {
         const currentX = this.gameData.userPaddle.mesh.position.x;
         const targetX = intersection.point.x;
-        if (Math.abs(targetX - currentX) > 0.1) {
+        if (Math.abs(targetX - currentX) > 0.5) {
           direction = Math.sign(targetX - currentX);
         }
       }
@@ -514,9 +514,9 @@ export default class Game {
         this.isTransitioning = false;
         this.isGameStart = true;
         // this.controls.enabled = true;
-        if (this.isOnline && this.gameData.userIs === 'p1') {
-          this.network.toggle();
-        }
+        // if (this.isOnline && this.gameData.userIs === 'p1') {
+        //   this.network.toggle();
+        // }
       }
     }
 

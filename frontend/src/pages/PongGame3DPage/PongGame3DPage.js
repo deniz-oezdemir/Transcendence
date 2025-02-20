@@ -135,14 +135,14 @@ export default function PongGame3DPage() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(params.dimensions.game.x, params.dimensions.game.y);
 
-  const stats = new Stats();
+  // const stats = new Stats();
 
   const game = new Game(scene, camera, renderer, params);
 
   onMount(async () => {
     try {
       gameRef.current.appendChild(renderer.domElement);
-      gameRef.current.appendChild(stats.dom);
+      // gameRef.current.appendChild(stats.dom);
 
       await game.init();
 
@@ -174,7 +174,7 @@ export default function PongGame3DPage() {
   function animate() {
     delta = clock.getDelta();
     elapsedTime = clock.getElapsedTime();
-    stats.update();
+    // stats.update();
     game.update(delta, elapsedTime);
   }
 
@@ -200,10 +200,15 @@ export default function PongGame3DPage() {
   createEffect(async () => {
     const state = gameState();
 
-    if (state.mode == 'practice') {
+    if (state.mode === 'practice') {
+      game.gameData.startPosition = game.params.camera.pongP1Position;
       game.isTransitioning = true;
       game.isOnline = false;
-    } else if (state.mode == 'Online 1 vs 1') {
+    } else if (state.mode === 'offline 1 vs 1') {
+      game.isTransitioning = true;
+      game.isOnline = false;
+      game.isAiMode = false;
+    } else if (state.mode === 'Online 1 vs 1') {
       await game.network.initGameEngine();
       game.isTransitioning = true;
       game.isOnline = true;

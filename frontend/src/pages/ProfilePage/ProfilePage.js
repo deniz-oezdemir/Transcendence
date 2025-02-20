@@ -92,9 +92,10 @@ function friendRequestForm(setReload) {
           input: (event) => setUsername(event.target.value),
         },
       }),
-      createComponent("button", {
-        className: styles.friendButton,
-        content: "Add Friend",
+      
+      createComponent('button', {
+        className: 'btn btn-outline-light',
+        content: 'Add Friend',
         events: {
           click : (event) => {
             console.log('Calling send friend request...');
@@ -173,8 +174,13 @@ function friendListComponent(user_data, setReload) {
   }
 
   return createComponent('div', {
-    className: styles.friendsBox,
-    children: friendsComponents,
+    className: `${styles.friendsBoxWrapper}`,
+    children: [
+      createComponent('div', {
+        className: styles.friendsBox,
+        children: friendsComponents,
+      }),
+    ],
   });
 }
 
@@ -497,15 +503,52 @@ function dynamicData(user_data, user_stats, setReload) {
           }),
         ],
       }),
-      createComponent('button', {
-        className: styles.deleteButton,
-        content: 'Delete Account',
-        events: {
-          click : (event) => {
-            console.log('Delete Account button clicked');
-            handleDeleteAccount(event);
-          }
-        }
+
+      // Action Buttons
+      createComponent('div', {
+        className: styles.actions,
+        children: [
+          createComponent('button', {
+            className: 'btn btn-primary',
+            content: 'Change Avatar',
+            events: {
+              click: (event) => {
+                console.log('Change Avatar button clicked');
+                handleChangeAvatar(event, setReload);
+              },
+            },
+          }),
+          createComponent('button', {
+            className: 'btn btn-primary',
+            content: 'Change Username',
+            events: {
+              click: (event) => {
+                console.log('Change Username button clicked');
+                handleChangeUsername(event, setReload);
+              },
+            },
+          }),
+          createComponent('button', {
+            className: 'btn btn-primary',
+            content: 'Change Password',
+            events: {
+              click: (event) => {
+                console.log('Change Password button clicked');
+                handleChangePassword(event, setReload);
+              },
+            },
+          }),
+          createComponent('button', {
+            className: 'btn btn-danger',
+            content: 'Delete Account',
+            events: {
+              click: (event) => {
+                console.log('Delete Account button clicked');
+                handleDeleteAccount(event);
+              },
+            },
+          }),
+        ],
       }),
 
       changeUsernameComponent(user_data, setReload),
