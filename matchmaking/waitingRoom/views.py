@@ -8,6 +8,8 @@ from asgiref.sync import async_to_sync
 from .models import Match, Tournament
 from .serializers import GameResultSerializer
 from django.utils.dateparse import parse_datetime
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +110,9 @@ async def send_match_to_history(match):
 
 @api_view(["POST"])
 def update_game_result(request, match_id):
+    # Get channel layer for WebSocket broadcasting
+    channel_layer = get_channel_layer()
+
     logger.info(f"Received request to update game result for match_id: {match_id}")
     match = get_object_or_404(Match, match_id=match_id)
 
@@ -146,58 +151,138 @@ def update_game_result(request, match_id):
     if not success:
         logger.warning(f"Failed to send match {match_id} to history service")
 
-    # If this is a tournament match, handle tournament progression
+    serializer.save(
+        status=Match.FINISHED,
+        winner_id=winner_id,
+        player_1_score=request.data.get("player_1_score"),
+        player_2_score=request.data.get("player_2_score"),
+        start_time=request.data.get("start_time"),
+        end_time=request.data.get("end_time"),
+    )
+
+    # Broadcast match result to all connected clients
+    async_to_sync(channel_layer.group_send)(
+        "waiting_room",
+        {
+            "type": "match_finished",
+            "match_id": match.match_id,
+            "winner_id": winner_id,
+            "player_1_score": match.player_1_score,
+            "player_2_score": match.player_2_score,
+            "tournament_id": match.tournament_id
+        }
+    )
+
+    # Handle tournament progression
+    new_matches = []  # Initialize new_matches list
     if match.tournament_id:
-        logger.info(f"Handling tournament progression for match {match_id}")
         tournament = Tournament.objects.get(tournament_id=match.tournament_id)
         current_round = match.round
+        logger.info(f"Handling tournament progression for match {match_id}")
 
-        # Check if all matches in current round are finished
-        round_matches = Match.objects.filter(
-            tournament_id=tournament.tournament_id, round=current_round
+        # Create next round matches if all matches in current round are finished
+        current_round_matches = Match.objects.filter(
+            tournament_id=tournament.tournament_id,
+            round=current_round
         )
-        if all(m.status == Match.FINISHED for m in round_matches):
-            logger.info(f"All matches in round {current_round} are finished")
-            winners = [m.winner_id for m in round_matches]
 
-            if current_round < len(tournament.matches):
-                logger.info(f"Creating matches for next round {current_round + 1}")
-                new_matches = []
-                for i in range(0, len(winners), 2):
-                    if i + 1 < len(winners):
-                        logger.info(
-                            f"Creating new match between winner {winners[i]} and winner {winners[i + 1]}"
-                        )
-                        new_match = Match.objects.create(
-                            tournament_id=tournament.tournament_id,
-                            player_1_id=winners[i],
-                            player_2_id=winners[i + 1],
-                            round=current_round + 1,
-                            status=Match.ACTIVE,
-                        )
-                        new_matches.append(new_match.match_id)
-                        logger.info(
-                            f"Created new match {new_match.match_id} for round {current_round + 1}"
-                        )
+        if all(m.status == Match.FINISHED for m in current_round_matches):
+            # Get winners from current round
+            winners = [m.winner_id for m in current_round_matches]
 
-                        success = async_to_sync(create_game_in_pong_api)(new_match)
-                        if not success:
-                            logger.error(
-                                f"Failed to create game in pong-api for match {new_match.match_id}"
-                            )
+            if len(winners) >= 2:  # Need at least 2 winners for next round
+                # Create matches for next round
+                new_matches = create_next_round_matches(tournament, winners, current_round + 1)
 
-                tournament.matches[current_round]["matches"] = new_matches
-                tournament.save()
-                logger.info(
-                    f"Tournament {tournament.tournament_id} updated with new matches for round {current_round + 1}"
-                )
+                if new_matches:
+                    # Get the tournament's match structure and update it
+                    tournament.matches[1]["matches"] = [m["match_id"] for m in new_matches]  # Add new match IDs
+                    tournament.save()
+                    # Get fresh game state
+                    matches = list(Match.objects.filter(status=Match.ACTIVE).values(
+                        "match_id", "player_1_id", "player_1_name",
+                        "player_2_id", "player_2_name", "status"
+                    ))
+                    tournaments = list(Tournament.objects.filter(
+                        status__in=[Tournament.PENDING, Tournament.ACTIVE]
+                    ).values())
 
-            if current_round == len(tournament.matches):
+                    # Send both tournament round start and updated available games
+                    async_to_sync(channel_layer.group_send)(
+                        "waiting_room",
+                        {
+                            "type": "tournament_round_started",
+                            "tournament_id": tournament.tournament_id,
+                            "round": current_round + 1,
+                            "matches": new_matches,
+                            "available_games": {
+                                "matches": matches,
+                                "tournaments": tournaments
+                            }
+                        }
+                    )
+            else:
+                # Tournament is finished
                 tournament.status = Tournament.FINISHED
                 tournament.winner_id = winner_id
                 tournament.save()
-                logger.info(
-                    f"Tournament {tournament.tournament_id} finished with winner {winner_id}"
+                logger.info(f"Tournament {tournament.tournament_id} finished. Winner: {winner_id}")
+
+                # Get fresh game state
+                matches = list(Match.objects.filter(status=Match.ACTIVE).values(
+                    "match_id", "player_1_id", "player_1_name",
+                    "player_2_id", "player_2_name", "status"
+                ))
+                tournaments = list(Tournament.objects.filter(
+                    status__in=[Tournament.PENDING, Tournament.ACTIVE]
+                ).values())
+
+                # Send tournament finished event with updated game state
+                async_to_sync(channel_layer.group_send)(
+                    "waiting_room",
+                    {
+                        "type": "tournament_finished",
+                        "tournament_id": tournament.tournament_id,
+                        "winner_id": winner_id,
+                        "available_games": {
+                            "matches": matches,
+                            "tournaments": tournaments
+                        }
+                    }
                 )
 
     return Response({"message": "Match result updated"}, status=status.HTTP_200_OK)
+
+def create_next_round_matches(tournament, winners, next_round):
+    """Create matches for the next tournament round"""
+    new_matches = []
+
+    # Create matches pairing winners
+    for i in range(0, len(winners), 2):
+        if i + 1 < len(winners):
+            # Get player names from tournament data
+            player1_name = tournament.player_names.get(str(winners[i]))
+            player2_name = tournament.player_names.get(str(winners[i + 1]))
+
+            match = Match.objects.create(
+                tournament_id=tournament.tournament_id,
+                round=next_round,
+                player_1_id=winners[i],
+                player_1_name=player1_name,  # Use name from tournament
+                player_2_id=winners[i + 1],
+                player_2_name=player2_name,  # Use name from tournament
+                status=Match.ACTIVE
+            )
+
+            # Convert Match object to serializable dict
+            new_matches.append({
+                'match_id': match.match_id,
+                'player_1_id': match.player_1_id,
+                'player_1_name': player1_name,
+                'player_2_id': match.player_2_id,
+                'player_2_name': player2_name,
+                'round': match.round,
+                'status': match.status
+            })
+
+    return new_matches

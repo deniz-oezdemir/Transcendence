@@ -269,6 +269,38 @@
 					addGameDataMessage('Info', data);
 					updateGameList(data.available_games);
 					break;
+
+				case 'match_finished':
+					addMessage('Info', `Match ${data.match_id} finished! Winner: Player ${data.winner_id}`);
+					addMessage('Info', `Final Score: ${data.player_1_score} - ${data.player_2_score}`);
+					break;
+
+				case 'tournament_round_started':
+					addMessage('Info', `Tournament ${data.tournament_id} Round ${data.round} started!`);
+					data.matches.forEach(match => {
+						addMessage('Info',
+							`Match ${match.match_id}: ${match.player_1_name} vs ${match.player_2_name}`
+						);
+					});
+
+					// Update available games list immediately
+					if (data.available_games) {
+						addMessage('Info', `Matches: ${JSON.stringify(data.available_games.matches)}`);
+						addMessage('Info', `Tournaments: ${JSON.stringify(data.available_games.tournaments)}`);
+						updateGameList(data.available_games);
+					}
+					break;
+
+				case 'tournament_finished':
+					addMessage('Info', `Tournament ${data.tournament_id} finished! Winner: Player ${data.winner_id}`);
+
+					// Update available games list immediately
+					if (data.available_games) {
+						addMessage('Info', `Matches: ${JSON.stringify(data.available_games.matches)}`);
+						addMessage('Info', `Tournaments: ${JSON.stringify(data.available_games.tournaments)}`);
+						updateGameList(data.available_games);
+					}
+					break;
 			}
 		};
 

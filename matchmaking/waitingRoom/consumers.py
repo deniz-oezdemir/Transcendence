@@ -377,6 +377,18 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
     async def tournament_started(self, event):
         await self.send(text_data=json.dumps(event))
 
+    async def match_finished(self, event):
+        """Handle finished match broadcast"""
+        await self.send(text_data=json.dumps(event))
+
+    async def tournament_round_started(self, event):
+        """Handle new tournament round broadcast"""
+        await self.send(text_data=json.dumps(event))
+
+    async def tournament_finished(self, event):
+        """Handle tournament finished broadcast"""
+        await self.send(text_data=json.dumps(event))
+
     async def send_error(self, message):
         await self.send(text_data=json.dumps({"type": "error", "message": message}))
 
@@ -482,7 +494,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             created_matches.extend([semi1, semi2])
             matches = [
                 {"round": 1, "matches": [semi1.match_id, semi2.match_id]},
-                {"round": 2, "matches": ["final"]},
+                {"round": 2, "matches": []},
             ]
 
         elif tournament.max_players == 8:
@@ -511,8 +523,8 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
             matches = [
                 {"round": 1, "matches": quarters},
-                {"round": 2, "matches": ["semi1", "semi2"]},  # Two semi-finals
-                {"round": 3, "matches": ["final"]},
+                {"round": 2, "matches": []},  # Two semi-finals
+                {"round": 3, "matches": []},
             ]
 
         tournament.status = Tournament.ACTIVE
