@@ -28,7 +28,6 @@ export default class NetworkManager {
     this.gameEngineState = {
       connected: false,
     };
-    this.gameId = null;
 
     this.createSignals();
 
@@ -164,7 +163,7 @@ export default class NetworkManager {
       this.userState.match.player1Id = match.player_1_id;
       this.userState.match.player1Name = match.player_1_name;
       this.matchReady[1](true);
-      this.callbacks.onPlayerJoined?.(this.userState);
+      this.callbacks.onPlayerJoined?.();
     }
     this.updateGameLists(data.available_games);
   }
@@ -230,13 +229,10 @@ export default class NetworkManager {
   }
 
   initGameEngine(timeout = 5000) {
-    if (this.userState.matchId === null) {
-      this.handleError('No match found');
-      return;
-    }
+    this.callbacks.onPlayerJoined?.();
     try {
       const port = 8002;
-      const wsUrl = `${this.protocol}//${this.hostname}:${port}/ws/game/${this.userState.matchId}/`;
+      const wsUrl = `${this.protocol}//${this.hostname}:${port}/ws/game/${this.userState.match.id}/`;
 
       this.gameEngineSocket = new WebSocket(wsUrl);
       this.setupGameEngineListeners();
@@ -302,10 +298,11 @@ export default class NetworkManager {
 
   sendGameEngineMessage(message) {
     if (!this.gameEngineState.connected) {
-      this.handleError('Not connected to matchmaking server');
+      this.handleError('Not connected to the game engine server');
       return;
     }
     try {
+      console.log('before send message to Engine:', message);
       this.gameEngineSocket.send(JSON.stringify(message));
     } catch (error) {
       this.handleError('Error sending message', error);
@@ -314,10 +311,17 @@ export default class NetworkManager {
 
   move(direction) {
     if (!this.gameEngineSocket) return;
-    this.sendMatchMakingMessage({
-      type: 'move',
+    this.sendGameEngineMessage({
+      action: 'move',
       player_id: this.userState.userId,
       direction: direction,
+    });
+  }
+
+  toggle() {
+    if (!this.gameEngineSocket) return;
+    this.sendGameEngineMessage({
+      action: 'toggle',
     });
   }
 }
