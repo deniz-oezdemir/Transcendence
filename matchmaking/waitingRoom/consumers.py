@@ -253,12 +253,14 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             tournament = await self.get_tournament(data["tournament_id"])
 
             if len(tournament.players) == tournament.max_players:
-                matches, created_matches = await self.create_tournament_matches(
+                matches, created_matches, available_matches = await self.create_tournament_matches(
                     tournament
                 )
                 logger.debug(
                     f"Tournament {tournament.tournament_id} is full. Matches created: {matches}"
                 )
+
+                available_games = await self.get_available_games()
 
                 # Create games in pong-api and wait for response
                 success, match_data = await self.create_tournament_matches_in_pong_api(
@@ -280,7 +282,11 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                         "type": "tournament_started",
                         "tournament_id": tournament.tournament_id,
                         "matches": matches,
-                        "available_games": available_games,
+                        "player_names": tournament.player_names,
+                        "available_games": {
+                            "matches": available_matches,  # Include the newly created matches
+                            "tournaments": available_games["tournaments"]
+                        }
                     },
                 )
             else:
@@ -369,6 +375,18 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event))
 
     async def tournament_started(self, event):
+        await self.send(text_data=json.dumps(event))
+
+    async def match_finished(self, event):
+        """Handle finished match broadcast"""
+        await self.send(text_data=json.dumps(event))
+
+    async def tournament_round_started(self, event):
+        """Handle new tournament round broadcast"""
+        await self.send(text_data=json.dumps(event))
+
+    async def tournament_finished(self, event):
+        """Handle tournament finished broadcast"""
         await self.send(text_data=json.dumps(event))
 
     async def send_error(self, message):
@@ -476,7 +494,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             created_matches.extend([semi1, semi2])
             matches = [
                 {"round": 1, "matches": [semi1.match_id, semi2.match_id]},
-                {"round": 2, "matches": ["final"]},
+                {"round": 2, "matches": []},
             ]
 
         elif tournament.max_players == 8:
@@ -505,14 +523,28 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
             matches = [
                 {"round": 1, "matches": quarters},
-                {"round": 2, "matches": ["semi1", "semi2"]},  # Two semi-finals
-                {"round": 3, "matches": ["final"]},
+                {"round": 2, "matches": []},  # Two semi-finals
+                {"round": 3, "matches": []},
             ]
 
         tournament.status = Tournament.ACTIVE
         tournament.matches = matches
         tournament.save()
-        return matches, created_matches
+
+        # Ensure the created matches are in the response
+        available_matches = list(Match.objects.filter(
+            tournament_id=tournament.tournament_id,
+            status=Match.ACTIVE
+        ).values(
+            "match_id",
+            "player_1_id",
+            "player_1_name",
+            "player_2_id",
+            "player_2_name",
+            "status"
+        ))
+
+        return matches, created_matches, available_matches
 
     @database_sync_to_async
     def is_player_in_game(self, player_id):

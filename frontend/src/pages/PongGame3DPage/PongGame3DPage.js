@@ -85,8 +85,9 @@ export default function PongGame3DPage() {
     },
     camera: {
       fov: 60,
+      offlinePosition: new Vector3(-55, 75, 0),
       pongP1Position: new Vector3(0, 55, 75),
-      pongP2Position: new Vector3(0, 30, -60),
+      pongP2Position: new Vector3(0, 55, -75),
       pongLookAt: new Vector3(0, 0, 0),
       startPosition: new Vector3(-256, 96, 0),
     },
