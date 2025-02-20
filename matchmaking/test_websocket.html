@@ -235,13 +235,37 @@
 					break;
 
 				case 'tournament_started':
-					addMessage('Info', `Tournament ${data.tournament_id} started! Matches created: ${JSON.stringify(data.matches)}`);
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
+					// Display tournament start message
+					addMessage('Info', `Tournament ${data.tournament_id} started!`);
 
-				case 'games_deleted':
-					addMessage('Success', 'All matches and tournaments have been deleted');
+					// Display matches by round with cleaner formatting
+					data.matches.forEach(roundData => {
+						// Show round header with match IDs
+						const matchIds = roundData.matches
+							.filter(id => typeof id === 'number')
+							.join(', ');
+						addMessage('Info', `Round ${roundData.round} (Match IDs: ${matchIds}):`);
+
+						// Display match details
+						const roundMatches = roundData.matches
+							.map(matchId => {
+								const match = data.available_games.matches.find(m => m.match_id === matchId);
+								if (match) {
+									const player1Name = data.player_names[match.player_1_id] || 'Unknown';
+									const player2Name = data.player_names[match.player_2_id] || 'Unknown';
+									return `Match ${matchId}: ${player1Name} vs ${player2Name}`;
+								}
+								return null;
+							})
+							.filter(Boolean); // Remove null entries
+
+						// Display matches in this round
+						roundMatches.forEach(matchText => {
+							addMessage('Info', matchText);
+						});
+					});
+
+					// Show available games immediately
 					addGameDataMessage('Info', data);
 					updateGameList(data.available_games);
 					break;

@@ -253,12 +253,14 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             tournament = await self.get_tournament(data["tournament_id"])
 
             if len(tournament.players) == tournament.max_players:
-                matches, created_matches = await self.create_tournament_matches(
+                matches, created_matches, available_matches = await self.create_tournament_matches(
                     tournament
                 )
                 logger.debug(
                     f"Tournament {tournament.tournament_id} is full. Matches created: {matches}"
                 )
+
+                available_games = await self.get_available_games()
 
                 # Create games in pong-api and wait for response
                 success, match_data = await self.create_tournament_matches_in_pong_api(
@@ -280,7 +282,11 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                         "type": "tournament_started",
                         "tournament_id": tournament.tournament_id,
                         "matches": matches,
-                        "available_games": available_games,
+                        "player_names": tournament.player_names,
+                        "available_games": {
+                            "matches": available_matches,  # Include the newly created matches
+                            "tournaments": available_games["tournaments"]
+                        }
                     },
                 )
             else:
@@ -512,7 +518,21 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         tournament.status = Tournament.ACTIVE
         tournament.matches = matches
         tournament.save()
-        return matches, created_matches
+
+        # Ensure the created matches are in the response
+        available_matches = list(Match.objects.filter(
+            tournament_id=tournament.tournament_id,
+            status=Match.ACTIVE
+        ).values(
+            "match_id",
+            "player_1_id",
+            "player_1_name",
+            "player_2_id",
+            "player_2_name",
+            "status"
+        ))
+
+        return matches, created_matches, available_matches
 
     @database_sync_to_async
     def is_player_in_game(self, player_id):
