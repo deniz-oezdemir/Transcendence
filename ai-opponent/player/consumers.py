@@ -1,30 +1,27 @@
 import asyncio
 import datetime
-import base64
-import zlib
+import socketio
 import time
 import math
-import websockets
 import json
 import logging
 import threading
-from channels.generic.websocket import AsyncWebsocketConsumer
-from websockets.exceptions import ConnectionClosedError, InvalidURI, InvalidHandshake
+from socketio.exceptions import ConnectionError
 
 logger = logging.getLogger(__name__)
 
 
-class WebSocketConnectionError(Exception):
+class SocketIOConnectionError(Exception):
     def __init__(self, message):
         super().__init__(message)
         self.status_code = 450
 
 
-class WebSocketClient(AsyncWebsocketConsumer):
+class SocketIOClient:
     def __init__(self, uri, ai_player):
         self.uri = uri
         self.ai_player = ai_player
-        self.websocket = None
+        self.sio = socketio.AsyncClient()
         self.last_update_time = 0
         self.move_task = None
         self.game_running = True
@@ -33,60 +30,52 @@ class WebSocketClient(AsyncWebsocketConsumer):
         self.ball_x_direction_sign = 0
         self.current_game_state = {}  # Maintain the current game state
 
+        # Register event handlers
+        self.sio.event(self.connect)
+        self.sio.event(self.disconnect)
+        self.sio.on("game_state_update", self.handle_game_state_update)
+        self.sio.on("connection_closed", self.handle_connection_closed)
+
     async def connect(self):
+        if self.sio.connected:
+            logger.info("Already connected to Socket.IO server")
+            return
         try:
-            async with websockets.connect(self.uri) as websocket:
-                logger.info("connect: WebSocket connection success")
-                self.websocket = websocket
-                await self.listen()
-        except (
-            ConnectionRefusedError,
-            ConnectionClosedError,
-            InvalidURI,
-            InvalidHandshake,
-            OSError,
-        ) as e:
-            logger.error(f"WebSocket connection error: {e}")
+            logger.info(f"Attempting to connect to {self.uri}")
+            await self.sio.connect(self.uri)
+            logger.info("connect: Socket.IO connection success")
+        except ConnectionError as e:
+            logger.error(f"Socket.IO connection error: {e}")
             self.connection_error = True
-            raise WebSocketConnectionError(f"WebSocket connection error: {e}")
+            raise SocketIOConnectionError(f"Socket.IO connection error: {e}")
 
-    async def listen(self):
-        try:
-            while True:
-                message = await self.websocket.recv()
-                data = json.loads(message)
-                encoded_state = data.get("state", "")
+    async def disconnect(self):
+        if not self.sio.connected:
+            logger.info("Already disconnected from Socket.IO server")
+            return
+        logger.info("Socket.IO disconnected")
+        self.delete_ai_player()
+        await self.sio.disconnect()
 
-                if data.get("type") == "connection_closed":
-                    await self.handle_connection_closed(data)
+    async def handle_game_state_update(self, data):
+        encoded_state = data.get("state", "")
 
-                if encoded_state:
-                    compressed_state = base64.b64decode(encoded_state)
-                    partial_state = json.loads(
-                        zlib.decompress(compressed_state).decode()
-                    )
-                    self.current_game_state.update(
-                        partial_state
-                    )  # Merge partial update
-                    logger.debug(
-                        f"partial_state merge into self.current_game_state: {self.current_game_state}"
-                    )
-                else:
-                    partial_state = {}
+        if encoded_state:
+            partial_state = json.loads(encoded_state)
+            self.current_game_state.update(partial_state)  # Merge partial update
+            logger.debug(
+                f"partial_state merge into self.current_game_state: {self.current_game_state}"
+            )
 
-                is_game_running = self.current_game_state.get("is_game_running", True)
-                is_game_ended = self.current_game_state.get("is_game_ended", False)
-                if not is_game_running or is_game_ended:
-                    self.game_running = False
-                current_time = time.time()
-                if current_time - self.last_update_time >= 1:  # Only once per second
-                    logger.debug(f"Received message: {self.current_game_state}")
-                    if data.get("type") == "game_state_update":
-                        await self.handle_game_update(self.current_game_state)
-                    self.last_update_time = current_time
-        except websockets.ConnectionClosed:
-            logger.warning("Connection closed")
-            self.delete_ai_player()
+        is_game_running = self.current_game_state.get("is_game_running", True)
+        is_game_ended = self.current_game_state.get("is_game_ended", False)
+        if not is_game_running or is_game_ended:
+            self.game_running = False
+        current_time = time.time()
+        if current_time - self.last_update_time >= 1:  # Only once per second
+            logger.debug(f"Received message: {self.current_game_state}")
+            await self.handle_game_update(self.current_game_state)
+            self.last_update_time = current_time
 
     async def handle_game_update(self, state):
         ball_x_position = state.get("ball_x_position")
@@ -234,7 +223,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
             "direction": direction,
         }
         logger.debug("Sending move command")
-        await self.websocket.send(json.dumps(move_command))
+        await self.sio.emit("move", move_command)
         logger.debug(f"{datetime.datetime.now()} - Sent move command")
 
     async def handle_connection_closed(self, data):
@@ -243,7 +232,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
         if self.move_task is not None:
             self.move_task.cancel()
         self.delete_ai_player()
-        await self.websocket.close()
+        await self.sio.disconnect()
         logger.info("Connection closed")
 
     def delete_ai_player(self):

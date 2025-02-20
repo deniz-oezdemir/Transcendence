@@ -5,7 +5,7 @@ from rest_framework import generics, serializers
 from django.core.cache import cache
 from .serializers import AIPlayerSerializer
 import logging
-from .consumers import WebSocketClient, WebSocketConnectionError
+from .consumers import SocketIOClient, SocketIOConnectionError
 
 logger = logging.getLogger("AIOpponent")
 
@@ -18,6 +18,16 @@ class CreateAIPlayer(generics.CreateAPIView):
         target_game_id = serializer.validated_data.get("target_game_id")
         cache_key = f"ai_player_{ai_player_id}"
 
+        # Check if an AI player already exists for the target game
+        existing_ai_player = AIPlayer.objects.filter(
+            target_game_id=target_game_id
+        ).first()
+        if existing_ai_player:
+            raise serializers.ValidationError(
+                f"An AI player already exists for game {target_game_id}."
+            )
+
+        logger.info("Creating ai-opponent")
         # Check if the player exists in Redis
         if cache.get(cache_key):
             raise serializers.ValidationError(
@@ -27,14 +37,14 @@ class CreateAIPlayer(generics.CreateAPIView):
 
         # Connect to the WebSocket server
         try:
-            ws_client = WebSocketClient(
+            ws_client = SocketIOClient(
                 f"ws://pong-api:8000/ws/game/{target_game_id}/", ai_player
             )
             ws_client.start()
             logger.info(
                 f"Successfully connected to WebSocket for game {target_game_id}"
             )
-        except WebSocketConnectionError as e:
+        except SocketIOConnectionError as e:
             logger.error(
                 f"Failed to connect to WebSocket for game {target_game_id}: {e}"
             )

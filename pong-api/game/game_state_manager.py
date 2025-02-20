@@ -84,46 +84,29 @@ class GameStateManager:
                     logger.debug(f"Detected change in {key}: {prev_value} -> {value}")
         return diffs
 
-    async def send_full_game_state(self, channel_layer, game_group_name):
+    async def send_full_game_state(self, sio, game_group_name):
         async with self.lock:
             game_state_data = {
                 key: value
                 for key, value in self.game_state.__dict__.items()
                 if not key.startswith("_")
             }
-            compressed_data = zlib.compress(json.dumps(game_state_data).encode())
-            encoded_data = base64.b64encode(compressed_data).decode()
-
-            await channel_layer.group_send(
-                game_group_name,
-                {"type": "game_state_update", "state": encoded_data},
-            )
+            await sio.emit("game_state_update", game_state_data, room=game_group_name)
             logger.info(
                 f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
             )
 
-    async def send_partial_game_state(self, channel_layer, game_group_name):
+    async def send_partial_game_state(self, sio, game_group_name):
         async with self.lock:
             if self.previous_game_state is None:
-                self.previous_game_state = copy.deepcopy(
-                    self.game_state
-                )  # Initialize previous state if None
-
+                self.previous_game_state = copy.deepcopy(self.game_state)
             diffs = self.calculate_diffs(self.game_state, self.previous_game_state)
             if diffs:
-                compressed_data = zlib.compress(json.dumps(diffs).encode())
-                encoded_data = base64.b64encode(compressed_data).decode()
-
-                await channel_layer.group_send(
-                    game_group_name,
-                    {"type": "game_state_update", "state": encoded_data},
-                )
+                await sio.emit("game_state_update", diffs, room=game_group_name)
                 logger.debug(
                     f"Sent game state diffs to group: {game_group_name} for game_id: {self.game_id}"
                 )
-            self.previous_game_state = copy.deepcopy(
-                self.game_state
-            )  # Update previous state
+            self.previous_game_state = copy.deepcopy(self.game_state)
 
     async def start_periodic_updates(self, channel_layer, game_group_name):
         if self.periodic_task is None:

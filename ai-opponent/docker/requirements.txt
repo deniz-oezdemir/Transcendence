@@ -33,3 +33,5 @@ types-psycopg2==2.9.21.20250121
 typing_extensions==4.12.2
 websockets==11.0.3
 zope.interface==7.2
+python-socketio[asyncio]==5.8.0
+aiohttp==3.8.1
