@@ -571,16 +571,15 @@ export default function ProfilePage({ params, query }) {
         },
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch user data');
+        console.log('Failed to fetch user data');
+        // throw new Error('Failed to fetch user data');
       }
       const data = await response.json();
-      // console.log("user id to fetch history:", data.id);
-      // const userStats = await fetchStats(data.id);
-      // console.log('userStats:', userStats);
-      
-      setContent(dynamicData(data, stats, setReload));
+      const userStats = await fetchStats(data.id);
+      console.log('userStats:', userStats);
+      setContent(dynamicData(data, userStats, setReload));
     } catch (error) {
-      console.error(error);
+      console.error('fetch user data fails with error: ', error);
       setError(error.message);
       throw error;
     }
@@ -590,6 +589,7 @@ export default function ProfilePage({ params, query }) {
     try {
       console.log('Fetching user stats...');
       const userID = id;
+      const data = '';
       const response = await fetch(`${historyUrl}/api/player/${userID}`, {
         method: 'GET',
         headers: {
@@ -597,13 +597,14 @@ export default function ProfilePage({ params, query }) {
         },
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch stats');
+        console.log('No stats for user');
+      } else {
+        data = await response.json();
       }
-      const data = await response.json();
       setStats(data);
       return data;
     } catch (error) {
-      console.error(error);
+      console.error('fetch user statistics fails with error: ', error);
       setError(error.message);
       throw error;
     }
