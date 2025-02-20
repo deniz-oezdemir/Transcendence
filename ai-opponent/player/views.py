@@ -1,99 +1,38 @@
-from .models import AIPlayer
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework import generics, serializers
-from django.core.cache import cache
+from .models import AIPlayer
 from .serializers import AIPlayerSerializer
-import logging
-from .consumers import SocketIOClient, SocketIOConnectionError
-
-logger = logging.getLogger("AIOpponent")
+from .consumers import SocketIOClient
 
 
-class CreateAIPlayer(generics.CreateAPIView):
-    serializer_class = AIPlayerSerializer
-
-    def perform_create(self, serializer):
-        ai_player_id = serializer.validated_data.get("ai_player_id")
-        target_game_id = serializer.validated_data.get("target_game_id")
-        cache_key = f"ai_player_{ai_player_id}"
-
-        # Check if an AI player already exists for the target game
-        existing_ai_player = AIPlayer.objects.filter(
-            target_game_id=target_game_id
-        ).first()
-        if existing_ai_player:
-            raise serializers.ValidationError(
-                f"An AI player already exists for game {target_game_id}."
+class CreateAIPlayer(APIView):
+    def post(self, request):
+        serializer = AIPlayerSerializer(data=request.data)
+        if serializer.is_valid():
+            ai_player = serializer.save()
+            client = SocketIOClient(
+                uri=f"ws://pong-api:8000/ws/game/{ai_player.target_game_id}/",
+                ai_player=ai_player,
             )
-
-        logger.info("Creating ai-opponent")
-        # Check if the player exists in Redis
-        if cache.get(cache_key):
-            raise serializers.ValidationError(
-                f"Player with ai_player_id {ai_player_id} already exists in cache."
-            )
-        ai_player = serializer.save()
-
-        # Connect to the WebSocket server
-        try:
-            ws_client = SocketIOClient(
-                f"ws://pong-api:8000/ws/game/{target_game_id}/", ai_player
-            )
-            ws_client.start()
-            logger.info(
-                f"Successfully connected to WebSocket for game {target_game_id}"
-            )
-        except SocketIOConnectionError as e:
-            logger.error(
-                f"Failed to connect to WebSocket for game {target_game_id}: {e}"
-            )
-            # Rollback the AI player creation if WebSocket connection fails
-            ai_player.delete()
-            raise serializers.ValidationError(
-                f"Failed to connect to WebSocket for game {target_game_id}: {e}"
-            )
-
-        return ai_player
-
-    def create(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        try:
-            ai_player = self.perform_create(serializer)
-        except serializers.ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        headers = self.get_success_headers(serializer.data)
-        logger.info("ai-opponent create succesfully, sending response")
-
-        return Response(
-            AIPlayerSerializer(ai_player).data,
-            status=status.HTTP_201_CREATED,
-            headers=headers,
-        )
+            connection_error = client.start()
+            if connection_error:
+                return Response(
+                    {"error": "Failed to connect to WebSocket"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class DeleteAIPlayer(generics.DestroyAPIView):
+class DeleteAIPlayer(APIView):
     def delete(self, request, player_id):
         try:
-            logger.info(f"Attempting to delete AI Player with id {player_id}")
-            ai_player = AIPlayer.from_cache(player_id)
-            if not ai_player:
-                ai_player = AIPlayer.objects.get(ai_player_id=player_id)
+            ai_player = AIPlayer.objects.get(ai_player_id=player_id)
             ai_player.delete()
-            logger.info(f"Successfully deleted AI Player with id {player_id}")
-            return Response({"detail": "AI Player deleted."}, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except AIPlayer.DoesNotExist:
-            logger.warning(f"No AI player matches the given query for id {player_id}")
             return Response(
-                {"detail": "No AI player matches the given query."},
-                status=status.HTTP_404_NOT_FOUND,
+                {"error": "AI Player not found"}, status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
-            logger.error(f"Error deleting AI Player with id {player_id}: {e}")
-            return Response(
-                {
-                    "detail": "An error occurred while attempting to delete the AI Player."
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+

@@ -25,10 +25,11 @@ class SocketIOClient:
         self.last_update_time = 0
         self.move_task = None
         self.game_running = True
-        self.move_step = 10
+        self.move_step = 1
         self.predicted_ball_y = None
         self.ball_x_direction_sign = 0
         self.current_game_state = {}  # Maintain the current game state
+        self.connection_lock = asyncio.Lock()  # Add a lock for connection
 
         # Register event handlers
         self.sio.event(self.connect)
@@ -37,17 +38,20 @@ class SocketIOClient:
         self.sio.on("connection_closed", self.handle_connection_closed)
 
     async def connect(self):
-        if self.sio.connected:
-            logger.info("Already connected to Socket.IO server")
-            return
-        try:
-            logger.info(f"Attempting to connect to {self.uri}")
-            await self.sio.connect(self.uri)
-            logger.info("connect: Socket.IO connection success")
-        except ConnectionError as e:
-            logger.error(f"Socket.IO connection error: {e}")
-            self.connection_error = True
-            raise SocketIOConnectionError(f"Socket.IO connection error: {e}")
+        async with (
+            self.connection_lock
+        ):  # Use the lock to synchronize connection attempts
+            if self.sio.connected:
+                logger.info("Already connected to Socket.IO server")
+                return
+            try:
+                logger.info(f"Attempting to connect to {self.uri}")
+                await self.sio.connect(self.uri)
+                logger.info("connect: Socket.IO connection success")
+            except ConnectionError as e:
+                logger.error(f"Socket.IO connection error: {e}")
+                self.connection_error = True
+                raise SocketIOConnectionError(f"Socket.IO connection error: {e}")
 
     async def disconnect(self):
         if not self.sio.connected:
