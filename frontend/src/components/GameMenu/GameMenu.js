@@ -61,7 +61,7 @@ export default function GameMenu({ gameState, setGameState, network }) {
         {
           label: 'Create a Match',
           action: () => {
-            network.createMatch('create_match', 1);
+            network.createMatch();
           },
         },
         {
@@ -77,8 +77,6 @@ export default function GameMenu({ gameState, setGameState, network }) {
           action: () => {
             setGameState({
               mode: 'Online 1 vs 1',
-              player: network.userState.player,
-              gameId: network.userState.userId,
             });
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('resize', updateMenuRect);
@@ -191,7 +189,7 @@ export default function GameMenu({ gameState, setGameState, network }) {
   });
 
   createEffect(() => {
-    if (matchReadySig[0]() && network.userState.matchId) {
+    if (matchReadySig[0]() && network.userState.match.id) {
       const startButton = submenuSet.element.querySelector('#Start');
       if (startButton) {
         startButton.classList.remove(styles.disabledButton);

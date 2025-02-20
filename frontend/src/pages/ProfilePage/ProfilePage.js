@@ -5,8 +5,10 @@ import { validateUsername, validatePassword, matchPasswords } from '../../core/u
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const port = 8007;
-const apiUrl = `${protocol}//${hostname}:${port}`;
+const UAMport = 8007;
+const historyPort = 8006;
+const accountUrl = `${protocol}//${hostname}:${UAMport}`;
+const historyUrl = `${protocol}//${hostname}:${historyPort}`;
 
 const[usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
 const[passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
@@ -20,7 +22,7 @@ async function handleDeleteAccount() {
   }
 
   try {
-    const response = await fetch(`${apiUrl}/profile/`, {
+    const response = await fetch(`${accountUrl}/profile/`, {
       method: "DELETE",
       headers: {
         "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -55,7 +57,7 @@ function friendRequestForm(setReload) {
 
     try {
       console.log("Sending friend request to", username());
-      const response = await fetch(`${apiUrl}/friend-request/`, {
+      const response = await fetch(`${accountUrl}/friend-request/`, {
         method: "POST",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -111,7 +113,7 @@ function friendListComponent(user_data, setReload) {
     try {
       console.log("Sending unfollow request to", friend_username);
   
-      const response = await fetch(`${apiUrl}/friend-request/`, {
+      const response = await fetch(`${accountUrl}/friend-request/`, {
         method: "DELETE",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -191,7 +193,7 @@ function changeUsernameComponent(user_data, setReload) {
     try {
       console.log("Sending change username request");
       let new_username = username();
-      const response = await fetch(`${apiUrl}/change-username/`, {
+      const response = await fetch(`${accountUrl}/change-username/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -256,7 +258,7 @@ function changeUsernameComponent(user_data, setReload) {
   }
 
   return createComponent('div', {
-    className: styles.changeBox, // create own style!!
+    className: styles.changeBox,
     children: changeUsernameComponent,
   });
 }
@@ -276,7 +278,7 @@ function changePasswordComponent(user_data, setReload) {
         return alert(passwordError());
       }
       let new_password = password();
-      const response = await fetch(`${apiUrl}/change-password/`, {
+      const response = await fetch(`${accountUrl}/change-password/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -386,7 +388,7 @@ function changeAvatarComponent(user_data, setReload) {
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const response = await fetch(`${apiUrl}/change-avatar/`, {
+      const response = await fetch(`${accountUrl}/change-avatar/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -461,14 +463,14 @@ function changeAvatarComponent(user_data, setReload) {
   }
 
   return createComponent('div', {
-    className: styles.changeBox, // create own style!!
+    className: styles.changeBox,
     children: changeAvatarComponent,
   });
 }
 
 //*********************************************************************************************//
 
-function dynamicData(user_data, setReload) {
+function dynamicData(user_data, user_stats, setReload) {
   if (!user_data) {
     return createComponent('div', {
       className: styles.profileContainer,
@@ -479,7 +481,6 @@ function dynamicData(user_data, setReload) {
   return createComponent('div', {
     className: styles.profileContainer,
     children: [
-      // User Info Box
       createComponent('div', {
         className: styles.userBox,
         children: [
@@ -490,15 +491,12 @@ function dynamicData(user_data, setReload) {
               alt: `${user_data.username}'s avatar`,
             }
           }),
-          // AvatarComponent({ user_data: user_data, setReload: () => setReload(true) }),
           createComponent('h1', {
             className: styles.username,
             content: user_data.username,
           }),
         ],
       }),
-
-      // Delete Account Button
       createComponent('button', {
         className: styles.deleteButton,
         content: 'Delete Account',
@@ -513,25 +511,43 @@ function dynamicData(user_data, setReload) {
       changeUsernameComponent(user_data, setReload),
       changePasswordComponent(user_data, setReload),
       changeAvatarComponent(user_data, setReload),
-      
-      // Friends List Section
       friendListComponent(user_data, setReload),
       friendRequestForm(setReload),
 
-      // // Stats Section
-      // createComponent('div', {
-      //   className: styles.statsBox,
-      //   children: [
-      //     createComponent('h2', { content: 'Game Stats' }),
-      //     createComponent('ul', {
-      //       children: user_data.stats.length > 0
-      //         ? user_data.stats.map((stat) =>
-      //             createComponent('li', { content: `${stat.name}: ${stat.value}` })
-      //           )
-      //         : createComponent('p', { content: 'No games played yet' }),
-      //     }),
-      //   ],
-      // }),
+      // Stats Section
+      createComponent('div', {
+        className: `${styles.statsBox} card`,
+        children: [
+          createComponent('div', {
+            className: 'card-header',
+            content: 'Game Stats',
+          }),
+          createComponent('ul', {
+            className: 'list-group list-group-flush',
+            children: user_stats
+              ? [
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: `Wins: ${user_stats.games_won}`,
+                  }),
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: `Losses: ${user_stats.games_lost}`,
+                  }),
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: `Total Play Time: ${user_stats.total_time_played}`,
+                  }),
+                ]
+              : [
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: 'No games played yet',
+                  }),
+                ],
+          }),
+        ],
+      }),
     ],
   });
 }
@@ -542,11 +558,12 @@ export default function ProfilePage({ params, query }) {
   const[content, setContent] = createSignal(null);
   const[error, setError] = createSignal(null);
   const[reload, setReload] = createSignal(true);
+  const [stats, setStats] = createSignal(null);
 
   async function fetchUserData() {
     try {
       console.log('Fetching user data...');
-      const response = await fetch(`${apiUrl}/profile/`, {
+      const response = await fetch(`${accountUrl}/profile/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${localStorage.getItem('authToken')}`,
@@ -557,7 +574,34 @@ export default function ProfilePage({ params, query }) {
         throw new Error('Failed to fetch user data');
       }
       const data = await response.json();
-      setContent(dynamicData(data, setReload));
+      // console.log("user id to fetch history:", data.id);
+      // const userStats = await fetchStats(data.id);
+      // console.log('userStats:', userStats);
+      
+      setContent(dynamicData(data, stats, setReload));
+    } catch (error) {
+      console.error(error);
+      setError(error.message);
+      throw error;
+    }
+  }
+
+  async function fetchStats(id) {
+    try {
+      console.log('Fetching user stats...');
+      const userID = id;
+      const response = await fetch(`${historyUrl}/api/player/${userID}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch stats');
+      }
+      const data = await response.json();
+      setStats(data);
+      return data;
     } catch (error) {
       console.error(error);
       setError(error.message);
@@ -571,29 +615,6 @@ export default function ProfilePage({ params, query }) {
     setReload(false);
     }
   });
-
-  // //example code for fetching stats and achievements
-  // const fetchStats = async () => {
-  //   try {
-  //     const response = await fetch(`http://localhost:8006/stats/`, {
-  //       method: 'GET',
-  //       headers: {
-  //         'Authorization': `Token ${localStorage.getItem('authToken')}`,
-  //         'Content-Type': 'application/json',
-  //       },
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error('Failed to fetch stats');
-  //     }
-  //     const data = await response.json();
-  //     setStats(data);
-  //     return data;
-  //   } catch (error) {
-  //     console.error(error);
-  //     setError(error.message);
-  //     throw error;
-  //   }
-  // };
 
   const wrapper = createComponent('div', {
     className: styles.container,

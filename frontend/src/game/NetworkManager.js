@@ -10,8 +10,13 @@ export default class NetworkManager {
     this.userState = {
       userId: null,
       username: null,
-      matchId: null,
-      player: null,
+      match: {
+        id: null,
+        player1Id: null,
+        player1Name: null,
+        player2Id: null,
+        player2Name: null,
+      },
     };
     this.matchmakingSocket = null;
     this.gameEngineSocket = null;
@@ -23,7 +28,6 @@ export default class NetworkManager {
     this.gameEngineState = {
       connected: false,
     };
-    this.gameId = null;
 
     this.createSignals();
 
@@ -108,8 +112,9 @@ export default class NetworkManager {
       case 'match_created':
         if (this.userId === data.creator_id) {
           this.currentGameId[1](data.id);
-          this.userState.matchId = data.id;
-          this.userState.player = 'p1';
+          this.userState.match.id = data.id;
+          this.userState.match.player1Id = data.creator_id;
+          this.userState.match.player1Name = data.creator_name;
         }
         this.updateGameLists(data.available_games);
         break;
@@ -146,12 +151,19 @@ export default class NetworkManager {
   handlePlayerJoined(data) {
     if (
       data.game_type === 'match' &&
-      data.player_id === this.userState.userId
+      data.game_id === this.userState.match.id
     ) {
-      console.log('from player joined');
+      const match = data.available_games.matches.find(
+        (match) => match.match_id === this.userState.match.id
+      );
+      if (!match) this.handleError("On Player Joined, game doesn't exist");
+      this.userState.match.id = match.match_id;
+      this.userState.match.player2Id = match.player_2_id;
+      this.userState.match.player2Name = data.player_2_name;
+      this.userState.match.player1Id = match.player_1_id;
+      this.userState.match.player1Name = match.player_1_name;
       this.matchReady[1](true);
-      this.userState.player = 'p2';
-      this.userState.matchId = data.game_id;
+      this.callbacks.onPlayerJoined?.();
     }
     this.updateGameLists(data.available_games);
   }
@@ -188,12 +200,12 @@ export default class NetworkManager {
     this.connectionStatus[1]('disconnected');
   }
 
-  createMatch(type, playerId) {
+  createMatch() {
     if (!this.matchmakingSocket) return;
     this.sendMatchMakingMessage({
       type: 'create_match',
-      gameType: type,
-      player_id: playerId,
+      player_id: this.userState.userId,
+      player_name: this.userState.username,
     });
   }
 
@@ -203,6 +215,7 @@ export default class NetworkManager {
       type: 'join_match',
       match_id: matchId,
       player_id: this.userState.userId,
+      player_name: this.userState.username,
     });
   }
 
@@ -217,13 +230,10 @@ export default class NetworkManager {
   }
 
   initGameEngine(timeout = 5000) {
-    if (this.userState.matchId === null) {
-      this.handleError('No match found');
-      return;
-    }
+    this.callbacks.onPlayerJoined?.();
     try {
       const port = 8002;
-      const wsUrl = `${this.protocol}//${this.hostname}:${port}/ws/game/${this.userState.matchId}/`;
+      const wsUrl = `${this.protocol}//${this.hostname}:${port}/ws/game/${this.userState.match.id}/`;
 
       this.gameEngineSocket = new WebSocket(wsUrl);
       this.setupGameEngineListeners();
@@ -281,6 +291,7 @@ export default class NetworkManager {
           ...this.gameEngineState.state,
           ...partialGameState,
         };
+        console.log(this.gameEngineState.state);
         break;
       default:
         console.warn('Unknown message type:', data.type);
@@ -289,10 +300,11 @@ export default class NetworkManager {
 
   sendGameEngineMessage(message) {
     if (!this.gameEngineState.connected) {
-      this.handleError('Not connected to matchmaking server');
+      this.handleError('Not connected to the game engine server');
       return;
     }
     try {
+      console.log('before send message to Engine:', message);
       this.gameEngineSocket.send(JSON.stringify(message));
     } catch (error) {
       this.handleError('Error sending message', error);
@@ -301,10 +313,17 @@ export default class NetworkManager {
 
   move(direction) {
     if (!this.gameEngineSocket) return;
-    this.sendMatchMakingMessage({
-      type: 'move',
+    this.sendGameEngineMessage({
+      action: 'move',
       player_id: this.userState.userId,
       direction: direction,
+    });
+  }
+
+  toggle() {
+    if (!this.gameEngineSocket) return;
+    this.sendGameEngineMessage({
+      action: 'toggle',
     });
   }
 }

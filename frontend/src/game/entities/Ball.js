@@ -115,4 +115,23 @@ export default class Ball extends EventDispatcher {
 
     this.mesh.position.copy(tPos);
   }
+
+  updateFromGameEngine(newX, newZ) {
+    const pos = this.mesh.position;
+    const absX = Math.abs(newX);
+    const absZ = Math.abs(newZ);
+
+    pos.set(newX, pos.y, newZ);
+
+    const dx = this.boundaries.x - this.radius - absX;
+    if (dx <= 0.0) {
+      pos.x = (this.boundaries.x - this.radius + dx) * Math.sign(newX);
+      this.dispatchEvent({ type: 'collide' });
+    }
+
+    const dz = this.boundaries.y - this.radius - absZ;
+    if (dz <= 0.0) {
+      this.dispatchEvent({ type: 'onGoal', message: newZ > 0 ? 'p2' : 'p1' });
+    }
+  }
 }
