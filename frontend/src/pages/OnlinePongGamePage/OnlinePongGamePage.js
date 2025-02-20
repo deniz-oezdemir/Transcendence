@@ -11,6 +11,7 @@ const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // Use HTTP(S) for fetch requests
 const port = 8002;
 const apiUrl = `${protocol}//${hostname}:${port}`;
+let lastMoveTime = 0;
 
 export default function OnlinePongGamePage({ navigate }) {
   const cleanup = createCleanupContext();
@@ -103,7 +104,15 @@ export default function OnlinePongGamePage({ navigate }) {
         player2: { id: parseInt(playerId()), name: playerName() },
       },
     });
-    console.log('Game Initialized:', gameId(), CreatorId(), CreatorName(), playerId(), playerName(), gameType());
+    console.log(
+      'Game Initialized:',
+      gameId(),
+      CreatorId(),
+      CreatorName(),
+      playerId(),
+      playerName(),
+      gameType()
+    );
   }
 
   /**
@@ -263,6 +272,8 @@ export default function OnlinePongGamePage({ navigate }) {
       e.preventDefault();
       const ws = websocket();
       if (ws === null) return;
+      if (now - lastMoveTime < 200) return; // 200ms = 5 times per second
+      lastMoveTime = now;
       ws.send(
         JSON.stringify({
           action: 'move',
@@ -275,6 +286,8 @@ export default function OnlinePongGamePage({ navigate }) {
       e.preventDefault();
       const ws = websocket();
       if (ws === null) return;
+      if (ws === null) return;
+      if (now - lastMoveTime < 200) return; // 200ms = 5 times per second
       ws.send(
         JSON.stringify({
           action: 'move',
@@ -340,7 +353,13 @@ export default function OnlinePongGamePage({ navigate }) {
           setWaitingRoom(false);
           initializeGame();
           toogleGame();
-        }, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType
+        },
+        setGameId,
+        setCreatorId,
+        setCreatorName,
+        setPlayerId,
+        setPlayerName,
+        setGameType,
       });
       content.element.appendChild(waitingroom.element);
     } else {
