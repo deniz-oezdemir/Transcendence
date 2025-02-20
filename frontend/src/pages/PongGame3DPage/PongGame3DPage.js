@@ -135,14 +135,14 @@ export default function PongGame3DPage() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(params.dimensions.game.x, params.dimensions.game.y);
 
-  const stats = new Stats();
+  // const stats = new Stats();
 
   const game = new Game(scene, camera, renderer, params);
 
   onMount(async () => {
     try {
       gameRef.current.appendChild(renderer.domElement);
-      gameRef.current.appendChild(stats.dom);
+      // gameRef.current.appendChild(stats.dom);
 
       await game.init();
 
@@ -174,7 +174,7 @@ export default function PongGame3DPage() {
   function animate() {
     delta = clock.getDelta();
     elapsedTime = clock.getElapsedTime();
-    stats.update();
+    // stats.update();
     game.update(delta, elapsedTime);
   }
 

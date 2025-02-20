@@ -26,7 +26,7 @@ export default function GameMenu({ gameState, setGameState, network }) {
       label: 'Practice',
       submenu: [
         {
-          label: 'Start',
+          label: 'Ai vs Player',
           action: () => {
             setGameState({ mode: 'practice', player: 'p1', gameId: -1 });
             window.removeEventListener('mousemove', handleMouseMove);
@@ -58,40 +58,40 @@ export default function GameMenu({ gameState, setGameState, network }) {
         },
       ],
     },
-    // {
-    //   label: 'Online 1 vs 1',
-    //   action: () => network.getGames(),
-    //   submenu: [
-    //     {
-    //       label: 'Create a Match',
-    //       action: () => {
-    //         network.createMatch();
-    //       },
-    //     },
-    //     {
-    //       label: 'Refresh',
-    //       action: () => network.getGames(),
-    //     },
-    //     {
-    //       label: 'Delete all',
-    //       action: () => network.deleteAllGames(),
-    //     },
-    //     {
-    //       label: 'Start',
-    //       action: () => {
-    //         setGameState({
-    //           mode: 'Online 1 vs 1',
-    //         });
-    //         window.removeEventListener('mousemove', handleMouseMove);
-    //         window.removeEventListener('resize', updateMenuRect);
-    //         if (rafId) cancelAnimationFrame(rafId);
-    //         if (gameMenuRef.current) {
-    //           gameMenuRef.current.style.display = 'none';
-    //         }
-    //       },
-    //     },
-    //   ],
-    // },
+    {
+      label: 'Online 1 vs 1',
+      action: () => network.getGames(),
+      submenu: [
+        {
+          label: 'Create a Match',
+          action: () => {
+            network.createMatch();
+          },
+        },
+        {
+          label: 'Refresh',
+          action: () => network.getGames(),
+        },
+        {
+          label: 'Delete all',
+          action: () => network.deleteAllGames(),
+        },
+        {
+          label: 'Start',
+          action: () => {
+            setGameState({
+              mode: 'Online 1 vs 1',
+            });
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('resize', updateMenuRect);
+            if (rafId) cancelAnimationFrame(rafId);
+            if (gameMenuRef.current) {
+              gameMenuRef.current.style.display = 'none';
+            }
+          },
+        },
+      ],
+    },
     // {
     //   label: 'AI vs You',
     //   submenu: [

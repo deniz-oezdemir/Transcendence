@@ -184,8 +184,13 @@ function friendListComponent(user_data, setReload) {
   }
 
   return createComponent('div', {
-    className: styles.friendsBox,
-    children: friendsComponents,
+    className: `${styles.friendsBoxWrapper}`,
+    children: [
+      createComponent('div', {
+        className: styles.friendsBox,
+        children: friendsComponents,
+      }),
+    ],
   });
 }
 
