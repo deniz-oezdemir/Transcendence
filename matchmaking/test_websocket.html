@@ -215,9 +215,9 @@
 
 					const matchType = data.is_ai_match ? "AI Match" :
 						data.is_local_match ? "Local Match" : "Match";
-					const opponent = data.is_ai_match ? `vs AI ${data.ai_id}` :
+					const opponent = data.is_ai_match ? `vs AI ${data.player_2_id}` :
 						data.is_local_match ? "vs Guest" : "";
-					addMessage('Success', `${matchType} ${data.id} created by Player ${data.creator_id} ${opponent}`);
+					addMessage('Success', `${matchType} ${data.match_id} created by Player ${data.player_1_id} ${opponent}`);
 					addGameDataMessage('Info', data);
 					updateGameList(data.available_games);
 					break;

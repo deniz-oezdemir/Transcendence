@@ -131,6 +131,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "player_2_id": match.player_2_id,
                     "player_2_name": match.player_2_name,
                     "status": match.status,
+                    "is_remote_match": True,
                     "available_games": available_games,
                 },
             )
@@ -167,6 +168,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "player_2_id": match.player_2_id,
                     "player_2_name": match.player_2_name,
                     "status": match.status,
+                    "is_local_match": True,
                     "available_games": available_games,
                 },
             )
@@ -210,6 +212,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "player_2_id": match.player_2_id,
                     "player_2_name": match.player_2_name,
                     "status": match.status,
+                    "is_remote_match": True,
                     "available_games": available_games,
                 },
             )
@@ -365,6 +368,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "player_2_id": match.player_2_id,
                     "player_2_name": match.player_2_name,
                     "status": match.status,
+                    "is_ai_match": True,
                     "available_games": available_games,
                 },
             )
