@@ -307,10 +307,12 @@ class PongGameEngine:
             player_id (int): The ID of the player who scored.
         """
         logger.debug(f"_handle_score_point() for player id: {player_id}")
+        new_ball_direction = 1
         if player_id == self.game_state.player_1_id:
             self.game_state.player_1_score += 1
         elif player_id == self.game_state.player_2_id:
             self.game_state.player_2_score += 1
+            new_ball_direction = -1
 
         logger.debug(
             "Player scored: player_id=%s, player_1_score=%s, player_2_score=%s",
@@ -324,12 +326,8 @@ class PongGameEngine:
         self.game_state.ball_y_position = self.game_height // 2
         self.game_state.ball_x_direction = self.game_state.ball_speed / 4
         self.game_state.ball_y_direction = self.game_state.ball_y_direction / 4
-        self.game_state.ball_x_direction *= (
-            -1 if self.game_state.ball_x_direction < 0 else 1
-        )
-        self.game_state.ball_y_direction *= (
-            1 if self.game_state.ball_y_direction < 0 else -1
-        )
+        self.game_state.ball_x_direction *= new_ball_direction
+        self.game_state.ball_y_direction *= new_ball_direction
         self.game_state.is_game_running = False
         new_players_position = (
             self.game_state.game_height / 2
