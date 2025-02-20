@@ -27,7 +27,7 @@ export default function Navbar({ location, navigate }) {
         navigate('/');
       }
     } else {
-      navigate('/login');
+      router.navigate('/login');
     }
   };
 

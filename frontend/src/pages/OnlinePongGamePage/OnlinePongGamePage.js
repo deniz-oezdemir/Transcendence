@@ -11,6 +11,7 @@ const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // Use HTTP(S) for fetch requests
 const port = 8002;
 const apiUrl = `${protocol}//${hostname}:${port}`;
+let lastMoveTime = 0;
 
 export default function OnlinePongGamePage({ navigate }) {
   const cleanup = createCleanupContext();
@@ -26,16 +27,16 @@ export default function OnlinePongGamePage({ navigate }) {
   const [playerName, setPlayerName] = createSignal('');
   const [gameType, setGameType] = createSignal('');
   const [gameDimensions, setGameDimensions] = createSignal({
-    game: { width: 60, height: 40 },
-    paddle: { width: 1, height: 5, offset: 2 },
-    ball: { radius: 1 },
+    game: { width: 600, height: 400 },
+    paddle: { width: 15, height: 80, offset: 20 },
+    ball: { radius: 10 },
     scaleFactor: 10,
   });
   const [gamePositions, setGamePositions] = createSignal({
-    ball: { x: 30, y: 20 },
-    ballDirection: { x: 0.3, y: 0.3 },
-    player1Position: 15,
-    player2Position: 15,
+    ball: { x: 290, y: 190 },
+    ballDirection: { x: 3, y: 3 },
+    player1Position: 160,
+    player2Position: 160,
   });
   const [gameScore, setGameScore] = createSignal({
     player1: { score: 0 },
@@ -103,7 +104,15 @@ export default function OnlinePongGamePage({ navigate }) {
         player2: { id: parseInt(playerId()), name: playerName() },
       },
     });
-    console.log('Game Initialized:', gameId(), CreatorId(), CreatorName(), playerId(), playerName(), gameType());
+    console.log(
+      'Game Initialized:',
+      gameId(),
+      CreatorId(),
+      CreatorName(),
+      playerId(),
+      playerName(),
+      gameType()
+    );
   }
 
   /**
@@ -184,6 +193,7 @@ export default function OnlinePongGamePage({ navigate }) {
           const partialGameState = JSON.parse(
             pako.inflate(bytes, { to: 'string' })
           );
+          console.log("partial state inside game update", partialGameState);
           // Merge partial update into the current game state
           currentGameState = { ...currentGameState, ...partialGameState };
           // console.log('Data from server game_state now:', currentGameState);
@@ -196,25 +206,6 @@ export default function OnlinePongGamePage({ navigate }) {
             ball: {
               x: currentGameState.ball_x_position * scaleFactor,
               y: currentGameState.ball_y_position * scaleFactor,
-            },
-            ballDirection: {
-              x: currentGameState.ball_x_direction * scaleFactor,
-              y: currentGameState.ball_y_direction * scaleFactor,
-            },
-          }));
-          setGameDimensions((prevDimensions) => ({
-            ...prevDimensions,
-            game: {
-              width: currentGameState.game_width * scaleFactor,
-              height: currentGameState.game_height * scaleFactor,
-            },
-            paddle: {
-              width: currentGameState.paddle_width * scaleFactor,
-              height: currentGameState.paddle_height * scaleFactor,
-              offset: currentGameState.paddle_offset * scaleFactor,
-            },
-            ball: {
-              radius: currentGameState.ball_radius * scaleFactor,
             },
           }));
           const currentScore = gameScore();
@@ -281,6 +272,8 @@ export default function OnlinePongGamePage({ navigate }) {
       e.preventDefault();
       const ws = websocket();
       if (ws === null) return;
+      if (now - lastMoveTime < 200) return; // 200ms = 5 times per second
+      lastMoveTime = now;
       ws.send(
         JSON.stringify({
           action: 'move',
@@ -293,6 +286,8 @@ export default function OnlinePongGamePage({ navigate }) {
       e.preventDefault();
       const ws = websocket();
       if (ws === null) return;
+      if (ws === null) return;
+      if (now - lastMoveTime < 200) return; // 200ms = 5 times per second
       ws.send(
         JSON.stringify({
           action: 'move',
@@ -358,7 +353,13 @@ export default function OnlinePongGamePage({ navigate }) {
           setWaitingRoom(false);
           initializeGame();
           toogleGame();
-        }, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType
+        },
+        setGameId,
+        setCreatorId,
+        setCreatorName,
+        setPlayerId,
+        setPlayerName,
+        setGameType,
       });
       content.element.appendChild(waitingroom.element);
     } else {

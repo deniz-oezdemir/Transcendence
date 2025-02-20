@@ -5,11 +5,11 @@ from django.db import models
 #The default username field is set as the unique identifier for authentication
 #All the default fields of User model are inherited by the CustomUser model (https://docs.djangoproject.com/en/5.1/ref/contrib/auth/)
 class CustomUser(AbstractUser):
-    avatar_url = models.ImageField(
-        upload_to='avatars/', #this gets added to the MEDIA_ROOT path in settings
+    avatar_url = models.CharField(
+        # upload_to='avatars/', #this gets added to the MEDIA_ROOT path in settings
         null=True,
         blank=True,
-        default='avatars/default.png'
+        # default='avatars/default.png'
     )
     status = models.CharField(
         max_length=10,
