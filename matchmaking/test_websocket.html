@@ -301,6 +301,13 @@
 						updateGameList(data.available_games);
 					}
 					break;
+
+				case 'games_deleted':
+					addMessage('Success', 'All games successfully deleted');
+					addMessage('Info', `Matches: ${JSON.stringify(data.available_games.matches)}`);
+					addMessage('Info', `Tournaments: ${JSON.stringify(data.available_games.tournaments)}`);
+					updateGameList(data.available_games);
+					break;
 			}
 		};
 

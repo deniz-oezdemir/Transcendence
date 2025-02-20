@@ -195,10 +195,11 @@ def update_game_result(request, match_id):
                 new_matches = create_next_round_matches(tournament, winners, current_round + 1)
 
                 if new_matches:
-                    # Get the tournament's match structure and update it
-                    tournament.matches[1]["matches"] = [m["match_id"] for m in new_matches]  # Add new match IDs
+                    # Update the correct round in tournament matches
+                    # For 8-player tournaments, rounds are 1-based indexed
+                    tournament.matches[current_round]["matches"] = [m["match_id"] for m in new_matches]
                     tournament.save()
-                    # Get fresh game state
+
                     matches = list(Match.objects.filter(status=Match.ACTIVE).values(
                         "match_id", "player_1_id", "player_1_name",
                         "player_2_id", "player_2_name", "status"
@@ -286,3 +287,35 @@ def create_next_round_matches(tournament, winners, next_round):
             })
 
     return new_matches
+
+@api_view(["POST"])
+def delete_all_games(request):
+    channel_layer = get_channel_layer()
+
+    # Delete all matches and tournaments
+    Match.objects.all().delete()
+    Tournament.objects.all().delete()
+
+    # Get fresh empty game state
+    matches = list(Match.objects.filter(status=Match.ACTIVE).values(
+        "match_id", "player_1_id", "player_1_name",
+        "player_2_id", "player_2_name", "status"
+    ))
+    tournaments = list(Tournament.objects.filter(
+        status__in=[Tournament.PENDING, Tournament.ACTIVE]
+    ).values())
+
+    # Send success message and updated game state
+    async_to_sync(channel_layer.group_send)(
+        "waiting_room",
+        {
+            "type": "games_deleted",
+            "message": "All games successfully deleted",
+            "available_games": {
+                "matches": matches,
+                "tournaments": tournaments
+            }
+        }
+    )
+
+    return Response({"message": "All games deleted"}, status=status.HTTP_200_OK)
