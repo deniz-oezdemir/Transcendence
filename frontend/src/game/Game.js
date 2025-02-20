@@ -270,9 +270,9 @@ export default class Game {
     this.keys[event.key] = true;
 
     if (this.isOnline && this.isGameStart) {
-      if (event.key === 'ArrowLeft') this.inputDirection = -1;
-      else if (event.key === 'ArrowRight') this.inputDirection = 1;
-      else if (event.key === ' ') {
+      //   if (event.key === 'ArrowLeft') this.inputDirection = -1;
+      //   else if (event.key === 'ArrowRight') this.inputDirection = 1;
+      if (event.key === ' ') {
         if (this.isOnline) {
           this.network.toggle();
         }
@@ -293,43 +293,125 @@ export default class Game {
     }
   }
 
-  predictBallPosition(delta) {
-    if (!this.network.gameEngineState.state) return null;
+  // predictBallPosition(delta) {
+  //   if (!this.network.gameEngineState.state) return null;
 
-    const serverBallX =
-      this.network.gameEngineState.state.ball_y_position -
-      this.params.dimensions.boundaries.x;
-    const serverBallZ =
-      this.network.gameEngineState.state.ball_x_position -
-      this.params.dimensions.boundaries.y;
+  //   const serverBallX =
+  //     this.network.gameEngineState.state.ball_y_position -
+  //     this.params.dimensions.boundaries.x;
+  //   const serverBallZ =
+  //     this.network.gameEngineState.state.ball_x_position -
+  //     this.params.dimensions.boundaries.y;
 
-    const currentBallPos = new Vector3(serverBallX, 0, serverBallZ);
+  //   const currentBallPos = new Vector3(serverBallX, 0, serverBallZ);
 
-    this.gameData.ballVelocity = currentBallPos
-      .clone()
-      .sub(this.gameData.prevBallPosition)
-      .divideScalar(delta);
+  //   this.gameData.ballVelocity = currentBallPos
+  //     .clone()
+  //     .sub(this.gameData.prevBallPosition)
+  //     .divideScalar(delta);
 
-    const predictedPosition = currentBallPos
-      .clone()
-      .add(this.gameData.ballVelocity.clone().multiplyScalar(delta * 2));
+  //   const predictedPosition = currentBallPos
+  //     .clone()
+  //     .add(this.gameData.ballVelocity.clone().multiplyScalar(delta * 2));
 
-    this.gameData.prevBallPosition = currentBallPos.clone();
+  //   this.gameData.prevBallPosition = currentBallPos.clone();
 
-    return predictedPosition;
-  }
+  //   return predictedPosition;
+  // }
+
+  // handleOnlineMovement(delta) {
+  //   this.sendAccumulator += delta * 1000;
+
+  //   // if (this.sendAccumulator < this.networkUpdateRate) {
+  //   //   return;
+  //   // }
+
+  //   let direction = 0;
+  //   let shouldSendUpdate = false;
+
+  //   if (this.isMouseMode) {
+  //     this.raycaster.setFromCamera(this.cursor, this.camera);
+  //     const intersection = this.raycaster.intersectObject(
+  //       this.sceneEnv.water
+  //     )?.[0];
+
+  //     if (intersection) {
+  //       const currentX = this.gameData.userPaddle.mesh.position.x;
+  //       const targetX = intersection.point.x;
+  //       const diff = targetX - currentX;
+
+  //       if (Math.abs(diff) > this.movementThreshold) {
+  //         const normalizedDirection = Math.max(-1, Math.min(1, diff / 5));
+  //         direction = normalizedDirection;
+  //         shouldSendUpdate = true;
+  //       }
+  //     }
+  //   } else if (this.inputDirection !== 0) {
+  //     direction = this.inputDirection;
+  //     shouldSendUpdate = true;
+  //   }
+  //   if (shouldSendUpdate && direction !== this.lastSentMovement) {
+  //     this.network.move(direction);
+  //     this.lastSentMovement = direction;
+  //     this.sendAccumulator = 0;
+  //   } else if (this.sendAccumulator > this.networkUpdateRate * 3) {
+  //     this.sendAccumulator = 0;
+  //   }
+  // }
+
+  // smoothlyUpdatePositions(delta) {
+  //   if (!this.network.gameEngineState.state) return;
+
+  //   const prevUserX = this.gameData.userPaddle.mesh.position.x;
+  //   const serverUserX =
+  //     this.gameData.userIs === 'p1'
+  //       ? this.network.gameEngineState.state.player_1_position -
+  //         this.params.dimensions.boundaries.x
+  //       : this.network.gameEngineState.state.player_2_position -
+  //         this.params.dimensions.boundaries.x;
+
+  //   const userLerpFactor = 0.5;
+  //   this.gameData.userPaddle.setX(lerp(prevUserX, serverUserX, userLerpFactor));
+
+  //   const prevOpponentX = this.gameData.opponentPaddle.mesh.position.x;
+  //   const serverOpponentX =
+  //     this.gameData.userIs !== 'p1'
+  //       ? this.network.gameEngineState.state.player_1_position -
+  //         this.params.dimensions.boundaries.x
+  //       : this.network.gameEngineState.state.player_2_position -
+  //         this.params.dimensions.boundaries.x;
+
+  //   const opponentLerpFactor = 0.5;
+  //   this.gameData.opponentPaddle.setX(
+  //     lerp(prevOpponentX, serverOpponentX, opponentLerpFactor)
+  //   );
+
+  //   const predictedBallPos = this.predictBallPosition(delta);
+  //   if (predictedBallPos) {
+  //     const prevBallX = this.pongTable.ball.mesh.position.x;
+  //     const prevBallZ = this.pongTable.ball.mesh.position.z;
+
+  //     const ballLerpFactor = 0.5;
+
+  //     const newBallX = lerp(prevBallX, predictedBallPos.x, ballLerpFactor);
+  //     const newBallZ = lerp(prevBallZ, predictedBallPos.z, ballLerpFactor);
+
+  //     this.pongTable.ball.updateFromGameEngine(newBallX, newBallZ);
+  //   }
+  // }
 
   handleOnlineMovement(delta) {
-    this.sendAccumulator += delta * 1000;
+    if (!this.isOnline || !this.isGameStart) return;
 
-    if (this.sendAccumulator < this.networkUpdateRate) {
-      return;
-    }
+    this.sendAccumulator += delta * 1000;
+    if (this.sendAccumulator < this.networkUpdateRate) return;
 
     let direction = 0;
-    let shouldSendUpdate = false;
 
-    if (this.isMouseMode) {
+    if (!this.isMouseMode) {
+      if (this.keys['ArrowLeft']) direction = -1;
+      else if (this.keys['ArrowRight']) direction = 1;
+    } else {
       this.raycaster.setFromCamera(this.cursor, this.camera);
       const intersection = this.raycaster.intersectObject(
         this.sceneEnv.water
@@ -338,66 +420,56 @@ export default class Game {
       if (intersection) {
         const currentX = this.gameData.userPaddle.mesh.position.x;
         const targetX = intersection.point.x;
-        const diff = targetX - currentX;
-
-        if (Math.abs(diff) > this.movementThreshold) {
-          const normalizedDirection = Math.max(-1, Math.min(1, diff / 5));
-          direction = normalizedDirection;
-          shouldSendUpdate = true;
+        if (Math.abs(targetX - currentX) > 0.1) {
+          direction = Math.sign(targetX - currentX);
         }
       }
-    } else if (this.inputDirection !== 0) {
-      direction = this.inputDirection;
-      shouldSendUpdate = true;
     }
-    if (shouldSendUpdate && direction !== this.lastSentMovement) {
+
+    if (this.gameData.userIs === 'p2') {
+      direction *= -1;
+    }
+
+    // if (direction !== this.lastSentMovement) {
+    if (direction !== 0) {
       this.network.move(direction);
       this.lastSentMovement = direction;
       this.sendAccumulator = 0;
-    } else if (this.sendAccumulator > this.networkUpdateRate * 3) {
-      this.sendAccumulator = 0;
     }
+    // } else if (this.sendAccumulator > this.networkUpdateRate * 3) {
+    //   this.sendAccumulator = 0;
+    // }
   }
 
-  smoothlyUpdatePositions(delta) {
+  // Método simplificado para actualizar posiciones desde el servidor
+  updatePositionsFromServer() {
     if (!this.network.gameEngineState.state) return;
 
-    const prevUserX = this.gameData.userPaddle.mesh.position.x;
-    const serverUserX =
-      this.gameData.userIs === 'p1'
-        ? this.network.gameEngineState.state.player_1_position -
-          this.params.dimensions.boundaries.x
-        : this.network.gameEngineState.state.player_2_position -
-          this.params.dimensions.boundaries.x;
+    const state = this.network.gameEngineState.state;
 
-    const userLerpFactor = 0.5;
-    this.gameData.userPaddle.setX(lerp(prevUserX, serverUserX, userLerpFactor));
-
-    const prevOpponentX = this.gameData.opponentPaddle.mesh.position.x;
-    const serverOpponentX =
-      this.gameData.userIs !== 'p1'
-        ? this.network.gameEngineState.state.player_1_position -
-          this.params.dimensions.boundaries.x
-        : this.network.gameEngineState.state.player_2_position -
-          this.params.dimensions.boundaries.x;
-
-    const opponentLerpFactor = 0.5;
-    this.gameData.opponentPaddle.setX(
-      lerp(prevOpponentX, serverOpponentX, opponentLerpFactor)
-    );
-
-    const predictedBallPos = this.predictBallPosition(delta);
-    if (predictedBallPos) {
-      const prevBallX = this.pongTable.ball.mesh.position.x;
-      const prevBallZ = this.pongTable.ball.mesh.position.z;
-
-      const ballLerpFactor = 0.5;
-
-      const newBallX = lerp(prevBallX, predictedBallPos.x, ballLerpFactor);
-      const newBallZ = lerp(prevBallZ, predictedBallPos.z, ballLerpFactor);
-
-      this.pongTable.ball.updateFromGameEngine(newBallX, newBallZ);
+    if (this.gameData.userIs === 'p1') {
+      const serverX =
+        state.player_1_position - this.params.dimensions.boundaries.x;
+      this.gameData.userPaddle.setX(serverX);
+    } else {
+      const serverX =
+        state.player_2_position - this.params.dimensions.boundaries.x;
+      this.gameData.userPaddle.setX(serverX);
     }
+
+    if (this.gameData.userIs === 'p1') {
+      const serverX =
+        state.player_2_position - this.params.dimensions.boundaries.x;
+      this.gameData.opponentPaddle.setX(serverX);
+    } else {
+      const serverX =
+        state.player_1_position - this.params.dimensions.boundaries.x;
+      this.gameData.opponentPaddle.setX(serverX);
+    }
+
+    const ballX = state.ball_y_position - this.params.dimensions.boundaries.x;
+    const ballZ = state.ball_x_position - this.params.dimensions.boundaries.y;
+    this.pongTable.ball.updateFromGameEngine(ballX, ballZ);
   }
 
   update(delta, elapsedTime) {
@@ -492,7 +564,9 @@ export default class Game {
         }
       } else {
         this.handleOnlineMovement(delta);
-        this.smoothlyUpdatePositions(delta);
+        this.updatePositionsFromServer();
+        // this.handleOnlineMovement(delta);
+        // this.smoothlyUpdatePositions(delta);
       }
 
       this.fireworks.update(delta);

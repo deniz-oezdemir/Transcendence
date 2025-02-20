@@ -200,12 +200,12 @@ export default class NetworkManager {
     this.connectionStatus[1]('disconnected');
   }
 
-  createMatch(type, playerId) {
+  createMatch() {
     if (!this.matchmakingSocket) return;
     this.sendMatchMakingMessage({
       type: 'create_match',
-      gameType: type,
-      player_id: playerId,
+      player_id: this.userState.userId,
+      player_name: this.userState.username,
     });
   }
 
@@ -215,6 +215,7 @@ export default class NetworkManager {
       type: 'join_match',
       match_id: matchId,
       player_id: this.userState.userId,
+      player_name: this.userState.username,
     });
   }
 
@@ -290,6 +291,7 @@ export default class NetworkManager {
           ...this.gameEngineState.state,
           ...partialGameState,
         };
+        console.log(this.gameEngineState.state);
         break;
       default:
         console.warn('Unknown message type:', data.type);

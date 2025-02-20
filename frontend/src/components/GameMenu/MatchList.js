@@ -35,7 +35,7 @@ export default function MatchList({ matches, readySignal, network, onJoin }) {
         });
 
         const label = createComponent('span', {
-          content: `Match ${match.match_id}: ${match.player_1_name} vs ${match.player_2_name ? match.player_2_name : 'Waiting for player'} - ${match.status}`,
+          content: `Match ${match.match_id}: ${match.player_1_name} vs ${match.player_2_name ? match.player_2_name : 'Waiting...'} - ${match.status}`,
         });
         li.element.appendChild(label.element);
 

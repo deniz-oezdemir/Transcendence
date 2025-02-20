@@ -61,7 +61,7 @@ export default function GameMenu({ gameState, setGameState, network }) {
         {
           label: 'Create a Match',
           action: () => {
-            network.createMatch('create_match', 1);
+            network.createMatch();
           },
         },
         {
