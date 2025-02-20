@@ -75,22 +75,23 @@ http://localhost:8001/api/match/<match_id>/result/
 
 **Create Match**
 
-- **Send:**
-    ```json
-    {
-        "type": "create_match",
-        "player_id": int,
-        "player_name": string
-    }
-    ```
 - **Receive:**
     ```json
     {
         "type": "match_created",
-        "id": int,
+        "match_id": int,
         "creator_id": int,
         "creator_name": string,
-        "available_games": []
+        "player_1_id": int,
+        "player_1_name": string,
+        "player_2_id": int,
+        "player_2_name": string,
+        "status": string,
+        "is_remote_match": true,
+        "available_games": {
+            "matches": [],
+            "tournaments": []
+        }
     }
     ```
 
@@ -108,12 +109,18 @@ http://localhost:8001/api/match/<match_id>/result/
 - **Receive:**
     ```json
     {
-        "type": "player_joined",
-        "game_type": "match",
-        "game_id": int,
-        "player_id": int,
-        "player_name": string,
-        "available_games": []
+        "type": "match_created",
+        "match_id": int,
+        "player_1_id": int,
+        "player_1_name": string,
+        "player_2_id": int,
+        "player_2_name": string,
+        "status": "active",
+        "is_remote_match": true,
+        "available_games": {
+            "matches": [],
+            "tournaments": []
+        }
     }
     ```
 
@@ -132,13 +139,17 @@ http://localhost:8001/api/match/<match_id>/result/
     ```json
     {
         "type": "match_created",
-        "id": int,
-        "creator_id": int,
-        "creator_name": string,
+        "match_id": int,
+        "player_1_id": int,
+        "player_1_name": string,
+        "player_2_id": int,
+        "player_2_name": string,
+        "status": string,
         "is_local_match": true,
-        "guest_id": 0,
-        "guest_name": "Guest",
-        "available_games": []
+        "available_games": {
+            "matches": [],
+            "tournaments": []
+        }
     }
     ```
 
@@ -157,13 +168,17 @@ http://localhost:8001/api/match/<match_id>/result/
     ```json
     {
         "type": "match_created",
-        "id": int,
-        "creator_id": int,
-        "creator_name": string,
+        "match_id": int,
+        "player_1_id": int,
+        "player_1_name": string,
+        "player_2_id": int,
+        "player_2_name": string,
+        "status": string,
         "is_ai_match": true,
-        "ai_id": int,
-        "ai_name": "AI",
-        "available_games": []
+        "available_games": {
+            "matches": [],
+            "tournaments": []
+        }
     }
     ```
 
