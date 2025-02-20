@@ -29,7 +29,7 @@ export default function OnlinePongGamePage({ navigate }) {
     game: { width: 600, height: 400 },
     paddle: { width: 15, height: 80, offset: 20 },
     ball: { radius: 10 },
-    scaleFactor: 1,
+    scaleFactor: 10,
   });
   const [gamePositions, setGamePositions] = createSignal({
     ball: { x: 290, y: 190 },
@@ -184,6 +184,7 @@ export default function OnlinePongGamePage({ navigate }) {
           const partialGameState = JSON.parse(
             pako.inflate(bytes, { to: 'string' })
           );
+          console.log("partial state inside game update", partialGameState);
           // Merge partial update into the current game state
           currentGameState = { ...currentGameState, ...partialGameState };
           // console.log('Data from server game_state now:', currentGameState);
