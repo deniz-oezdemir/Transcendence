@@ -64,15 +64,20 @@ class GameStateManager:
                 logger.debug(f"Moved player {player_id} for game_id: {self.game_id}")
 
     async def update_game_state(self, channel_layer, game_group_name):
-        async with self.lock:
-            if self.game_state.is_game_running:
-                engine = PongGameEngine(self.game_state)
-                self.game_state = engine.update_game_state()
-                logger.debug(f"Updated game state for game_id: {self.game_id}")
-            if self.game_state.is_game_ended:
-                logger.info(f"Ending game state for game_id: {self.game_id}")
-                await self.send_connection_close(channel_layer, game_group_name)
-                await self.send_game_result_to_matchmaking()
+        try:
+            async with self.lock:
+                if self.game_state.is_game_running:
+                    engine = PongGameEngine(self.game_state)
+                    self.game_state = engine.update_game_state()
+                    logger.debug(f"Updated game state for game_id: {self.game_id}")
+                if self.game_state.is_game_ended:
+                    logger.info(f"Ending game state for game_id: {self.game_id}")
+                    await self.send_game_result_to_matchmaking()
+                    await self.send_connection_close(channel_layer, game_group_name)
+        except Exception as e:
+            logger.error(
+                f"Error updating game state: {str(e)}", exc_info=True
+            )
 
     def calculate_diffs(self, current_state, previous_state):
         diffs = {}
@@ -85,45 +90,55 @@ class GameStateManager:
         return diffs
 
     async def send_full_game_state(self, channel_layer, game_group_name):
-        async with self.lock:
-            game_state_data = {
-                key: value
-                for key, value in self.game_state.__dict__.items()
-                if not key.startswith("_")
-            }
-            compressed_data = zlib.compress(json.dumps(game_state_data).encode())
-            encoded_data = base64.b64encode(compressed_data).decode()
-
-            await channel_layer.group_send(
-                game_group_name,
-                {"type": "game_state_update", "state": encoded_data},
-            )
-            logger.info(
-                f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
-            )
-
-    async def send_partial_game_state(self, channel_layer, game_group_name):
-        async with self.lock:
-            if self.previous_game_state is None:
-                self.previous_game_state = copy.deepcopy(
-                    self.game_state
-                )  # Initialize previous state if None
-
-            diffs = self.calculate_diffs(self.game_state, self.previous_game_state)
-            if diffs:
-                compressed_data = zlib.compress(json.dumps(diffs).encode())
+        try:
+            async with self.lock:
+                game_state_data = {
+                    key: value
+                    for key, value in self.game_state.__dict__.items()
+                    if not key.startswith("_")
+                }
+                compressed_data = zlib.compress(json.dumps(game_state_data).encode())
                 encoded_data = base64.b64encode(compressed_data).decode()
 
                 await channel_layer.group_send(
                     game_group_name,
                     {"type": "game_state_update", "state": encoded_data},
                 )
-                logger.debug(
-                    f"Sent game state diffs to group: {game_group_name} for game_id: {self.game_id}"
+                logger.info(
+                    f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
                 )
-            self.previous_game_state = copy.deepcopy(
-                self.game_state
-            )  # Update previous state
+        except Exception as e:
+            logger.error(
+                f"Error sending full game state to clients: {str(e)}", exc_info=True
+            )
+
+    async def send_partial_game_state(self, channel_layer, game_group_name):
+        try:
+            async with self.lock:
+                if self.previous_game_state is None:
+                    self.previous_game_state = copy.deepcopy(
+                        self.game_state
+                    )  # Initialize previous state if None
+
+                diffs = self.calculate_diffs(self.game_state, self.previous_game_state)
+                if diffs:
+                    compressed_data = zlib.compress(json.dumps(diffs).encode())
+                    encoded_data = base64.b64encode(compressed_data).decode()
+
+                    await channel_layer.group_send(
+                        game_group_name,
+                        {"type": "game_state_update", "state": encoded_data},
+                    )
+                    logger.debug(
+                        f"Sent game state diffs to group: {game_group_name} for game_id: {self.game_id}"
+                    )
+                self.previous_game_state = copy.deepcopy(
+                    self.game_state
+                )  # Update previous state
+        except Exception as e:
+            logger.error(
+                f"Error sending partial game state to clients: {str(e)}", exc_info=True
+            )
 
     async def start_periodic_updates(self, channel_layer, game_group_name):
         if self.periodic_task is None:
@@ -133,13 +148,18 @@ class GameStateManager:
             logger.debug(f"Started periodic updates for game_id: {self.game_id}")
 
     async def send_connection_close(self, channel_layer, game_group_name):
-        await channel_layer.group_send(
-            game_group_name,
-            {"type": "connection_closed"},
-        )
-        logger.info(
-            f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
-        )
+        try:
+            await channel_layer.group_send(
+                game_group_name,
+                {"type": "connection_closed"},
+            )
+            logger.info(
+                f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error sending connection closed message to clients: {str(e)}", exc_info=True
+            )
 
     async def _periodic_updates(self, channel_layer, game_group_name):
         try:
@@ -162,7 +182,7 @@ class GameStateManager:
         """Sends game result to matchmaking service when game ends"""
         if not self.match_result_sent:
             self.match_result_sent = True
-            logger.debug(f"Preparing to send game result for game {self.game_id}")
+            logger.info(f"Preparing to send game result for game {self.game_id}")
             matchmaking_url = (
                 f"http://matchmaking:8000/api/match/{self.game_id}/result/"
             )
@@ -194,7 +214,7 @@ class GameStateManager:
                         response_text = await response.text()
                         logger.debug(f"Matchmaking response: {response_text}")
                         if response.status == 200:
-                            logger.debug(
+                            logger.info(
                                 f"Game {self.game_id} result successfully sent to matchmaking. Response: {response_text}"
                             )
                             try:

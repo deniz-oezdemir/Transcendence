@@ -4,8 +4,10 @@ import styles from './ProfilePage.module.css';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const port = 8007;
-const apiUrl = `${protocol}//${hostname}:${port}`;
+const UAMport = 8007;
+const historyPort = 8006;
+const apiUrl = `${protocol}//${hostname}:${UAMport}`;
+const historyUrl = `${protocol}//${hostname}:${historyPort}`;
 
 async function handleDeleteAccount() {
   if (
@@ -194,7 +196,7 @@ function friendListComponent(user_data, setReload) {
   });
 }
 
-function dynamicData(user_data, setReload) {
+function dynamicData(user_data, user_stats, setReload) {
   if (!user_data) {
     return createComponent('div', {
       className: styles.profileContainer,
@@ -270,20 +272,40 @@ function dynamicData(user_data, setReload) {
         ],
       }),
 
-      // // Stats Section
-      // createComponent('div', {
-      //   className: styles.statsBox,
-      //   children: [
-      //     createComponent('h2', { content: 'Game Stats' }),
-      //     createComponent('ul', {
-      //       children: user_data.stats.length > 0
-      //         ? user_data.stats.map((stat) =>
-      //             createComponent('li', { content: `${stat.name}: ${stat.value}` })
-      //           )
-      //         : createComponent('p', { content: 'No games played yet' }),
-      //     }),
-      //   ],
-      // }),
+      // Stats Section
+      createComponent('div', {
+        className: `${styles.statsBox} card`,
+        children: [
+          createComponent('div', {
+            className: 'card-header',
+            content: 'Game Stats',
+          }),
+          createComponent('ul', {
+            className: 'list-group list-group-flush',
+            children: user_stats
+              ? [
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: `Wins: ${user_stats.games_won}`,
+                  }),
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: `Losses: ${user_stats.games_lost}`,
+                  }),
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: `Total Play Time: ${user_stats.total_time_played}`,
+                  }),
+                ]
+              : [
+                  createComponent('li', {
+                    className: 'list-group-item',
+                    content: 'No games played yet',
+                  }),
+                ],
+          }),
+        ],
+      }),
 
       // Friends List Section
       friendListComponent(user_data, setReload),
@@ -298,6 +320,7 @@ export default function ProfilePage({ params, query }) {
   const [content, setContent] = createSignal(null);
   const [error, setError] = createSignal(null);
   const [reload, setReload] = createSignal(true);
+  const [stats, setStats] = createSignal(null);
 
   async function fetchUserData() {
     try {
@@ -313,7 +336,9 @@ export default function ProfilePage({ params, query }) {
         throw new Error('Failed to fetch user data');
       }
       const data = await response.json();
-      setContent(dynamicData(data, setReload));
+      const userStats = await fetchStats(data.id);
+      console.log('userStats:', userStats);
+      setContent(dynamicData(data, userStats, setReload));
       console.log('Friends List Data:', data.friends);
     } catch (error) {
       console.error(error);
@@ -331,28 +356,36 @@ export default function ProfilePage({ params, query }) {
     }
   });
 
-  // //example code for fetching stats and achievements
-  // const fetchStats = async () => {
-  //   try {
-  //     const response = await fetch(`http://localhost:8006/stats/`, {
-  //       method: 'GET',
-  //       headers: {
-  //         'Authorization': `Token ${localStorage.getItem('authToken')}`,
-  //         'Content-Type': 'application/json',
-  //       },
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error('Failed to fetch stats');
-  //     }
-  //     const data = await response.json();
-  //     setStats(data);
-  //     return data;
-  //   } catch (error) {
-  //     console.error(error);
-  //     setError(error.message);
-  //     throw error;
-  //   }
-  // };
+  //example code for fetching stats and achievements
+  async function fetchStats(id) {
+    try {
+      console.log('Fetching user stats...');
+      const userID = id;
+      const response = await fetch(`${historyUrl}/api/player/${userID}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch stats');
+      }
+      const data = await response.json();
+      setStats(data);
+      return data;
+    } catch (error) {
+      console.error(error);
+      setError(error.message);
+      throw error;
+    }
+  }
+
+  createEffect(() => {
+    if (reload()) {
+      fetchStats().catch((err) => console.error('Failed to load stats:', err));
+      setReload(false);
+    }
+  });
 
   const wrapper = createComponent('div', {
     className: styles.container,

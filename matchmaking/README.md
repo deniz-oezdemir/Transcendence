@@ -235,6 +235,78 @@ http://localhost:8001/api/match/<match_id>/result/
     }
     ```
 
+**Tournament Round Started**
+- **Receive:**
+    ```json
+    {
+        "type": "tournament_round_started",
+        "tournament_id": int,
+        "round": int,
+        "matches": [
+            {
+                "match_id": int,
+                "player_1_id": int,
+                "player_1_name": string,
+                "player_2_id": int,
+                "player_2_name": string,
+                "round": int,
+                "status": string
+            }
+        ],
+        "available_games": {
+            "matches": [],
+            "tournaments": []
+        }
+    }
+    ```
+
+**Tournament Finished**
+- **Receive:**
+    ```json
+    {
+        "type": "tournament_finished",
+        "tournament_id": int,
+        "winner_id": int,
+        "available_games": {
+            "matches": [],
+            "tournaments": []
+        }
+    }
+    ```
+
+**Match Finished**
+- **Receive:**
+    ```json
+    {
+        "type": "match_finished",
+        "match_id": int,
+        "winner_id": int,
+        "player_1_score": int,
+        "player_2_score": int,
+        "tournament_id": int  // If part of tournament
+    }
+    ```
+
+**Games Deleted**
+- **Send:**
+    ```json
+    {
+        "type": "delete_all_games"
+    }
+    ```
+- **Receive:**
+    ```json
+    {
+        "type": "games_deleted",
+        "message": "All games successfully deleted",
+        "available_games": {
+            "matches": [],
+            "tournaments": []
+        }
+    }
+    ```
+
+
 ## Goals
 First version: support only matches - done
 
