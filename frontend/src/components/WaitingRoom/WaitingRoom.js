@@ -46,24 +46,25 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
           case 'games_deleted':
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
-            if (data.is_local_match === true && userData.id === data.creator_id) {
+            console.log("match tets");
+            if (data.is_local_match === true && userData.id === data.player_1_id) {
               console.log('Local match created:', data);
-              setGameId(data.id);
-              setCreatorId(data.creator_id);
-              setCreatorName(data.creator_name);
-              setPlayerId(data.guest_id);
-              setPlayerName(data.guest_name);
+              setGameId(data.match_id);
+              setCreatorId(data.player_1_id);
+              setCreatorName(data.player_1_name);
+              setPlayerId(data.player_2_id);
+              setPlayerName(data.player_2_name);
               setGameType('local_match');
-              onStartGame(data.game, data.id);
-            } else if (data.is_ai_match === true && userData.id === data.creator_id) {
+              onStartGame(data.game, data.match_id);
+            } else if (data.is_ai_match === true && userData.id === data.player_1_id) {
               console.log('AI match created:', data);
-              setGameId(data.id);
-              setCreatorId(data.available_games.matches[0].player_1_id);
-              setCreatorName(data.available_games.matches[0].player_1_name);
-              setPlayerId(data.available_games.matches[0].player_2_id);
-              setPlayerName(data.available_games.matches[0].player_2_name);
+              setGameId(data.match_id);
+              setCreatorId(data.player_1_id);
+              setCreatorName(data.player_1_name);
+              setPlayerId(data.player_2_id);
+              setPlayerName(data.player_2_name);
               setGameType('AI_match');
-              onStartGame(data.game, data.id);
+              onStartGame(data.game, data.match_id);
             }
             break;
           
@@ -72,24 +73,24 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
             
               if (data.available_games) {
                 if (data.available_games.matches && data.available_games.matches.length > 0) {
-                  switch (data.available_games.matches[0].status) {
+                  switch (data.status) {
                     case 'active':
-                      if (data.available_games.matches[0].player_1_id === userData.id || data.available_games.matches[0].player_2_id === userData.id) {
+                      if (data.player_1_id === userData.id || data.player_2_id === userData.id) {
                         console.log('Match Started');
-                        setGameId(data.game_id);
-                        setCreatorId(data.available_games.matches[0].player_1_id);
-                        setCreatorName(data.available_games.matches[0].player_1_name);
-                        setPlayerId(data.available_games.matches[0].player_2_id);
-                        setPlayerName(data.available_games.matches[0].player_2_name);
+                        setGameId(data.match_id);
+                        setCreatorId(data.player_1_id);
+                        setCreatorName(data.player_1_name);
+                        setPlayerId(data.player_2_id);
+                        setPlayerName(data.player_2_name);
                         setGameType('match');
-                        onStartGame(data.game, data.game_id);
+                        onStartGame(data.game, data.match_id);
                       }
                       break;
                     case 'pending':
                       console.log('Match Pending');
                       break;
                     default:
-                      console.log('Match Status:', data.available_games.matches[0].status);
+                      console.log('Match Status:', data.status);
                   }
                 } else {
                   console.log('No matches available');
