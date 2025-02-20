@@ -1,21 +1,25 @@
 from rest_framework import serializers
-from django.contrib.auth import authenticate
-from rest_framework.authtoken.models import Token
+from .register_serializer import RegisterSerializer
+from accounts.models import CustomUser
+from django.contrib.auth.hashers import check_password
 
-#needs to validate the input password and update the password field in the database
-class ChangePasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(
-        write_only=True, #to not include it in the JSON output
-        required=True,
-        error_messages={"blank": "Password cannot be empty."}
-    )
+class ChangePasswordSerializer(serializers.ModelSerializer):
+    new_password = RegisterSerializer().fields['password']
 
-    def validate_password(self, value):
-        # if len(value) < 8:
-        #     raise serializers.ValidationError("Password must be at least 8 characters long.")
-        return value
+    class Meta:
+        model = CustomUser
+        fields = ['new_password']
+        write_only_fields = ['new_password']
+
+    def validate_new_password(self, value):
+        if value == self.instance.username:
+            raise serializers.ValidationError("New password cannot be the same as the current username.")
+        if check_password(value, self.instance.password):
+            raise serializers.ValidationError("New password cannot be the same as the current password.")
+        return RegisterSerializer().validate_password(value)
+
 
     def update(self, instance, validated_data):
-        instance.set_password(validated_data['password'])
-        instance.save()
+        instance.set_password(validated_data['new_password'])
+        instance.save(update_fields=['password'])
         return instance

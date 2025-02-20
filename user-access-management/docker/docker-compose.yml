@@ -1,3 +1,4 @@
+
 services:
   accounts:
     build:
@@ -7,6 +8,7 @@ services:
       - "8007:8000"
     volumes:
       - ..:/app
+      - avatar_storage:/usr/share/nginx/images
     # env_file:
     #   - path: ./.env
     #     required: true
@@ -61,3 +63,4 @@ networks:
 
 volumes:
   accounts-postgres_data:
+  avatar_storage:

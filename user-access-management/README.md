@@ -147,9 +147,8 @@ Endpoint: DELETE /profile/delete/
   - Authorization: Token USER_TOKEN_HERE
 
 ## TO DO:
-- Integrate remaining endpoints (change avatar, username & password)
-- Switch to PostgeSQL
+- Integrate remaining endpoints (user stats)
 - For deployment:
     - Use a production server like Gunicorn or uWSGI.
-    - Use nginx for reverse proxying and save avatars
-    - Set DEBUG = False in settings.py and configure ALLOWED_HOSTS.
+    - Use nginx for storing avatars
+    - Set DEBUG = False in settings.py and configure ALLOWED_HOSTS + .env.
