@@ -130,10 +130,20 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
       console.warn('WebSocket closed:', event);
       setSocket(null);
     };
+
+    const handlekeydown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        console.log('Escape key disabled');
+      }
+    }
+    document.addEventListener('keydown', handlekeydown);
   
     return () => {
       ws?.close();
       setSocket(null);
+      document.removeEventListener('keydown', handlekeydown);
     };
   });
 
@@ -339,24 +349,36 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   });
 
   let selectedGameType = '';
-  return createComponent('div', {
-    className: styles.waitingRoom,
-    children: [
-      creatGame,
-      localGame,
-      botMatch,
-      checkAvailableGames,
-      deleteAllGames,
-      createComponent('div', {
-        className: styles.matchList,
-        children: [
-          createComponent('pre', {
-            style: 'color: white;',
-            content: 'Waiting Room', tournaments, matches,
-          }),
-          gameList,
-        ],
-      }),
-    ]
-  });  
+return createComponent('div', {
+  className: styles.waitingRoom,
+  children: [
+    // Left Section
+    createComponent('div', {
+      className: styles.leftSection,
+      children: [
+        creatGame,
+        localGame,
+        botMatch,
+        checkAvailableGames,
+        deleteAllGames,
+      ],
+    }),
+    // Right Section (Match List)
+    createComponent('div', {
+      className: styles.matchListContainer,
+      children: [
+        createComponent('div', {
+          className: styles.matchList,
+          children: [
+            createComponent('pre', {
+              style: { color: 'white' }, // Ensure text is white
+              content: 'Waiting Room', // Add your content here
+            }),
+            gameList,
+          ],
+        }),
+      ],
+    }),
+  ],
+});
 }

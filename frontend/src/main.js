@@ -41,7 +41,7 @@ const authentication = async (path, context) => {
       (context.nextPath === '/login' || context.nextPath === '/signup')
     ) {
       // console.log('User already authenticated, redirecting to home...');
-      router.navigate('/');
+      router.navigate('/', { queryParams: { message: 'You are already logged in' } });
       return false;
     }
     return true;
