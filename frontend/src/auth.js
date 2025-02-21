@@ -66,8 +66,8 @@ async function logout() {
 
 async function getUser() {
   return {
-    id: localStorage.getItem('username'),
-    username: localStorage.getItem('UserId'),
+    id: localStorage.getItem('UserId'),
+    username: localStorage.getItem('username'),
   };
 }
 
