@@ -100,7 +100,7 @@ export default function PongGame3DPage() {
   // createEffect(async () => {
   const user = getUser();
   params.user.id = user.id;
-  params.user.name = user.username;
+  params.user.name = user.name;
   // });
 
   const gameRef = { current: null };
