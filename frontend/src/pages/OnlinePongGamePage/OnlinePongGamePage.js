@@ -193,7 +193,7 @@ export default function OnlinePongGamePage({ navigate }) {
           const partialGameState = JSON.parse(
             pako.inflate(bytes, { to: 'string' })
           );
-          console.log("partial state inside game update", partialGameState);
+          console.log('partial state inside game update', partialGameState);
           // Merge partial update into the current game state
           currentGameState = { ...currentGameState, ...partialGameState };
           // console.log('Data from server game_state now:', currentGameState);
@@ -386,6 +386,7 @@ export default function OnlinePongGamePage({ navigate }) {
   });
 
   return createComponent('div', {
+    className: `container position-relative`,
     content: pageContent,
     cleanup,
   });

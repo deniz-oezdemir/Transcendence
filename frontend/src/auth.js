@@ -64,10 +64,10 @@ async function logout() {
   setIsAuthenticated(false);
 }
 
-async function getUser() {
+function getUser() {
   return {
-    id: localStorage.getItem('username'),
-    username: localStorage.getItem('UserId'),
+    id: localStorage.getItem('userId'),
+    name: localStorage.getItem('username'),
   };
 }
 
