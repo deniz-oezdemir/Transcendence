@@ -39,9 +39,49 @@ http://localhost:8001/api/match/<match_id>/result/
 
 **Connect to:** `ws://localhost:8001/ws/waiting-room/`
 
-**Get Available Games**
+Each WebSocket response includes an `available_games` object with this structure:
 
-- **Send:** `{"type": "get_games"}`
+```json
+{
+    "matches": [
+        {
+            "match_id": int,
+            "player_1_id": int,
+            "player_1_name": string,
+            "player_2_id": int,
+            "player_2_name": string,
+            "status": string
+        }
+    ],
+    "tournaments": [
+        {
+            "tournament_id": int,
+            "creator_id": int,
+            "creator_name": string,
+            "players": [int],
+            "player_names": {
+                "player_id": "player_name"
+            },
+            "max_players": int,
+            "status": string,
+            "matches": [
+                {
+                    "match_id": int,
+                    "player_1_id": int,
+                    "player_1_name": string,
+                    "player_2_id": int,
+                    "player_2_name": string,
+                    "status": string
+                }
+            ]
+        }
+    ]
+}
+```
+
+Note: The `matches` array in tournaments contains only active matches for that tournament.
+
+
 - **Receive:**
     ```json
     {
