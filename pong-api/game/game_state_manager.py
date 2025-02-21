@@ -132,9 +132,9 @@ class GameStateManager:
                     logger.debug(
                         f"Sent game state diffs to group: {game_group_name} for game_id: {self.game_id}"
                     )
-                self.previous_game_state = copy.deepcopy(
-                    self.game_state
-                )  # Update previous state
+                    self.previous_game_state = copy.deepcopy(
+                        self.game_state
+                    )  # Update previous state
         except Exception as e:
             logger.error(
                 f"Error sending partial game state to clients: {str(e)}", exc_info=True
@@ -154,7 +154,7 @@ class GameStateManager:
                 {"type": "connection_closed"},
             )
             logger.info(
-                f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
+                f"Sent connec ion closed {game_group_name} for game_id: {self.game_id}"
             )
         except Exception as e:
             logger.error(
@@ -167,7 +167,7 @@ class GameStateManager:
                 await self.update_game_state(channel_layer, game_group_name)
                 logger.debug("Game updated now send")
                 await self.send_partial_game_state(channel_layer, game_group_name)
-                await asyncio.sleep(1 / 20)
+                await asyncio.sleep(1 / 30)
         except asyncio.CancelledError:
             pass
         logger.debug(f"Stopped periodic updates for game_id: {self.game_id}")

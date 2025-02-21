@@ -28,7 +28,7 @@ export default function OnlinePongGamePage({ navigate }) {
   const [gameType, setGameType] = createSignal('');
   const [gameDimensions, setGameDimensions] = createSignal({
     game: { width: 600, height: 400 },
-    paddle: { width: 15, height: 80, offset: 20 },
+    paddle: { width: 10, height: 50, offset: 20 },
     ball: { radius: 10 },
     scaleFactor: 10,
   });
@@ -160,7 +160,7 @@ export default function OnlinePongGamePage({ navigate }) {
       websocket().close();
       setWebsocket(null);
     }
-    console.log('End Game Is Waiting Room:', isWaitingRoom());
+    // console.log('End Game Is Waiting Room:', isWaitingRoom());
     if (!isWaitingRoom()) {
       setWaitingRoom(true);
     }
@@ -179,10 +179,25 @@ export default function OnlinePongGamePage({ navigate }) {
     };
     let currentGameState = {}; // Maintain the current game state
 
+    let lastMessageTime = 0;
+    let gameStateQueue = [];
+    let queueHighWaterMark = 0;
+
     ws.onmessage = function (event) {
       const data = JSON.parse(event.data);
+      const now = performance.now();
+      const timeSinceLastMessage = now - lastMessageTime;
+      console.log('Time between received messages:', timeSinceLastMessage, 'ms');
+      lastMessageTime = now;
+
+      let startTime = performance.now();
+      gameStateQueue.push(event.data);
+      queueHighWaterMark = Math.max(queueHighWaterMark, gameStateQueue.length);
+      console.log('Queue size:', gameStateQueue.length, 'High water mark:', queueHighWaterMark);
+
       if (data.type === 'game_state_update') {
         try {
+          const decompressStart = performance.now();
           // console.log('Received encoded data: ', data)
           const binaryString = atob(data.state);
           const len = binaryString.length;
@@ -193,8 +208,11 @@ export default function OnlinePongGamePage({ navigate }) {
           const partialGameState = JSON.parse(
             pako.inflate(bytes, { to: 'string' })
           );
-          console.log('partial state inside game update', partialGameState);
+          const decompressTime = performance.now() - decompressStart;
+          console.log('Decompression time:', decompressTime, 'ms');
+          // console.log('partial state inside game update', partialGameState);
           // Merge partial update into the current game state
+          const updateStart = performance.now();
           currentGameState = { ...currentGameState, ...partialGameState };
           // console.log('Data from server game_state now:', currentGameState);
 
@@ -208,6 +226,8 @@ export default function OnlinePongGamePage({ navigate }) {
               y: currentGameState.ball_y_position * scaleFactor,
             },
           }));
+          const updateTime = performance.now() - updateStart;
+          console.log('State update time:', updateTime, 'ms');
           const currentScore = gameScore();
           if (
             currentGameState.player_1_score !== currentScore.player1.score ||
@@ -219,12 +239,19 @@ export default function OnlinePongGamePage({ navigate }) {
               player2: { score: currentGameState.player_2_score },
             }));
           }
+          // currentGameState = null;
+          // partialGameState = null;
+          const totalTime = performance.now() - startTime;
+          console.log('Total message processing time:', totalTime, 'ms');
+          gameStateQueue.shift();
         } catch (error) {
           console.error('Error processing game state update:', error);
         }
       } else if (data.type === 'connection_closed') {
         console.log('Connection closed by server.');
         ws.close();
+      } else {
+        console.log(data.type);
       }
     };
 
@@ -272,7 +299,7 @@ export default function OnlinePongGamePage({ navigate }) {
       e.preventDefault();
       const ws = websocket();
       if (ws === null) return;
-      if (now - lastMoveTime < 200) return; // 200ms = 5 times per second
+      // if (now - lastMoveTime < 200) return; // 200ms = 5 times per second
       lastMoveTime = now;
       ws.send(
         JSON.stringify({
@@ -346,7 +373,7 @@ export default function OnlinePongGamePage({ navigate }) {
     const content = createComponent('div', {
       className: `container position-relative`,
     });
-    console.log('Is Waiting Room:', isWaitingRoom());
+    // console.log('Is Waiting Room:', isWaitingRoom());
     if (isWaitingRoom()) {
       const waitingroom = WaitingRoom({
         onStartGame: () => {

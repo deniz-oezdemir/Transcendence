@@ -66,13 +66,14 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def close_all_connections(self):
         # Notify all clients that the connection has ended
         logger.info("Closing all connections")
-        self.game_state_manager.game_state.delete()
+
         await self.channel_layer.group_send(
             self.game_group_name,
             {
                 "type": "connection_closed",
             },
         )
+        self.game_state_manager.game_state.delete()
         await self.disconnect(0)
         await self.close()
 
