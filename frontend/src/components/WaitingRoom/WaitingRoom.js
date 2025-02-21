@@ -1,5 +1,6 @@
 import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
+import { getUser } from '@/auth.js';
 import styles from './WaitingRoom.module.css';
 
 export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType }) {
@@ -12,13 +13,20 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   const port = 8001;
   const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
 
+  let userData = { id: null, username: null };
+  createEffect(async () => {
+    const user = await getUser();
+    userData.id = user.id;
+    userData.name = user.username;
+  });
+
   createEffect(() => {
     const ws = new WebSocket(wsUrl);
   
     ws.onopen = () => {
       console.log('Connected to matchmaking service');
-      console.log('username:', localStorage.getItem('username'));
-      console.log('userId:', localStorage.getItem('userId'));
+      console.log('username:', userData.name);
+      console.log('userId:', userData.id);
       setSocket(ws);
     };
   
@@ -38,24 +46,25 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
           case 'games_deleted':
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
-            if (data.is_local_match === true) {
+            console.log("match tets");
+            if (data.is_local_match === true && userData.id === data.player_1_id) {
               console.log('Local match created:', data);
-              setGameId(data.id);
-              setCreatorId(data.creator_id);
-              setCreatorName(data.creator_name);
-              setPlayerId(data.guest_id);
-              setPlayerName(data.guest_name);
+              setGameId(data.match_id);
+              setCreatorId(data.player_1_id);
+              setCreatorName(data.player_1_name);
+              setPlayerId(data.player_2_id);
+              setPlayerName(data.player_2_name);
               setGameType('local_match');
-              onStartGame(data.game, data.id);
-            } else if (data.is_ai_match === true) {
+              onStartGame(data.game, data.match_id);
+            } else if (data.is_ai_match === true && userData.id === data.player_1_id) {
               console.log('AI match created:', data);
-              setGameId(data.id);
-              setCreatorId(data.available_games.matches[0].player_1_id);
-              setCreatorName(data.available_games.matches[0].player_1_name);
-              setPlayerId(data.available_games.matches[0].player_2_id);
-              setPlayerName(data.available_games.matches[0].player_2_name);
+              setGameId(data.match_id);
+              setCreatorId(data.player_1_id);
+              setCreatorName(data.player_1_name);
+              setPlayerId(data.player_2_id);
+              setPlayerName(data.player_2_name);
               setGameType('AI_match');
-              onStartGame(data.game, data.id);
+              onStartGame(data.game, data.match_id);
             }
             break;
           
@@ -64,23 +73,24 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
             
               if (data.available_games) {
                 if (data.available_games.matches && data.available_games.matches.length > 0) {
-                  switch (data.available_games.matches[0].status) {
+                  switch (data.status) {
                     case 'active':
-                      console.log('Match Started');
-                      setGameId(data.game_id);
-                      setCreatorId(data.available_games.matches[0].player_1_id);
-                      setCreatorName(data.available_games.matches[0].player_1_name);
-                      setPlayerId(data.available_games.matches[0].player_2_id);
-                      setPlayerName(data.available_games.matches[0].player_2_name);
-                      setGameType('match');
-                      onStartGame(data.game, data.game_id);
-
+                      if (data.player_1_id === userData.id || data.player_2_id === userData.id) {
+                        console.log('Match Started');
+                        setGameId(data.match_id);
+                        setCreatorId(data.player_1_id);
+                        setCreatorName(data.player_1_name);
+                        setPlayerId(data.player_2_id);
+                        setPlayerName(data.player_2_name);
+                        setGameType('match');
+                        onStartGame(data.game, data.match_id);
+                      }
                       break;
                     case 'pending':
                       console.log('Match Pending');
                       break;
                     default:
-                      console.log('Match Status:', data.available_games.matches[0].status);
+                      console.log('Match Status:', data.status);
                   }
                 } else {
                   console.log('No matches available');
@@ -130,10 +140,20 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
       console.warn('WebSocket closed:', event);
       setSocket(null);
     };
+
+    const handlekeydown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        console.log('Escape key disabled');
+      }
+    }
+    document.addEventListener('keydown', handlekeydown);
   
     return () => {
       ws?.close();
       setSocket(null);
+      document.removeEventListener('keydown', handlekeydown);
     };
   });
 
@@ -148,8 +168,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     if (!socket()) return;
     socket().send(JSON.stringify({
       type: 'create_AI_match',
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -157,8 +177,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     if (!socket()) return;
     socket().send(JSON.stringify({
       type: 'create_local_match',
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -167,8 +187,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       gameType: 'match',
       type: 'create_match',
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -177,8 +197,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 4,
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -187,8 +207,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'create_tournament',
       max_players: 8,
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -197,8 +217,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'join_match',
       match_id: matches()[0].match_id,
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
     }));
   };
 
@@ -207,8 +227,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     socket().send(JSON.stringify({
       type: 'join_tournament',
       tournament_id: tournaments()[0].tournament_id,
-      player_id: localStorage.getItem('userId'),
-      player_name: localStorage.getItem('username'),
+      player_id: userData.id,
+      player_name: userData.name,
       player_id: 4
     }));
   };
@@ -339,24 +359,36 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   });
 
   let selectedGameType = '';
-  return createComponent('div', {
-    className: styles.waitingRoom,
-    children: [
-      creatGame,
-      localGame,
-      botMatch,
-      checkAvailableGames,
-      deleteAllGames,
-      createComponent('div', {
-        className: styles.matchList,
-        children: [
-          createComponent('pre', {
-            style: 'color: white;',
-            content: 'Waiting Room', tournaments, matches,
-          }),
-          gameList,
-        ],
-      }),
-    ]
-  });  
+return createComponent('div', {
+  className: styles.waitingRoom,
+  children: [
+    // Left Section
+    createComponent('div', {
+      className: styles.leftSection,
+      children: [
+        creatGame,
+        localGame,
+        botMatch,
+        checkAvailableGames,
+        deleteAllGames,
+      ],
+    }),
+    // Right Section (Match List)
+    createComponent('div', {
+      className: styles.matchListContainer,
+      children: [
+        createComponent('div', {
+          className: styles.matchList,
+          children: [
+            createComponent('pre', {
+              style: { color: 'white' }, // Ensure text is white
+              content: 'Waiting Room', // Add your content here
+            }),
+            gameList,
+          ],
+        }),
+      ],
+    }),
+  ],
+});
 }

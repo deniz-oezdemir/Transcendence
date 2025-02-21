@@ -12,7 +12,7 @@ class FriendSerializer(serializers.ModelSerializer):
     def get_avatar_url(self, obj):
         request = self.context.get('request')
         if obj.avatar_url:
-            return request.build_absolute_uri(obj.avatar_url.url) if request else obj.avatar_url.url
+            return obj.avatar_url
         return None
 
 
@@ -28,6 +28,6 @@ class ProfileDataSerializer(serializers.ModelSerializer):
     def get_avatar_url(self, obj):
         request = self.context.get('request')
         if obj.avatar_url:
-            return request.build_absolute_uri(obj.avatar_url.url) if request else obj.avatar_url.url
+            return obj.avatar_url
         return None
 

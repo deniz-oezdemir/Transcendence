@@ -25,7 +25,7 @@ class LoginSerializer(serializers.Serializer):
         data['user'] = user
         return data
 
-    def create(self, validated_data):    
+    def create(self, validated_data):
         user = validated_data['user']
         token, _ = Token.objects.get_or_create(user=user)
         user.status = 'online'
