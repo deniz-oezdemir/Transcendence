@@ -178,37 +178,57 @@ def update_game_result(request, match_id):
     if match.tournament_id:
         tournament = Tournament.objects.get(tournament_id=match.tournament_id)
         current_round = match.round
-        logger.info(f"Handling tournament progression for match {match_id}")
 
-        # Create next round matches if all matches in current round are finished
+        # Get all matches for current round in this tournament
         current_round_matches = Match.objects.filter(
             tournament_id=tournament.tournament_id,
             round=current_round
         )
 
         if all(m.status == Match.FINISHED for m in current_round_matches):
-            # Get winners from current round
             winners = [m.winner_id for m in current_round_matches]
 
-            if len(winners) >= 2:  # Need at least 2 winners for next round
-                # Create matches for next round
+            if len(winners) >= 2:
                 new_matches = create_next_round_matches(tournament, winners, current_round + 1)
 
                 if new_matches:
-                    # Update the correct round in tournament matches
-                    # For 8-player tournaments, rounds are 1-based indexed
                     tournament.matches[current_round]["matches"] = [m["match_id"] for m in new_matches]
                     tournament.save()
 
-                    matches = list(Match.objects.filter(status=Match.ACTIVE).values(
+                    # Get non-tournament matches
+                    matches = list(Match.objects.filter(
+                        status=Match.ACTIVE,
+                        tournament_id__isnull=True  # Only get non-tournament matches
+                    ).values(
                         "match_id", "player_1_id", "player_1_name",
                         "player_2_id", "player_2_name", "status"
                     ))
-                    tournaments = list(Tournament.objects.filter(
-                        status__in=[Tournament.PENDING, Tournament.ACTIVE]
-                    ).values())
 
-                    # Send both tournament round start and updated available games
+                    # Get tournaments with their matches
+                    tournaments = []
+                    for t in Tournament.objects.filter(status__in=[Tournament.PENDING, Tournament.ACTIVE]):
+                        tournament_data = {
+                            "tournament_id": t.tournament_id,
+                            "creator_id": t.creator_id,
+                            "creator_name": t.creator_name,
+                            "players": t.players,
+                            "player_names": t.player_names,
+                            "max_players": t.max_players,
+                            "status": t.status,
+                            "matches": list(Match.objects.filter(
+                                tournament_id=t.tournament_id,
+                                status__in=[Match.PENDING, Match.ACTIVE]
+                            ).values(
+                                "match_id",
+                                "player_1_id",
+                                "player_1_name",
+                                "player_2_id",
+                                "player_2_name",
+                                "status"
+                            ))
+                        }
+                        tournaments.append(tournament_data)
+
                     async_to_sync(channel_layer.group_send)(
                         "waiting_room",
                         {
@@ -217,28 +237,51 @@ def update_game_result(request, match_id):
                             "round": current_round + 1,
                             "matches": new_matches,
                             "available_games": {
-                                "matches": matches,
-                                "tournaments": tournaments
+                                "matches": matches,  # Only non-tournament matches
+                                "tournaments": tournaments  # Tournaments with their matches
                             }
                         }
                     )
             else:
-                # Tournament is finished
+                # Tournament is finished - similar update needed here
                 tournament.status = Tournament.FINISHED
                 tournament.winner_id = winner_id
                 tournament.save()
-                logger.info(f"Tournament {tournament.tournament_id} finished. Winner: {winner_id}")
 
-                # Get fresh game state
-                matches = list(Match.objects.filter(status=Match.ACTIVE).values(
+                # Get non-tournament matches
+                matches = list(Match.objects.filter(
+                    status=Match.ACTIVE,
+                    tournament_id__isnull=True
+                ).values(
                     "match_id", "player_1_id", "player_1_name",
                     "player_2_id", "player_2_name", "status"
                 ))
-                tournaments = list(Tournament.objects.filter(
-                    status__in=[Tournament.PENDING, Tournament.ACTIVE]
-                ).values())
 
-                # Send tournament finished event with updated game state
+                # Get tournaments with their matches
+                tournaments = []
+                for t in Tournament.objects.filter(status__in=[Tournament.PENDING, Tournament.ACTIVE]):
+                    tournament_data = {
+                        "tournament_id": t.tournament_id,
+                        "creator_id": t.creator_id,
+                        "creator_name": t.creator_name,
+                        "players": t.players,
+                        "player_names": t.player_names,
+                        "max_players": t.max_players,
+                        "status": t.status,
+                        "matches": list(Match.objects.filter(
+                            tournament_id=t.tournament_id,
+                            status__in=[Match.PENDING, Match.ACTIVE]
+                        ).values(
+                            "match_id",
+                            "player_1_id",
+                            "player_1_name",
+                            "player_2_id",
+                            "player_2_name",
+                            "status"
+                        ))
+                    }
+                    tournaments.append(tournament_data)
+
                 async_to_sync(channel_layer.group_send)(
                     "waiting_room",
                     {
@@ -246,8 +289,8 @@ def update_game_result(request, match_id):
                         "tournament_id": tournament.tournament_id,
                         "winner_id": winner_id,
                         "available_games": {
-                            "matches": matches,
-                            "tournaments": tournaments
+                            "matches": matches,  # Only non-tournament matches
+                            "tournaments": tournaments  # Tournaments with their matches
                         }
                     }
                 )

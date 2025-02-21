@@ -194,6 +194,7 @@
 		}
 		socket.onmessage = function (e) {
 			const data = JSON.parse(e.data);
+			console.log('Received:', data);
 
 			switch (data.type) {
 				case 'error':
