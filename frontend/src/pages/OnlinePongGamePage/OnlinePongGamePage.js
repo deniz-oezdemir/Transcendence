@@ -18,6 +18,7 @@ export default function OnlinePongGamePage({ navigate }) {
 
   // Game state signals
   const [isWaitingRoom, setWaitingRoom] = createSignal(true);
+  const [isTournament, setTournament] = createSignal(false);
   const [isLoading, setIsLoading] = createSignal(true);
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameId, setGameId] = createSignal(-1);
@@ -338,6 +339,7 @@ export default function OnlinePongGamePage({ navigate }) {
     content.element.appendChild(loading.element);
     return content;
   };
+
 
   /**
    * Creates main game component with score, board, and controls
