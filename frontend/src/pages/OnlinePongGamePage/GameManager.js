@@ -4,7 +4,7 @@ import lerp from '@/game/utils/lerp.js';
 
 const originalDimensions = {
   game: { width: 600, height: 400 },
-  paddle: { width: 10, height: 50, offset: 20 },
+  paddle: { width: 20, height: 50, offset: 10 },
   ball: { radius: 10 },
   scaleFactor: 1,
 };
@@ -82,7 +82,7 @@ export default class GameManager {
     // Set up event listeners
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
-    // window.addEventListener('resize', this.handleResize.bind(this));
+    window.addEventListener('resize', this.handleResize.bind(this));
   }
 
   // Setter methods for game configuration
@@ -239,6 +239,20 @@ export default class GameManager {
           ...this.partialState,
         };
 
+        // Update scores if needed
+        if (
+          'player_1_score' in this.partialState ||
+          'player_2_score' in this.partialState ||
+          'max_score' in this.partialState
+        ) {
+          this.gameScoreSig[1]((prevScore) => ({
+            ...prevScore,
+            player1: { score: this.currentGameState.player_1_score },
+            player2: { score: this.currentGameState.player_2_score },
+            maxScore: this.currentGameState.max_score,
+          }));
+        }
+
         // Run update callbacks
         // this.updateCallbacks.forEach((callback) =>
         //   callback(this.currentGameState)
@@ -250,6 +264,7 @@ export default class GameManager {
       console.log('Connection closed by server.');
       this.ws.close();
       this.ws = null;
+      this.updateCallbacks.forEach((callback) => callback());
     }
   }
 
@@ -286,7 +301,7 @@ export default class GameManager {
     // Remove event listeners
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
-    // window.removeEventListener('resize', this.handleResize.bind(this));
+    window.removeEventListener('resize', this.handleResize.bind(this));
 
     return true;
   }
@@ -395,20 +410,6 @@ export default class GameManager {
         ),
       },
     });
-
-    // Update scores if needed
-    if (
-      'player_1_score' in this.partialState ||
-      'player_2_score' in this.partialState ||
-      'max_score' in this.partialState
-    ) {
-      this.gameScoreSig[1]((prevScore) => ({
-        ...prevScore,
-        player1: { score: this.currentGameState.player_1_score },
-        player2: { score: this.currentGameState.player_2_score },
-        maxScore: this.currentGameState.max_score,
-      }));
-    }
 
     this.frameCounter++;
     if (this.frameCounter >= this.sendEveryNFrames) {

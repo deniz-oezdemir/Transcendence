@@ -24,7 +24,10 @@ export default function OnlinePongGamePage({ navigate }) {
 
   const { id } = getUser();
   const gameManager = new GameManager(apiUrl, id);
-  // gameManager.handleResize();
+  gameManager.handleResize();
+  gameManager.updateCallbacks.push(() => {
+    setWaitingRoom(true);
+  });
 
   /**
    * Ends the game session and cleans up WebSocket connection
