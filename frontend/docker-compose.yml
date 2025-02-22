@@ -11,8 +11,8 @@ services:
       - NODE_ENV=${NODE_ENV:-development}
       - PORT=${PORT:-80}
     ports:
-      - '8005:${PORT:-80}'
-      - '4430:443'
+      # - '8005:${PORT:-80}'
+      # - '4430:443'
       - '35729:35729' # Livereload port
     stdin_open: ${STDIN_ENABLED:-true}
     tty: ${TTY_ENABLED:-true}

@@ -22,10 +22,11 @@ async function handleDeleteAccount() {
   }
 
   try {
-    const response = await fetch(`${accountUrl}/profile/`, {
+    const response = await fetch(`http://localhost:8000/profile/`, {
       method: "DELETE",
       headers: {
         "Authorization": `Token ${localStorage.getItem("authToken")}`,
+        "Content-Type": "application/json",
       },
     });
 
@@ -57,7 +58,7 @@ function friendRequestForm(setReload) {
 
     try {
       console.log("Sending friend request to", username());
-      const response = await fetch(`${accountUrl}/friend-request/`, {
+      const response = await fetch(`http://localhost:8000/api/uam/friend-request/`, {
         method: "POST",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -113,7 +114,7 @@ function friendListComponent(user_data, setReload) {
     try {
       console.log("Sending unfollow request to", friend_username);
   
-      const response = await fetch(`${accountUrl}/friend-request/`, {
+      const response = await fetch(`http://localhost:8000/api/uam/friend-request/`, {
         method: "DELETE",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -193,7 +194,7 @@ function changeUsernameComponent(user_data, setReload) {
     try {
       console.log("Sending change username request");
       let new_username = username();
-      const response = await fetch(`${accountUrl}/change-username/`, {
+      const response = await fetch(`http://localhost:8000/change-username/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -278,7 +279,7 @@ function changePasswordComponent(user_data, setReload) {
         return alert(passwordError());
       }
       let new_password = password();
-      const response = await fetch(`${accountUrl}/change-password/`, {
+      const response = await fetch(`http://localhost:8000/api/uam/change-password/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -388,7 +389,7 @@ function changeAvatarComponent(user_data, setReload) {
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const response = await fetch(`${accountUrl}/change-avatar/`, {
+      const response = await fetch(`http://localhost:8000/api/uam/change-avatar/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -563,21 +564,23 @@ export default function ProfilePage({ params, query }) {
   async function fetchUserData() {
     try {
       console.log('Fetching user data...');
-      const response = await fetch(`${accountUrl}/profile/`, {
+      const response = await fetch(`http://localhost:8000/profile/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${localStorage.getItem('authToken')}`,
           'Content-Type': 'application/json',
         },
       });
+      console.log('Fetched user data:', response);
       if (!response.ok) {
         console.log('Failed to fetch user data');
         // throw new Error('Failed to fetch user data');
       }
       const data = await response.json();
-      const userStats = await fetchStats(data.id);
-      console.log('userStats:', userStats);
-      setContent(dynamicData(data, userStats, setReload));
+      console.log('User data:', data);
+      // const userStats = await fetchStats(data.id);
+      // console.log('userStats:', userStats);
+      setContent(dynamicData(data, null, setReload));
     } catch (error) {
       console.error('fetch user data fails with error: ', error);
       setError(error.message);
@@ -590,7 +593,7 @@ export default function ProfilePage({ params, query }) {
       console.log('Fetching user stats...');
       const userID = id;
       const data = '';
-      const response = await fetch(`${historyUrl}/api/player/${userID}`, {
+      const response = await fetch(`http://localhost:8000/api/player/${userID}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -623,5 +626,6 @@ export default function ProfilePage({ params, query }) {
     cleanup,
   });
 
+console.log('ProfilePage.js: wrapper:', wrapper);
 return wrapper;
 }

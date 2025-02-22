@@ -12,7 +12,7 @@ setIsAuth(await checkAuth());
 async function validateToken(token) {
   if (!token) return Promise.resolve(false);
 
-  return fetch(`${apiUrl}/profile/`, {
+  return fetch(`http://localhost:8000/profile/`, {
     method: 'GET',
     headers: {
       Authorization: `Token ${token}`,
@@ -67,7 +67,7 @@ async function checkAuth() {
 
 async function login(username, password) {
   try {
-    const response = await fetch(`${apiUrl}/login/`, {
+    const response = await fetch(`http://localhost:8000/api/uam/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ async function login(username, password) {
 async function logout() {
   try {
     console.log('loggin out');
-    const response = await fetch(`${apiUrl}/logout/`, {
+    const response = await fetch(`http://localhost:8000/api/uam/logout/`, {
       method: 'POST',
       headers: {
         Authorization: `Token ${localStorage.getItem('authToken')}`,

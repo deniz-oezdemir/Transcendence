@@ -99,7 +99,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 #     'x-requested-with',
 # ]
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8005']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
 
 ROOT_URLCONF = "django_project.urls"
 
@@ -200,7 +200,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media') #The 'media' folder in your project
 # MEDIA_ROOT = '/usr/share/nginx/static/'  # physical directory where files are stored. 
 MEDIA_URL = '/media/'  # public URL where Nginx will serve the media files
 
-NGINX_STORAGE_URL = "http://nginx:80"
-NGINX_PUBLIC_URL = "http://localhost:8080"
+NGINX_STORAGE_URL = "http://nginx:8000"
+NGINX_PUBLIC_URL = "http://localhost:8000"
 
 # APPEND_SLASH=False

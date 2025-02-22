@@ -70,11 +70,22 @@ class ProfileView(APIView):
     def delete(self, request):
         try:
             user = request.user
-            if user.avatar_url and user.avatar_url.name != 'http://localhost:8000/avatars/default.png':
-                filename = user.avatar_url.name.split('/')[-1]
-                avatar_path = os.path.join('/usr/share/nginx/images', filename)
-                if os.path.exists(avatar_path):
-                    os.remove(avatar_path)
+            # old version (not working with new nginx setup):
+            # if user.avatar_url and user.avatar_url.name != 'http://localhost:8000/avatars/default.png':
+            #     filename = user.avatar_url.name.split('/')[-1]
+            #     avatar_path = os.path.join('/usr/share/nginx/images', filename)
+            #     if os.path.exists(avatar_path):
+            #         os.remove(avatar_path)
+            # new approach (needs to be readapted):
+            # if hasattr(user, 'avatar_url') and isinstance(user.avatar_url, (ImageFieldFile, FieldFile)):
+            #     if not user.avatar_url.name.endswith('default.png'):
+            #         try:
+            #             filename = user.avatar_url.name.split('/')[-1]
+            #             avatar_path = os.path.join('/usr/share/nginx/images', filename)
+            #             if os.path.exists(avatar_path):
+            #                 os.remove(avatar_path)
+            #         except Exception as e:
+            #             logger.error(f"Error deleting avatar file: {e}")
             user.delete()
             return Response({"message": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
