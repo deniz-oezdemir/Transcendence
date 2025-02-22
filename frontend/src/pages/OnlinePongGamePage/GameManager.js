@@ -204,12 +204,15 @@ export default class GameManager {
 
       this.ws.onerror = (error) => {
         console.error('Game Engine WebSocket error:', error);
+        this.ws.close();
+        this.isConnected = false;
         reject(error);
       };
 
       this.ws.onclose = () => {
         console.log('Game Engine WebSocket Disconnected.');
         this.isConnected = false;
+        this.ws.close();
         this.ws = null;
       };
     });
