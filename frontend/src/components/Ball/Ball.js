@@ -15,11 +15,13 @@ export default function Ball({ gameDimensions, gamePositions }) {
 
   // Reactive updates for the ball's position
   createEffect(() => {
-    const { ball: ballPosition } = gamePositions();
+    const { ball: currentBallPosition } = gamePositions();
     const { ball: ballDimensions } = gameDimensions();
 
-    ballComponent.element.style.top = `${ballPosition.y - ballDimensions.radius}px`;
-    ballComponent.element.style.left = `${ballPosition.x - ballDimensions.radius}px`;
+    // console.log('New ball position:', currentBallPosition);
+
+    ballComponent.element.style.top = `${currentBallPosition.y - ballDimensions.radius}px`;
+    ballComponent.element.style.left = `${currentBallPosition.x - ballDimensions.radius}px`;
   });
 
   return ballComponent;
