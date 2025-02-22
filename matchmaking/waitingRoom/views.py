@@ -1,5 +1,7 @@
 import logging
 import aiohttp
+import asyncio
+import datetime
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -13,6 +15,8 @@ from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
+async def delay_half_second():
+    await asyncio.sleep(0.5)  # 500ms delay
 
 async def create_game_in_pong_api(match):
     """Creates a game in the pong-api service"""
@@ -34,6 +38,7 @@ async def create_game_in_pong_api(match):
                         f"Failed to create game in pong-api: {await response.text()}"
                     )
                     return False
+                logger.info(f"Successfully created game {match.match_id} in pong-api")
                 return True
         except Exception as e:
             logger.error(f"Error creating game in pong-api: {e}")
@@ -228,6 +233,11 @@ def update_game_result(request, match_id):
                             ))
                         }
                         tournaments.append(tournament_data)
+                        logger.info("[%s] Delaying for 500ms before broadcasting new tournament round", 
+                                  datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+                        asyncio.run(delay_half_second())  # 500ms delay
+                        logger.info("[%s] Delay complete, broadcasting new tournament round",
+                                  datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
 
                     async_to_sync(channel_layer.group_send)(
                         "waiting_room",
@@ -317,6 +327,13 @@ def create_next_round_matches(tournament, winners, next_round):
                 player_2_name=player2_name,  # Use name from tournament
                 status=Match.ACTIVE
             )
+
+            # Create game in pong API
+            success = async_to_sync(create_game_in_pong_api)(match)
+            if not success:
+                logger.error(f"Failed to create game in pong-api for match {match.match_id}")
+                match.delete()  # Delete match if pong API creation fails
+                continue
 
             # Convert Match object to serializable dict
             new_matches.append({

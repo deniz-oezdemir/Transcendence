@@ -1,5 +1,6 @@
 import { createSignal, createEffect } from '@reactivity';
 import { createComponent, onCleanup, createCleanupContext } from '@component';
+import { isPending, setIsPending } from '@/components/GameState/GameState';
 
 import WaitingRoom from '@/components/WaitingRoom/WaitingRoom';
 import Score from '@/components/Score/Score';
@@ -61,6 +62,8 @@ export default function OnlinePongGamePage({ navigate }) {
     if (isWaitingRoom()) {
       content = WaitingRoom({
         onStartGame: async () => {
+          // use that in case of bad behavior server side
+          // this.ws	=	null;
           await gameManager.connectWebSocket();
           gameManager.initializeGame();
           setWaitingRoom(false);

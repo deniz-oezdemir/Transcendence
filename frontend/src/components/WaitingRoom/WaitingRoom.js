@@ -1,6 +1,7 @@
 import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
 import { getUser } from '@/auth.js';
+import { isPending, setIsPending } from '@/components/GameState/GameState';
 import styles from './WaitingRoom.module.css';
 
 export default function WaitingRoom({
@@ -15,7 +16,6 @@ export default function WaitingRoom({
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
   const [socket, setSocket] = createSignal(null);
-
   const hostname = window.location.hostname;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
   const port = 8001;
@@ -31,6 +31,8 @@ export default function WaitingRoom({
       console.log('username:', userData.name);
       console.log('userId:', userData.id);
       setSocket(ws);
+      if (!socket()) return;
+      socket().send(JSON.stringify({ type: 'get_games' }));
     };
 
     ws.onmessage = (event) => {
@@ -44,12 +46,91 @@ export default function WaitingRoom({
             setTournaments(data.games.tournaments || []);
             break;
 
+          case 'match_finished':
+            console.log('Match Finished:', data);
+            if (data.tournament_id) {
+              console.log('Tournament ID:', data.tournament_id);
+              setIsPending(true);
+              console.log('isPending:', isPending());
+            }
+            break;
+
+          case 'tournament_round_started':
+            console.log('Tournament Round Started:', data);
+            const tournamentTBC = data.available_games.tournaments.find(
+              (t) => t.tournament_id === data.tournament_id
+            );
+            if (
+              tournamentTBC.matches.find(
+                (m) =>
+                  m.player_1_id === userData.id || m.player_2_id === userData.id
+              )
+            ) {
+              console.log('Tournament to be continued');
+              console.log(
+                'Match_ID:',
+                tournamentTBC.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).match_id
+              );
+              setGameId(
+                tournamentTBC.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).match_id
+              );
+              setCreatorId(
+                tournamentTBC.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).player_1_id
+              );
+              setCreatorName(
+                tournamentTBC.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).player_1_name
+              );
+              setPlayerId(
+                tournamentTBC.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).player_2_id
+              );
+              setPlayerName(
+                tournamentTBC.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).player_2_name
+              );
+              setGameType('tournament');
+              setIsPending(false);
+              onStartGame(
+                data.game,
+                tournamentTBC.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).match_id
+              );
+            } else {
+              console.log('No match found');
+            }
+            break;
+
           case 'match_created':
           case 'tournament_created':
           case 'games_deleted':
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
-            console.log('match tets');
+            console.log('Available Games:', data.available_games);
             if (
               data.is_local_match === true &&
               userData.id === data.player_1_id
@@ -73,6 +154,20 @@ export default function WaitingRoom({
               setPlayerId(data.player_2_id);
               setPlayerName(data.player_2_name);
               setGameType('AI_match');
+              onStartGame(data.game, data.match_id);
+            } else if (
+              data.is_remote_match === true &&
+              data.status === 'active' &&
+              (userData.id === data.player_1_id ||
+                userData.id === data.player_2_id)
+            ) {
+              console.log('Match created:', data);
+              setGameId(data.match_id);
+              setCreatorId(data.player_1_id);
+              setCreatorName(data.player_1_name);
+              setPlayerId(data.player_2_id);
+              setPlayerName(data.player_2_name);
+              setGameType('remote_match');
               onStartGame(data.game, data.match_id);
             }
             break;
@@ -111,34 +206,68 @@ export default function WaitingRoom({
                 console.log('No matches available');
               }
 
-              if (
-                data.available_games.tournaments &&
-                data.available_games.tournaments.length > 0
-              ) {
-                switch (data.available_games.tournaments[0].status) {
-                  case 'pending':
-                    console.log('Tournament Pending');
-                    break;
-                  default:
-                    console.log(
-                      'Tournament Status:',
-                      data.available_games.tournaments[0].status
-                    );
-                }
-              } else {
-                console.log('No tournaments available');
-              }
-            } else {
-              console.log('No available games data found');
+              break;
             }
 
-            break;
-
           case 'tournament_started':
-            console.log('Tournament Started TEST');
+            console.log('Tournament Started:', data);
 
+            const tournament = data.available_games.tournaments.find(
+              (t) => t.tournament_id === data.tournament_id
+            );
+            if (
+              tournament.matches.find(
+                (m) =>
+                  m.player_1_id === userData.id || m.player_2_id === userData.id
+              )
+            ) {
+              console.log('Tournament Match Started');
+              setGameId(
+                tournament.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).match_id
+              );
+              setCreatorId(
+                tournament.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).player_1_id
+              );
+              setCreatorName(
+                tournament.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).player_1_name
+              );
+              setPlayerId(
+                tournament.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).player_2_id
+              );
+              setPlayerName(
+                tournament.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).player_2_name
+              );
+              setGameType('tournament');
+              onStartGame(
+                data.game,
+                tournament.matches.find(
+                  (m) =>
+                    m.player_1_id === userData.id ||
+                    m.player_2_id === userData.id
+                ).match_id
+              );
+            }
             break;
-
           case 'error':
             alert(data.message);
             console.log('error', data.message);
@@ -249,7 +378,7 @@ export default function WaitingRoom({
     socket().send(
       JSON.stringify({
         type: 'join_match',
-        match_id: matches()[0].match_id,
+        match_id: matches().find((m) => m.status === 'pending').match_id,
         player_id: userData.id,
         player_name: userData.name,
       })
@@ -261,10 +390,10 @@ export default function WaitingRoom({
     socket().send(
       JSON.stringify({
         type: 'join_tournament',
-        tournament_id: tournaments()[0].tournament_id,
+        tournament_id: tournaments().find((t) => t.status === 'pending')
+          .tournament_id,
         player_id: userData.id,
         player_name: userData.name,
-        player_id: 4,
       })
     );
   };
@@ -419,36 +548,64 @@ export default function WaitingRoom({
   });
 
   let selectedGameType = '';
-  return createComponent('div', {
+  const finalComponent = createComponent('div', {
     className: styles.waitingRoom,
-    children: [
-      // Left Section
-      createComponent('div', {
-        className: styles.leftSection,
-        children: [
-          creatGame,
-          localGame,
-          botMatch,
-          checkAvailableGames,
-          deleteAllGames,
-        ],
-      }),
-      // Right Section (Match List)
-      createComponent('div', {
-        className: styles.matchListContainer,
+  });
+
+  createEffect(() => {
+    finalComponent.element.innerHTML = '';
+    let content;
+    console.log('isnide create effect before if:', isPending());
+    if (isPending()) {
+      content = createComponent('div', {
+        className: styles.waitingRoom,
         children: [
           createComponent('div', {
-            className: styles.matchList,
+            className: styles.leftSection,
             children: [
               createComponent('pre', {
-                style: { color: 'white' }, // Ensure text is white
-                content: 'Waiting Room', // Add your content here
+                style: { color: 'white' },
+                content: 'Waiting for the next round to start...',
               }),
-              gameList,
             ],
           }),
         ],
-      }),
-    ],
+      });
+    } else {
+      content = createComponent('div', {
+        className: styles.waitingRoom,
+        children: [
+          // Left Section
+          createComponent('div', {
+            className: styles.leftSection,
+            children: [
+              creatGame,
+              localGame,
+              botMatch,
+              checkAvailableGames,
+              deleteAllGames,
+            ],
+          }),
+          // Right Section (Match List)
+          createComponent('div', {
+            className: styles.matchListContainer,
+            children: [
+              createComponent('div', {
+                className: styles.matchList,
+                children: [
+                  createComponent('pre', {
+                    style: { color: 'white' },
+                    content: 'Waiting Room',
+                  }),
+                  gameList,
+                ],
+              }),
+            ],
+          }),
+        ],
+      });
+    }
+    finalComponent.element.appendChild(content.element);
   });
+  return finalComponent;
 }
