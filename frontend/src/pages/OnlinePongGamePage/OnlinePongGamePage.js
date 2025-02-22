@@ -1,5 +1,6 @@
 import { createSignal, createEffect } from '@reactivity';
 import { createComponent, onCleanup, createCleanupContext } from '@component';
+import { isPending, setIsPending } from '@/components/GameState/GameState';
 
 import WaitingRoom from '@/components/WaitingRoom/WaitingRoom';
 import Score from '@/components/Score/Score';
@@ -226,6 +227,9 @@ export default function OnlinePongGamePage({ navigate }) {
       } else if (data.type === 'connection_closed') {
         console.log('Connection closed by server.');
         ws.close();
+        setWebsocket(null);
+      } else {
+        console.log('Unknown message type:', data);
       }
     };
 
@@ -352,6 +356,9 @@ export default function OnlinePongGamePage({ navigate }) {
     if (isWaitingRoom()) {
       const waitingroom = WaitingRoom({
         onStartGame: () => {
+          if (websocket() !== null) {
+            setWebsocket(null);
+          }
           setWaitingRoom(false);
           initializeGame();
           toogleGame();

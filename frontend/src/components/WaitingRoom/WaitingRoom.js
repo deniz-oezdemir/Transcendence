@@ -1,12 +1,12 @@
 import { createSignal, createEffect } from '@reactivity';
 import { createComponent } from '@component';
 import { getUser } from '@/auth.js';
+import { isPending, setIsPending } from '@/components/GameState/GameState';
 import styles from './WaitingRoom.module.css';
 
 export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType }) {
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
-  const [pending, setPending] = createSignal(false);
   const [socket, setSocket] = createSignal(null);  
   const hostname = window.location.hostname;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
@@ -47,14 +47,28 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
             console.log('Match Finished:', data);
             if (data.tournament_id) {
               console.log('Tournament ID:', data.tournament_id);
-              setPending(true);
-              console.log('isPending:', pending());
+              setIsPending(true);
+              console.log('isPending:', isPending());
             }
             break;
           
           case 'tournament_round_started':
             console.log('Tournament Round Started:', data);
-            //setIsPending(false);
+            const tournamentTBC = data.available_games.tournaments.find(t => t.tournament_id === data.tournament_id);
+            if (tournamentTBC.matches.find(m => m.player_1_id === userData.id || m.player_2_id === userData.id)) {
+                console.log('Tournament to be continued');
+                console.log('Match_ID:', tournamentTBC.matches.find(m => m.player_1_id === userData.id || m.player_2_id === userData.id).match_id);
+                setGameId(tournamentTBC.matches.find(m => m.player_1_id === userData.id || m.player_2_id === userData.id).match_id);
+                setCreatorId(tournamentTBC.matches.find(m => m.player_1_id === userData.id || m.player_2_id === userData.id).player_1_id);
+                setCreatorName(tournamentTBC.matches.find(m => m.player_1_id === userData.id || m.player_2_id === userData.id).player_1_name);
+                setPlayerId(tournamentTBC.matches.find(m => m.player_1_id === userData.id || m.player_2_id === userData.id).player_2_id);
+                setPlayerName(tournamentTBC.matches.find(m => m.player_1_id === userData.id || m.player_2_id === userData.id).player_2_name);
+                setGameType('tournament');
+                setIsPending(false);
+                onStartGame(data.game, tournamentTBC.matches.find(m => m.player_1_id === userData.id || m.player_2_id === userData.id).match_id);
+              } else {
+                console.log('No match found');
+              }
             break;
 
           case 'match_created':
@@ -400,8 +414,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   createEffect(() => {
     finalComponent.element.innerHTML = '';
     let content;
-    console.log('isnide create effect before if:', pending());
-    if (pending()) {
+    console.log('isnide create effect before if:', isPending());
+    if (isPending()) {
       content = createComponent('div', {
         className: styles.waitingRoom,
         children: [
