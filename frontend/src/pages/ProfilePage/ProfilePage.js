@@ -5,10 +5,8 @@ import { validateUsername, validatePassword, matchPasswords } from '../../core/u
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const UAMport = 8000;
-const historyPort = 8000;
-const accountUrl = `${protocol}//${hostname}:${UAMport}`;
-const historyUrl = `${protocol}//${hostname}:${historyPort}`;
+const port = 443;
+const apiUrl = `${protocol}//${hostname}:${port}`;
 
 const[usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
 const[passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
@@ -22,7 +20,7 @@ async function handleDeleteAccount() {
   }
 
   try {
-    const response = await fetch(`http://localhost:8000/profile/`, {
+    const response = await fetch(`${this.protocol}//${this.hostname}:${port}/profile/`, {
       method: "DELETE",
       headers: {
         "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -58,7 +56,7 @@ function friendRequestForm(setReload) {
 
     try {
       console.log("Sending friend request to", username());
-      const response = await fetch(`http://localhost:8000/api/uam/friend-request/`, {
+      const response = await fetch(`${this.protocol}//${this.hostname}:${port}/api/uam/friend-request/`, {
         method: "POST",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -114,7 +112,7 @@ function friendListComponent(user_data, setReload) {
     try {
       console.log("Sending unfollow request to", friend_username);
 
-      const response = await fetch(`http://localhost:8000/api/uam/friend-request/`, {
+      const response = await fetch(`${this.protocol}//${this.hostname}:${port}/api/uam/friend-request/`, {
         method: "DELETE",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -194,7 +192,7 @@ function changeUsernameComponent(user_data, setReload) {
     try {
       console.log("Sending change username request");
       let new_username = username();
-      const response = await fetch(`http://localhost:8000/change-username/`, {
+      const response = await fetch(`${this.protocol}//${this.hostname}:${port}/change-username/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -279,7 +277,7 @@ function changePasswordComponent(user_data, setReload) {
         return alert(passwordError());
       }
       let new_password = password();
-      const response = await fetch(`http://localhost:8000/api/uam/change-password/`, {
+      const response = await fetch(`${this.protocol}//${this.hostname}:${port}/api/uam/change-password/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -389,7 +387,7 @@ function changeAvatarComponent(user_data, setReload) {
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const response = await fetch(`http://localhost:8000/api/uam/change-avatar/`, {
+      const response = await fetch(`${this.protocol}//${this.hostname}:${port}/api/uam/change-avatar/`, {
         method: "PUT",
         headers: {
           "Authorization": `Token ${localStorage.getItem("authToken")}`,
@@ -564,7 +562,7 @@ export default function ProfilePage({ params, query }) {
   async function fetchUserData() {
     try {
       console.log('Fetching user data...');
-      const response = await fetch(`http://localhost:8000/profile/`, {
+      const response = await fetch(`${this.protocol}//${this.hostname}:${port}/profile/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${localStorage.getItem('authToken')}`,
@@ -593,7 +591,7 @@ export default function ProfilePage({ params, query }) {
       console.log('Fetching user stats...');
       const userID = id;
       const data = '';
-      const response = await fetch(`http://localhost:8000/api/game-history/api/player/${userID}`, {
+      const response = await fetch(`${this.protocol}//${this.hostname}:${port}/api/game-history/api/player/${userID}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

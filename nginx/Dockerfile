@@ -1,6 +1,7 @@
 FROM nginx:alpine
 
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./certs /etc/nginx/certs/
 
 RUN mkdir -p /usr/share/nginx/images
 # RUN chown -R nginx:www-data /usr/share/nginx/images

@@ -2,7 +2,7 @@ import { createSignal } from '@reactivity';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const port = 8000;
+const port = 443;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
 let userData = null;
@@ -11,8 +11,7 @@ setIsAuth(await checkAuth());
 
 async function validateToken(token) {
   if (!token) return Promise.resolve(false);
-
-  return fetch(`http://localhost:8000/profile/`, {
+  return fetch(`${this.protocol}//${this.hostname}:${port}/profile/`, {
     method: 'GET',
     headers: {
       Authorization: `Token ${token}`,
@@ -67,7 +66,7 @@ async function checkAuth() {
 
 async function login(username, password) {
   try {
-    const response = await fetch(`http://localhost:8000/api/uam/login/`, {
+    const response = await fetch(`${this.protocol}//${this.hostname}:${port}/api/uam/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -92,7 +91,7 @@ async function login(username, password) {
 async function logout() {
   try {
     console.log('loggin out');
-    const response = await fetch(`http://localhost:8000/api/uam/logout/`, {
+    const response = await fetch(`${this.protocol}//${this.hostname}:${port}/api/uam/logout/`, {
       method: 'POST',
       headers: {
         Authorization: `Token ${localStorage.getItem('authToken')}`,

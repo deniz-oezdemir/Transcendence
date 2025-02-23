@@ -3,10 +3,11 @@ import { createSignal, createEffect } from '@reactivity';
 import styles from './SignupPage.module.css';
 import { validateUsername, validatePassword, matchPasswords, validateEmail } from '../../core/utils';
 
+
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const port = 8000;
-const apiUrl = `${protocol}//${hostname}:${port}`;
+const port = 443;
+const apiUrl = `${protocol}//${hostname}:${port}`
 
 export default function SignupPage() {
   const cleanup = createCleanupContext();
@@ -37,7 +38,7 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/uam/register/`, {
+      const response = await fetch(`${this.protocol}//${this.hostname}:${port}/api/uam/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
