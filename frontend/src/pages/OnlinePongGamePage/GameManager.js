@@ -16,7 +16,7 @@ const originalPositions = {
 };
 
 export default class GameManager {
-  constructor(apiUrl, userId) {
+  constructor(apiUrl, userData) {
     // Core game state
     this.apiUrl = apiUrl;
     this.gameData = {
@@ -27,7 +27,7 @@ export default class GameManager {
       p2Name: null,
       type: null,
     };
-    this.UserId = userId;
+    this.userData = userData;
     this.isRunning = false;
     this.updateCallbacks = [];
     this.currentGameState = {};
@@ -412,9 +412,13 @@ export default class GameManager {
     if (this.frameCounter >= this.sendEveryNFrames) {
       const players = this.gameScoreSig[0]().players;
       console.log('players:', players);
-      console.log('UserId:', this.UserId);
+      console.log('UserId:', this.userData.id);
+      console.log('User:', this.userData);
 
-      if (this.UserId == players.player1.id) {
+      if (
+        this.userData.id == players.player1.id ||
+        this.gameData.type === 'local_match'
+      ) {
         console.log('inside player 1');
         if (this.keys['ArrowUp']) {
           this.updatePlayerPosition(players.player1.id, -1);
@@ -424,7 +428,7 @@ export default class GameManager {
         }
       }
       if (
-        this.UserId == players.player2.id ||
+        this.userData.id == players.player2.id ||
         this.gameData.type === 'local_match'
       ) {
         if (this.keys['w']) {

@@ -18,17 +18,20 @@ export default function OnlinePongGamePage() {
   const cleanup = createCleanupContext();
 
   const [isWaitingRoom, setWaitingRoom] = createSignal(true);
-  let id;
+
+  let gameManager = null;
+
+  let userData = { id: null, username: null };
+
   createEffect(async () => {
     const user = await getUser();
-    id = user.id;
+    userData.id = user.id;
+    userData.name = user.username;
   });
 
-  const gameManager = new GameManager(apiUrl, id);
+  gameManager = new GameManager(apiUrl, userData);
   gameManager.handleResize();
-  gameManager.onUpdate(() => {
-    setWaitingRoom(true);
-  });
+  gameManager.onUpdate(() => setWaitingRoom(true));
 
   onCleanup(() => {
     gameManager.endGame();
