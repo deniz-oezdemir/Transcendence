@@ -15,198 +15,201 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
 
   let userData = { id: null, username: null };
  
-    const user = getUser();
-    userData.id = user.id;
-    userData.name = user.name;
+  const user = getUser();
+  userData.id = user.id;
+  userData.name = user.name;
 
 
-  createEffect(() => {
-    const ws = new WebSocket(wsUrl);
+  //createEffect(() => {
+    const socketConnection = () => {
+      const ws = new WebSocket(wsUrl);
   
-    ws.onopen = () => {
-      console.log('Connected to matchmaking service');
-      console.log('username:', userData.name);
-      console.log('userId:', userData.id);
-      setSocket(ws);
-      if (!socket()) return;
-      socket().send(JSON.stringify({ type: 'get_games' }));
-    };
+      ws.onopen = () => {
+        console.log('Connected to matchmaking service');
+        console.log('username:', userData.name);
+        console.log('userId:', userData.id);
+        setSocket(ws);
+        if (!socket()) return;
+        socket().send(JSON.stringify({ type: 'get_games' }));
+      };
+    
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('Received:', data);
   
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received:', data);
-
-        switch (data.type) {
-          case 'initial_games':
-            setMatches(data.games.matches || []);
-            setTournaments(data.games.tournaments || []);
-            break;
-          
-          case 'match_finished':
-            console.log('Match Finished:', data);
-            if (data.tournament_id) {
-              console.log('Tournament ID:', data.tournament_id);
-              setIsPending(true);
-              console.log('isPending:', isPending());
-            }
-            break;
-          
-          case 'tournament_round_started':
-            console.log('Tournament Round Started:', data);
-            const tournamentTBC = data.available_games.tournaments.find(t => t.tournament_id == data.tournament_id);
-            if (tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id)) {
-                console.log('Tournament to be continued');
-                console.log('Match_ID:', tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
-                setGameId(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
-                setCreatorId(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_1_id);
-                setCreatorName(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_1_name);
-                setPlayerId(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_2_id);
-                setPlayerName(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_2_name);
-                setGameType('tournament');
-                setIsPending(false);
-                onStartGame(data.game, tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
-              } else {
-                console.log('No match found');
-              }
-            break;
-
-          case 'match_created':
-          case 'tournament_created':
-          case 'games_deleted':
-            console.log('TET TEST');
-            setMatches(data.available_games?.matches || []);
-            setTournaments(data.available_games?.tournaments || []);
-            console.log('Available Games:', data.available_games);
-            if (data.is_local_match == true && userData.id == data.player_1_id) {
-              console.log('Local match created:', data);
-              setGameId(data.match_id);
-              setCreatorId(data.player_1_id);
-              setCreatorName(data.player_1_name);
-              setPlayerId(data.player_2_id);
-              setPlayerName(data.player_2_name);
-              setGameType('local_match');
-              onStartGame(data.game, data.match_id);
-            } else if (data.is_ai_match == true && userData.id == data.player_1_id) {
-              console.log('AI match created:', data);
-              setGameId(data.match_id);
-              setCreatorId(data.player_1_id);
-              setCreatorName(data.player_1_name);
-              setPlayerId(data.player_2_id);
-              setPlayerName(data.player_2_name);
-              setGameType('AI_match');
-              onStartGame(data.game, data.match_id);
-            } else if (data.is_remote_match == true && data.status == 'active' && (userData.id == data.player_1_id || userData.id == data.player_2_id)) {
-              console.log('Match created:', data);
-              setGameId(data.match_id);
-              setCreatorId(data.player_1_id);
-              setCreatorName(data.player_1_name);
-              setPlayerId(data.player_2_id);
-              setPlayerName(data.player_2_name);
-              setGameType('remote_match');
-              onStartGame(data.game, data.match_id);
-            }
-            break;
-          
-            case 'player_joined':
-              console.log('Player joined:', data.available_games);
-            
-              if (data.available_games) {
-                if (data.available_games.matches && data.available_games.matches.length > 0) {
-                  switch (data.status) {
-                    case 'active':
-                      console.log('Plyer joined Match Active');
-                      if (data.player_1_id == userData.id || data.player_2_id == userData.id) {
-                        console.log('Match Started');
-                        setGameId(data.match_id);
-                        setCreatorId(data.player_1_id);
-                        setCreatorName(data.player_1_name);
-                        setPlayerId(data.player_2_id);
-                        setPlayerName(data.player_2_name);
-                        setGameType('match');
-                        onStartGame(data.game, data.match_id);
-                      }
-                      break;
-                    case 'pending':
-                      console.log('Match Pending');
-                      break;
-                    default:
-                      console.log('Match Status:', data.status);
-                  }
-                } else {
-                  console.log('No matches available');
-                }
-            
-                if (data.available_games.tournaments && data.available_games.tournaments.length > 0) {
-                  switch (data.available_games.tournaments[0].status) {
-                    case 'pending':
-                      console.log('Tournament Pending');
-                      break;
-                    default:
-                      console.log('Tournament Status:', data.available_games.tournaments[0].status);
-                  }
-                } else {
-                  console.log('No tournaments available');
-                }
-              } else {
-                console.log('No available games data found');
-              }
-            
+          switch (data.type) {
+            case 'initial_games':
+              setMatches(data.games.matches || []);
+              setTournaments(data.games.tournaments || []);
               break;
             
-            case 'tournament_started':
-              console.log('Tournament Started:', data);
-
-              const tournament = data.available_games.tournaments.find(t => t.tournament_id == data.tournament_id);
-              if (tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id)) {
-                console.log('Tournament Match Started');
-                setGameId(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
-                setCreatorId(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_1_id);
-                setCreatorName(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_1_name);
-                setPlayerId(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_2_id);
-                setPlayerName(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_2_name);
-                setGameType('tournament');
-                onStartGame(data.game, tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
+            case 'match_finished':
+              console.log('Match Finished:', data);
+              if (data.tournament_id) {
+                console.log('Tournament ID:', data.tournament_id);
+                setIsPending(true);
+                console.log('isPending:', isPending());
               }
-            break;
-          case 'error':
-            alert(data.message);
-            console.log('error', data.message);
-            break;
-
-          default:
-            console.warn('Unknown message type:', data.type);
+              break;
+            
+            case 'tournament_round_started':
+              console.log('Tournament Round Started:', data);
+              setIsPending(false);
+              const tournamentTBC = data.available_games.tournaments.find(t => t.tournament_id == data.tournament_id);
+              if (tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id)) {
+                  console.log('Tournament to be continued');
+                  console.log('Match_ID:', tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
+                  setGameId(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
+                  setCreatorId(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_1_id);
+                  setCreatorName(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_1_name);
+                  setPlayerId(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_2_id);
+                  setPlayerName(tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_2_name);
+                  setGameType('tournament');
+                  onStartGame(data.game, tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
+                } else {
+                  console.log('No match found');
+                }
+              break;
+  
+            case 'match_created':
+            case 'tournament_created':
+            case 'games_deleted':
+              setMatches(data.available_games?.matches || []);
+              setTournaments(data.available_games?.tournaments || []);
+              console.log('Available Games:', data.available_games);
+              if (data.is_local_match == true && userData.id == data.player_1_id) {
+                console.log('Local match created:', data);
+                setGameId(data.match_id);
+                setCreatorId(data.player_1_id);
+                setCreatorName(data.player_1_name);
+                setPlayerId(data.player_2_id);
+                setPlayerName(data.player_2_name);
+                setGameType('local_match');
+                onStartGame(data.game, data.match_id);
+              } else if (data.is_ai_match == true && userData.id == data.player_1_id) {
+                console.log('AI match created:', data);
+                setGameId(data.match_id);
+                setCreatorId(data.player_1_id);
+                setCreatorName(data.player_1_name);
+                setPlayerId(data.player_2_id);
+                setPlayerName(data.player_2_name);
+                setGameType('AI_match');
+                onStartGame(data.game, data.match_id);
+              } else if (data.is_remote_match == true && data.status == 'active' && (userData.id == data.player_1_id || userData.id == data.player_2_id)) {
+                console.log('Match created:', data);
+                setGameId(data.match_id);
+                setCreatorId(data.player_1_id);
+                setCreatorName(data.player_1_name);
+                setPlayerId(data.player_2_id);
+                setPlayerName(data.player_2_name);
+                setGameType('remote_match');
+                onStartGame(data.game, data.match_id);
+              }
+              break;
+            
+              case 'player_joined':
+                console.log('Player joined:', data.available_games);
+              
+                if (data.available_games) {
+                  if (data.available_games.matches && data.available_games.matches.length > 0) {
+                    switch (data.status) {
+                      case 'active':
+                        console.log('Plyer joined Match Active');
+                        if (data.player_1_id == userData.id || data.player_2_id == userData.id) {
+                          console.log('Match Started');
+                          setGameId(data.match_id);
+                          setCreatorId(data.player_1_id);
+                          setCreatorName(data.player_1_name);
+                          setPlayerId(data.player_2_id);
+                          setPlayerName(data.player_2_name);
+                          setGameType('match');
+                          onStartGame(data.game, data.match_id);
+                        }
+                        break;
+                      case 'pending':
+                        console.log('Match Pending');
+                        break;
+                      default:
+                        console.log('Match Status:', data.status);
+                    }
+                  } else {
+                    console.log('No matches available');
+                  }
+              
+                  if (data.available_games.tournaments && data.available_games.tournaments.length > 0) {
+                    switch (data.available_games.tournaments[0].status) {
+                      case 'pending':
+                        console.log('Tournament Pending');
+                        break;
+                      default:
+                        console.log('Tournament Status:', data.available_games.tournaments[0].status);
+                    }
+                  } else {
+                    console.log('No tournaments available');
+                  }
+                } else {
+                  console.log('No available games data found');
+                }
+              
+                break;
+              
+              case 'tournament_started':
+                console.log('Tournament Started:', data);
+  
+                const tournament = data.available_games.tournaments.find(t => t.tournament_id == data.tournament_id);
+                if (tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id)) {
+                  console.log('Tournament Match Started');
+                  setGameId(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
+                  setCreatorId(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_1_id);
+                  setCreatorName(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_1_name);
+                  setPlayerId(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_2_id);
+                  setPlayerName(tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).player_2_name);
+                  setGameType('tournament');
+                  onStartGame(data.game, tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
+                }
+              break;
+            case 'error':
+              alert(data.message);
+              console.log('error', data.message);
+              break;
+  
+            default:
+              console.warn('Unknown message type:', data.type);
+          }
+  
+        } catch (err) {
+          console.error('Error parsing WebSocket message:', err);
         }
-
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
-      }
-    };
+      };
+    
+      ws.onerror = (error) => {
+        console.error('WebSocket Error:', error);
+      };
+    
+      ws.onclose = (event) => {
+        console.warn('WebSocket closed:', event);
+        setSocket(null);
+      };
   
-    ws.onerror = (error) => {
-      console.error('WebSocket Error:', error);
-    };
-  
-    ws.onclose = (event) => {
-      console.warn('WebSocket closed:', event);
-      setSocket(null);
-    };
-
-    const handlekeydown = (event) => {
-      if (event.key == 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        console.log('Escape key disabled');
+      const handlekeydown = (event) => {
+        if (event.key == 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          console.log('Escape key disabled');
+        }
       }
+      document.addEventListener('keydown', handlekeydown);
     }
-    document.addEventListener('keydown', handlekeydown);
-  
-    return () => {
-      ws?.close();
-      setSocket(null);
+   
+    socketConnection();
+    /*return () => {
+      //ws?.close();
+      //setSocket(null);
       document.removeEventListener('keydown', handlekeydown);
-    };
-  });
+    };*/
+
+  //});
 
   const deleteGames = () => {
     if (!socket()) return;
