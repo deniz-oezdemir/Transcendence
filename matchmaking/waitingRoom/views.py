@@ -1,5 +1,7 @@
 import logging
 import aiohttp
+import asyncio
+import datetime
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -13,6 +15,8 @@ from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
+async def delay_half_second():
+    await asyncio.sleep(0)  # 500ms delay
 
 async def create_game_in_pong_api(match):
     """Creates a game in the pong-api service"""
@@ -22,7 +26,7 @@ async def create_game_in_pong_api(match):
                 "http://pong-api:8000/game/create_game/",
                 json={
                     "id": match.match_id,
-                    "max_score": 3,
+                    "max_score": 1,
                     "player_1_id": match.player_1_id,
                     "player_1_name": f"Player {match.player_1_name}",
                     "player_2_id": match.player_2_id,
@@ -34,6 +38,7 @@ async def create_game_in_pong_api(match):
                         f"Failed to create game in pong-api: {await response.text()}"
                     )
                     return False
+                logger.info(f"Successfully created game {match.match_id} in pong-api")
                 return True
         except Exception as e:
             logger.error(f"Error creating game in pong-api: {e}")
@@ -161,10 +166,24 @@ def update_game_result(request, match_id):
     )
 
     # Broadcast match result to all connected clients
+    logger.info(f"Broadcasting match result for match {match.match_id}")
+    logger.debug(
+        f"Match details - Winner: {winner_id}, "
+        f"Score: {match.player_1_score}-{match.player_2_score}, "
+        f"Tournament: {match.tournament_id}"
+    )
+    
+    # Add 1 second delay
+    logger.info("[%s] Delaying for 1s before broadcasting match result", 
+              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+    async_to_sync(asyncio.sleep)(0)
+    logger.info("[%s] Delay complete, broadcasting match result",
+              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+    
     async_to_sync(channel_layer.group_send)(
         "waiting_room",
         {
-            "type": "match_finished",
+            "type": "match_finished", 
             "match_id": match.match_id,
             "winner_id": winner_id,
             "player_1_score": match.player_1_score,
@@ -172,43 +191,79 @@ def update_game_result(request, match_id):
             "tournament_id": match.tournament_id
         }
     )
+    logger.info(f"Successfully broadcast match result for match {match.match_id}")
+
 
     # Handle tournament progression
     new_matches = []  # Initialize new_matches list
     if match.tournament_id:
         tournament = Tournament.objects.get(tournament_id=match.tournament_id)
         current_round = match.round
-        logger.info(f"Handling tournament progression for match {match_id}")
 
-        # Create next round matches if all matches in current round are finished
+        # Get all matches for current round in this tournament
         current_round_matches = Match.objects.filter(
             tournament_id=tournament.tournament_id,
             round=current_round
         )
 
         if all(m.status == Match.FINISHED for m in current_round_matches):
-            # Get winners from current round
             winners = [m.winner_id for m in current_round_matches]
 
-            if len(winners) >= 2:  # Need at least 2 winners for next round
-                # Create matches for next round
+            if len(winners) >= 2:
                 new_matches = create_next_round_matches(tournament, winners, current_round + 1)
 
                 if new_matches:
-                    # Update the correct round in tournament matches
-                    # For 8-player tournaments, rounds are 1-based indexed
                     tournament.matches[current_round]["matches"] = [m["match_id"] for m in new_matches]
                     tournament.save()
 
-                    matches = list(Match.objects.filter(status=Match.ACTIVE).values(
+                    # Get non-tournament matches
+                    matches = list(Match.objects.filter(
+                        status=Match.ACTIVE,
+                        tournament_id__isnull=True  # Only get non-tournament matches
+                    ).values(
                         "match_id", "player_1_id", "player_1_name",
                         "player_2_id", "player_2_name", "status"
                     ))
-                    tournaments = list(Tournament.objects.filter(
-                        status__in=[Tournament.PENDING, Tournament.ACTIVE]
-                    ).values())
 
-                    # Send both tournament round start and updated available games
+                    # Get tournaments with their matches
+                    tournaments = []
+                    for t in Tournament.objects.filter(status__in=[Tournament.PENDING, Tournament.ACTIVE]):
+                        tournament_data = {
+                            "tournament_id": t.tournament_id,
+                            "creator_id": t.creator_id,
+                            "creator_name": t.creator_name,
+                            "players": t.players,
+                            "player_names": t.player_names,
+                            "max_players": t.max_players,
+                            "status": t.status,
+                            "matches": list(Match.objects.filter(
+                                tournament_id=t.tournament_id,
+                                status__in=[Match.PENDING, Match.ACTIVE]
+                            ).values(
+                                "match_id",
+                                "player_1_id",
+                                "player_1_name",
+                                "player_2_id",
+                                "player_2_name",
+                                "status"
+                            ))
+                        }
+                        tournaments.append(tournament_data)
+                        # logger.info("[%s] Delaying for 500ms before broadcasting new tournament round", 
+                        #           datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+                        # asyncio.run(delay_half_second())  # 500ms delay
+                        # logger.info("[%s] Delay complete, broadcasting new tournament round",
+                        #           datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+
+                    logger.info("[%s] Delaying for 5s before broadcasting new tournament round", 
+                              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+                    async_to_sync(delay_half_second)()  # 5s delay 
+                    logger.info("[%s] Delay complete, broadcasting new tournament round",
+                              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+
+                    logger.info(f"Broadcasting new tournament round for tournament {tournament.tournament_id}")
+                    logger.debug(f"New matches: {new_matches}")
+                    logger.debug(f"Current round: {current_round}, Next round: {current_round + 1}")
                     async_to_sync(channel_layer.group_send)(
                         "waiting_room",
                         {
@@ -217,28 +272,52 @@ def update_game_result(request, match_id):
                             "round": current_round + 1,
                             "matches": new_matches,
                             "available_games": {
-                                "matches": matches,
-                                "tournaments": tournaments
+                                "matches": matches,  # Only non-tournament matches
+                                "tournaments": tournaments  # Tournaments with their matches
                             }
                         }
                     )
+                    logger.info(f"Successfully broadcast new tournament round for tournament {tournament.tournament_id}")
             else:
-                # Tournament is finished
+                # Tournament is finished - similar update needed here
                 tournament.status = Tournament.FINISHED
                 tournament.winner_id = winner_id
                 tournament.save()
-                logger.info(f"Tournament {tournament.tournament_id} finished. Winner: {winner_id}")
 
-                # Get fresh game state
-                matches = list(Match.objects.filter(status=Match.ACTIVE).values(
+                # Get non-tournament matches
+                matches = list(Match.objects.filter(
+                    status=Match.ACTIVE,
+                    tournament_id__isnull=True
+                ).values(
                     "match_id", "player_1_id", "player_1_name",
                     "player_2_id", "player_2_name", "status"
                 ))
-                tournaments = list(Tournament.objects.filter(
-                    status__in=[Tournament.PENDING, Tournament.ACTIVE]
-                ).values())
 
-                # Send tournament finished event with updated game state
+                # Get tournaments with their matches
+                tournaments = []
+                for t in Tournament.objects.filter(status__in=[Tournament.PENDING, Tournament.ACTIVE]):
+                    tournament_data = {
+                        "tournament_id": t.tournament_id,
+                        "creator_id": t.creator_id,
+                        "creator_name": t.creator_name,
+                        "players": t.players,
+                        "player_names": t.player_names,
+                        "max_players": t.max_players,
+                        "status": t.status,
+                        "matches": list(Match.objects.filter(
+                            tournament_id=t.tournament_id,
+                            status__in=[Match.PENDING, Match.ACTIVE]
+                        ).values(
+                            "match_id",
+                            "player_1_id",
+                            "player_1_name",
+                            "player_2_id",
+                            "player_2_name",
+                            "status"
+                        ))
+                    }
+                    tournaments.append(tournament_data)
+
                 async_to_sync(channel_layer.group_send)(
                     "waiting_room",
                     {
@@ -246,8 +325,8 @@ def update_game_result(request, match_id):
                         "tournament_id": tournament.tournament_id,
                         "winner_id": winner_id,
                         "available_games": {
-                            "matches": matches,
-                            "tournaments": tournaments
+                            "matches": matches,  # Only non-tournament matches
+                            "tournaments": tournaments  # Tournaments with their matches
                         }
                     }
                 )
@@ -274,6 +353,13 @@ def create_next_round_matches(tournament, winners, next_round):
                 player_2_name=player2_name,  # Use name from tournament
                 status=Match.ACTIVE
             )
+
+            # Create game in pong API
+            success = async_to_sync(create_game_in_pong_api)(match)
+            if not success:
+                logger.error(f"Failed to create game in pong-api for match {match.match_id}")
+                match.delete()  # Delete match if pong API creation fails
+                continue
 
             # Convert Match object to serializable dict
             new_matches.append({

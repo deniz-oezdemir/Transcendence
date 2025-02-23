@@ -32,7 +32,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                     "http://pong-api:8000/game/create_game/",
                     json={
                         "id": match.match_id,
-                        "max_score": 3,
+                        "max_score": 1,
                         "player_1_id": match.player_1_id,
                         "player_1_name": f"Player {match.player_1_name}",
                         "player_2_id": match.player_2_id,
@@ -125,9 +125,13 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 "waiting_room",
                 {
                     "type": "match_created",
-                    "id": match.match_id,
-                    "creator_id": match.player_1_id,
-                    "creator_name": match.player_1_name,
+                    "match_id": match.match_id,
+                    "player_1_id": match.player_1_id,
+                    "player_1_name": match.player_1_name,
+                    "player_2_id": match.player_2_id,
+                    "player_2_name": match.player_2_name,
+                    "status": match.status,
+                    "is_remote_match": True,
                     "available_games": available_games,
                 },
             )
@@ -158,12 +162,13 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 "waiting_room",
                 {
                     "type": "match_created",
-                    "id": match.match_id,
-                    "creator_id": match.player_1_id,
-                    "creator_name": match.player_1_name,
+                    "match_id": match.match_id,
+                    "player_1_id": match.player_1_id,
+                    "player_1_name": match.player_1_name,
+                    "player_2_id": match.player_2_id,
+                    "player_2_name": match.player_2_name,
+                    "status": match.status,
                     "is_local_match": True,
-                    "guest_id": match.player_2_id,
-                    "guest_name": "Guest",
                     "available_games": available_games,
                 },
             )
@@ -200,11 +205,14 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_send(
                 "waiting_room",
                 {
-                    "type": "player_joined",
-                    "game_type": "match",
-                    "game_id": match.match_id,
-                    "player_id": data["player_id"],
-                    "player_name": joiner_name,
+                    "type": "match_created",
+                    "match_id": match.match_id,
+                    "player_1_id": match.player_1_id,
+                    "player_1_name": match.player_1_name,
+                    "player_2_id": match.player_2_id,
+                    "player_2_name": match.player_2_name,
+                    "status": match.status,
+                    "is_remote_match": True,
                     "available_games": available_games,
                 },
             )
@@ -284,7 +292,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                         "matches": matches,
                         "player_names": tournament.player_names,
                         "available_games": {
-                            "matches": available_matches,  # Include the newly created matches
+                            "matches": available_games["matches"],
                             "tournaments": available_games["tournaments"]
                         }
                     },
@@ -354,10 +362,13 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 "waiting_room",
                 {
                     "type": "match_created",
-                    "id": match.match_id,
-                    "creator_id": match.player_1_id,
+                    "match_id": match.match_id,
+                    "player_1_id": match.player_1_id,
+                    "player_1_name": match.player_1_name,
+                    "player_2_id": match.player_2_id,
+                    "player_2_name": match.player_2_name,
+                    "status": match.status,
                     "is_ai_match": True,
-                    "ai_id": match.player_2_id,
                     "available_games": available_games,
                 },
             )
@@ -531,20 +542,33 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         tournament.matches = matches
         tournament.save()
 
-        # Ensure the created matches are in the response
-        available_matches = list(Match.objects.filter(
-            tournament_id=tournament.tournament_id,
-            status=Match.ACTIVE
-        ).values(
-            "match_id",
-            "player_1_id",
-            "player_1_name",
-            "player_2_id",
-            "player_2_name",
-            "status"
-        ))
+        # Get tournament data for the response
+        tournament_data = {
+            "tournament_id": tournament.tournament_id,
+            "creator_id": tournament.creator_id,
+            "creator_name": tournament.creator_name,
+            "players": tournament.players,
+            "player_names": tournament.player_names,
+            "max_players": tournament.max_players,
+            "status": tournament.status,
+            "matches": list(Match.objects.filter(
+                tournament_id=tournament.tournament_id,
+                status=Match.ACTIVE
+            ).values(
+                "match_id",
+                "player_1_id",
+                "player_1_name",
+                "player_2_id",
+                "player_2_name",
+                "status"
+            ))
+        }
 
-        return matches, created_matches, available_matches
+        # Return simplified structure
+        return matches, created_matches, {
+            "matches": [],  # Empty array for non-tournament matches
+            "tournaments": [tournament_data]  # Array containing only the tournament data
+        }
 
     @database_sync_to_async
     def is_player_in_game(self, player_id):
@@ -573,7 +597,10 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
     def get_available_games(self):
         """Gets all active and pending matches and tournaments"""
         matches = list(
-            Match.objects.filter(status__in=[Match.PENDING, Match.ACTIVE]).values(
+            Match.objects.filter(
+                status__in=[Match.PENDING, Match.ACTIVE],
+                tournament_id__isnull=True  # Only get non-tournament matches
+            ).values(
                 "match_id",
                 "player_1_id",
                 "player_1_name",
@@ -583,19 +610,31 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             )
         )
 
-        tournaments = list(
-            Tournament.objects.filter(
-                status__in=[Tournament.PENDING, Tournament.ACTIVE]
-            ).values(
-                "tournament_id",
-                "creator_id",
-                "creator_name",
-                "players",
-                "player_names",
-                "max_players",
-                "status",
-            )
-        )
+        # Get tournaments with their matches
+        tournaments = []
+        for t in Tournament.objects.filter(status__in=[Tournament.PENDING, Tournament.ACTIVE]):
+            tournament_data = {
+                "tournament_id": t.tournament_id,
+                "creator_id": t.creator_id,
+                "creator_name": t.creator_name,
+                "players": t.players,
+                "player_names": t.player_names,
+                "max_players": t.max_players,
+                "status": t.status,
+                "matches": list(Match.objects.filter(
+                    tournament_id=t.tournament_id,
+                    status__in=[Match.PENDING, Match.ACTIVE]
+                ).values(
+                    "match_id",
+                    "player_1_id",
+                    "player_1_name",
+                    "player_2_id",
+                    "player_2_name",
+                    "status"
+                ))
+            }
+            tournaments.append(tournament_data)
+
         return {"matches": matches, "tournaments": tournaments}
 
     @database_sync_to_async

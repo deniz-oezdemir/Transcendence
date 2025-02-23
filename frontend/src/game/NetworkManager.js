@@ -55,7 +55,7 @@ export default class NetworkManager {
   updateUserData() {
     if (this.userState.userId !== this.params.user.id) {
       this.userState.userId = this.params.user.id;
-      this.userState.username = this.params.user;
+      this.userState.username = this.params.user.name;
     }
   }
 
@@ -202,6 +202,7 @@ export default class NetworkManager {
 
   createMatch() {
     if (!this.matchmakingSocket) return;
+    console.log(this.userState.username);
     this.sendMatchMakingMessage({
       type: 'create_match',
       player_id: this.userState.userId,

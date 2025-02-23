@@ -1,7 +1,7 @@
 import { createComponent, Link } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import { setTheme, getPreferredTheme } from '@themeManager';
-import { logout, getIsAuth } from '../../auth.js';
+import { isAuthenticated, login, logout } from '../../auth.js';
 
 import styles from './Navbar.module.css';
 
@@ -9,22 +9,20 @@ export default function Navbar({ location, navigate }) {
   const path = location();
 
   const [theme, setThemeState] = createSignal(getPreferredTheme());
-  const { isAuth, setIsAuth } = getIsAuth();
 
   const toggleTheme = () => {
     const newTheme = theme() === 'dark' ? 'light' : 'dark';
     setThemeState(newTheme);
   };
 
-  const handleAuthButtonClick = (event) => {
-    if (event.target.textContent === 'Logout') {
+  const handleAuthButtonClick = () => {
+    if (isAuthenticated()) {
       try {
         logout();
-        setIsAuth((prev) => !prev);
-        navigate('/login');
+        router.navigate('/login');
       } catch (error) {
         console.error('Error logging out:', error);
-        navigate('/');
+        navigate('/profile');
       }
     } else {
       router.navigate('/login');
@@ -43,14 +41,14 @@ export default function Navbar({ location, navigate }) {
   const authButton = createComponent('button', {
     className: `btn btn-outline-success ${styles.customBtn}`,
     attributes: { type: 'button', role: 'button' },
-    content: isAuth() ? 'Logout' : 'Login',
+    content: isAuthenticated() ? 'Logout' : 'Login',
     events: {
       click: handleAuthButtonClick,
     },
   });
 
   createEffect(() => {
-    authButton.element.textContent = isAuth() ? 'Logout' : 'Login';
+    authButton.element.textContent = isAuthenticated() ? 'Logout' : 'Login';
   });
 
   createEffect(() => {

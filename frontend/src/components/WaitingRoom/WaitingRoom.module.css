@@ -1,75 +1,93 @@
 .waitingRoom {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 45px 0;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100vw;
-  max-width: 600px;
-  height: 600px; 
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  height: calc(100vh - 75px); /* Calculate height based on viewport height minus navbar and footer */
   padding: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 20px;
+  background: #141414; /* Changed background to solid color */
   color: white;
   font-size: 2rem;
   z-index: 1000;
   text-align: center;
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+  font-family: "Poppins", sans-serif;
+  overflow-y: auto; /* Add scroll if content overflows */
 }
 
-.dropdownContainer {
+.container {
   display: flex;
-  align-items: center;
-  margin-bottom: 15px;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
 }
 
-.dropdown {
-  width: 220px;
-  padding: 10px;
-  font-size: 1rem;
-  border: none;
-  border-radius: 40px;
-  background-color: #ffffff;
-  color: #333;
-  text-align: center;
-  cursor: pointer;
-  margin-bottom: 10px;
-  transition: background-color 0.3s ease;
-}
-
-.dropdown:hover {
-  background-color: #e0e0e0;
-}
-
-.createButton {
-  width: 200px;
-  padding: 10px;
+.leftSection {
+  display: flex;
   flex-direction: column;
-  margin-bottom: 15px;
-  font-size: 1rem;
-  color: #fff;
-  background-color: #007bff;
-  border: none;
-  border-radius: 40px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  text-decoration: none;
+  align-items: center;
+  justify-content: flex-start;
+  width: 45%;
+  height: 100%;
+  padding: 20px;
+  gap: 15px;
 }
 
-.createButton:hover {
-  background-color: #0056b3;
+.rightSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 45%;
+  height: 100%;
+  padding: 20px;
+  gap: 15px;
 }
 
 .matchList {
   font-family: monospace;
   white-space: pre-wrap;
   background: rgba(255, 255, 255, 0.1);
-  padding: 10px;
-  border-radius: 40px;
-  max-height: calc(100% - 80px);
-  margin-top: 15px;
-  overflow-y: auto;
-  width: 90%;
+  padding: 40px;
+  border-radius: 25px;
+  margin-top: 1em;
+  height: calc(100vh - 200px);
+  min-height: 300px;
+  width: 100%;
   text-align: center;
+  box-shadow: inset 0px 0px 8px rgba(255, 255, 255, 0.2);
+  color: white;
+  overflow-y: auto;
+}
+
+.createButton {
+  width: 200px;
+  padding: 12px;
+  margin-bottom: 0.5px;
+  font-size: 1rem;
+  color: #fff;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  border: none;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  text-decoration: none;
+  box-shadow: 0px 4px 10px rgba(0, 123, 255, 0.3);
+}
+
+.createButton:hover {
+  background: linear-gradient(135deg, #0056b3, #003c80);
+  transform: scale(1.05);
+}
+
+.createButton:active {
+  transform: scale(0.98);
 }
