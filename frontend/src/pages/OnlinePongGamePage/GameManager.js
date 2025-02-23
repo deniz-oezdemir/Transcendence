@@ -285,8 +285,8 @@ export default class GameManager {
         console.error('Error processing game state update:', error);
       }
     } else if (data.type === 'connection_closed') {
-      console.log('Connection closed by server.');
-      this.ws.close();
+      console.log(`Connection closed by server for game ${this.gameData.id}.`);
+     // this.ws.close();
       this.ws = null;
       this.updateCallbacks.forEach((callback) => callback());
     }

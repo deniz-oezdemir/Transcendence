@@ -16,7 +16,7 @@ from asgiref.sync import async_to_sync
 logger = logging.getLogger(__name__)
 
 async def delay_half_second():
-    await asyncio.sleep(0.5)  # 500ms delay
+    await asyncio.sleep(0)  # 500ms delay
 
 async def create_game_in_pong_api(match):
     """Creates a game in the pong-api service"""
@@ -166,10 +166,24 @@ def update_game_result(request, match_id):
     )
 
     # Broadcast match result to all connected clients
+    logger.info(f"Broadcasting match result for match {match.match_id}")
+    logger.debug(
+        f"Match details - Winner: {winner_id}, "
+        f"Score: {match.player_1_score}-{match.player_2_score}, "
+        f"Tournament: {match.tournament_id}"
+    )
+    
+    # Add 1 second delay
+    logger.info("[%s] Delaying for 1s before broadcasting match result", 
+              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+    async_to_sync(asyncio.sleep)(0)
+    logger.info("[%s] Delay complete, broadcasting match result",
+              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+    
     async_to_sync(channel_layer.group_send)(
         "waiting_room",
         {
-            "type": "match_finished",
+            "type": "match_finished", 
             "match_id": match.match_id,
             "winner_id": winner_id,
             "player_1_score": match.player_1_score,
@@ -177,6 +191,8 @@ def update_game_result(request, match_id):
             "tournament_id": match.tournament_id
         }
     )
+    logger.info(f"Successfully broadcast match result for match {match.match_id}")
+
 
     # Handle tournament progression
     new_matches = []  # Initialize new_matches list
@@ -233,12 +249,21 @@ def update_game_result(request, match_id):
                             ))
                         }
                         tournaments.append(tournament_data)
-                        logger.info("[%s] Delaying for 500ms before broadcasting new tournament round", 
-                                  datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
-                        asyncio.run(delay_half_second())  # 500ms delay
-                        logger.info("[%s] Delay complete, broadcasting new tournament round",
-                                  datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+                        # logger.info("[%s] Delaying for 500ms before broadcasting new tournament round", 
+                        #           datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+                        # asyncio.run(delay_half_second())  # 500ms delay
+                        # logger.info("[%s] Delay complete, broadcasting new tournament round",
+                        #           datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
 
+                    logger.info("[%s] Delaying for 5s before broadcasting new tournament round", 
+                              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+                    async_to_sync(delay_half_second)()  # 5s delay 
+                    logger.info("[%s] Delay complete, broadcasting new tournament round",
+                              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+
+                    logger.info(f"Broadcasting new tournament round for tournament {tournament.tournament_id}")
+                    logger.debug(f"New matches: {new_matches}")
+                    logger.debug(f"Current round: {current_round}, Next round: {current_round + 1}")
                     async_to_sync(channel_layer.group_send)(
                         "waiting_room",
                         {
@@ -252,6 +277,7 @@ def update_game_result(request, match_id):
                             }
                         }
                     )
+                    logger.info(f"Successfully broadcast new tournament round for tournament {tournament.tournament_id}")
             else:
                 # Tournament is finished - similar update needed here
                 tournament.status = Tournament.FINISHED

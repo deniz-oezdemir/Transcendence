@@ -39,10 +39,13 @@ export default function OnlinePongGamePage() {
   const waitingRoom = WaitingRoom({
     onStartGame: async () => {
       // use that in case of bad behavior server side
-      // this.ws	=	null;
+      if (gameManager.ws) {
+        gameManager.ws.close();
+        gameManager.ws = null;
+      }
       await gameManager.connectWebSocket();
       gameManager.initializeGame();
-      setWaitingRoom((prev) => (prev = !prev));
+      setWaitingRoom(false);
       gameManager.toggleGame();
       requestAnimationFrame(animate);
     },

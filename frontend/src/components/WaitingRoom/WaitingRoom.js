@@ -341,7 +341,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     deleteAllGames.element.innerHTML = '';
     deleteAllGames.element.appendChild(createComponent('button', {
         className: styles.createButton,
-        content: 'Delete All Games (to be deleted)',
+        content: 'DAG(TBdeleted)',
         events: { click: deleteGames }
       }).element);
   });
@@ -404,25 +404,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   createEffect(() => {
     finalComponent.element.innerHTML = '';
     let content;
-    console.log('isnide create effect before if:', isPending());
-    if (isPending()) {
-      content = createComponent('div', {
-        className: styles.waitingRoom,
-        children: [
-          createComponent('div', {
-            className: styles.leftSection,
-            children: [
-              createComponent('pre', {
-                style: { color: 'white' },
-                content: 'Waiting for the next round to start...',
-              }),
-            ],
-          }),
-        ],
-      });
-    } else {
     content = createComponent('div', {
-      className: styles.waitingRoom,
+      className: styles.container,
       children: [
         // Left Section
         createComponent('div', {
@@ -434,7 +417,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
               children: [
                 createComponent('pre', {
                   style: { color: 'white' },
-                  content: '1v1',
+                  content: '',
                 }),
                 remoteMatchGameList,
               ],
@@ -443,9 +426,9 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
             botMatch,
           ],
         }),
-        // Right Section (Match List)
+        // Right Section
         createComponent('div', {
-          className: styles.matchListContainer,
+          className: styles.rightSection,
           children: [
             tournament,
             createComponent('div', {
@@ -453,7 +436,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
               children: [
                 createComponent('pre', {
                   style: { color: 'white' },
-                  content: 'Tournament',
+                  content: '',
                 }),
                 tournamentGameList,
               ],
@@ -464,7 +447,6 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
         }),
       ],
     });
-    }
     finalComponent.element.appendChild(content.element);
   })
  return finalComponent;
