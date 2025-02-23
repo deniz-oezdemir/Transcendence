@@ -19,7 +19,7 @@ class GameState(models.Model):
     paddle_height = models.IntegerField(default=5)
     paddle_width = models.IntegerField(default=2)
     paddle_offset = models.IntegerField(default=1)
-    move_step = models.IntegerField(default=1)
+    move_step = models.FloatField(default=0.5)
 
     # Players
     player_1_id = models.IntegerField(null=True, blank=True)
