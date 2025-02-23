@@ -5,7 +5,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     ports:
-      - "8006:8000"
+      - ":8000"
     depends_on:
       game-history-postgres:
         condition: service_healthy
