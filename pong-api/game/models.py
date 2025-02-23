@@ -28,8 +28,8 @@ class GameState(models.Model):
     player_2_name = models.CharField(max_length=100, default="Player 2")
     player_1_score = models.IntegerField(default=0)
     player_2_score = models.IntegerField(default=0)
-    player_1_position = models.FloatField(default=15)
-    player_2_position = models.FloatField(default=15)
+    player_1_position = models.FloatField(default=17.5)
+    player_2_position = models.FloatField(default=17.5)
 
     # Ball state
     ball_radius = models.IntegerField(default=1)

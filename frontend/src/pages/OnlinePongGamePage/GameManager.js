@@ -2,13 +2,13 @@ import { createSignal, createEffect } from '@reactivity';
 import pako from 'pako';
 import lerp from '@/game/utils/lerp.js';
 
+const BASE_SCALE = 10;
 const originalDimensions = {
   game: { width: 600, height: 400 },
-  paddle: { width: 20, height: 50, offset: 10 },
+  paddle: { width: 15, height: 50, offset: 15 },
   ball: { radius: 10 },
   scaleFactor: 1,
 };
-
 const originalPositions = {
   ball: { x: 290, y: 190 },
   player1Position: 175,
@@ -29,12 +29,8 @@ export default class GameManager {
     };
     this.UserId = userId;
     this.isRunning = false;
-    this.lastMoveTime = 0;
-    this.lastSentTime = 0;
-    this.sendRate = 33; // ~30fps rate limit for sending data
     this.updateCallbacks = [];
     this.currentGameState = {};
-    this.partialState = {};
     this.frameCounter = 0;
     this.sendEveryNFrames = 2;
 
@@ -51,17 +47,8 @@ export default class GameManager {
     this.gamePositionsSig = createSignal({
       ...originalPositions,
     });
-    this.previousPositions = {
-      player1Position: originalPositions.player1Position,
-      player2Position: originalPositions.player2Position,
-      ball: { ...originalPositions.ball },
-    };
-
-    this.targetPositions = {
-      player1Position: originalPositions.player1Position,
-      player2Position: originalPositions.player2Position,
-      ball: { ...originalPositions.ball },
-    };
+    this.previousPositions = {};
+    this.targetPositions = {};
 
     this.gameScoreSig = createSignal({
       player1: { score: 0 },
@@ -134,10 +121,12 @@ export default class GameManager {
           id: parseInt(this.gameData.p1Id),
           name: this.gameData.p1Name,
         },
-        player2: { id: this.gameData.p2Id, name: this.gameData.p2Name },
+        player2: {
+          id: parseInt(this.gameData.p2Id),
+          name: this.gameData.p2Name,
+        },
       },
     });
-    console.log('Game Score:', this.gameScoreSig[0]());
   }
 
   /**
@@ -150,39 +139,47 @@ export default class GameManager {
     const aspectRatio =
       originalDimensions.game.width / originalDimensions.game.height;
 
-    let gameWidth = windowWidth * 0.6;
+    let gameWidth = windowWidth * 0.5;
     let gameHeight = gameWidth / aspectRatio;
 
-    if (gameHeight > windowHeight * 0.8) {
-      gameHeight = windowHeight * 0.8;
+    if (gameHeight > windowHeight * 0.7) {
+      gameHeight = windowHeight * 0.7;
       gameWidth = gameHeight * aspectRatio;
     }
 
     const scaleFactor = gameWidth / originalDimensions.game.width;
 
-    this.gameDimensionsSig[1]({
-      game: { width: Math.floor(gameWidth), height: Math.floor(gameHeight) },
+    const newDimensions = {
+      game: {
+        width: Math.round(gameWidth),
+        height: Math.round(gameHeight),
+      },
       paddle: {
-        width: Math.floor(originalDimensions.paddle.width * scaleFactor),
-        height: Math.floor(originalDimensions.paddle.height * scaleFactor),
-        offset: Math.floor(originalDimensions.paddle.offset * scaleFactor),
+        width: Math.round(originalDimensions.paddle.width * scaleFactor),
+        height: Math.round(originalDimensions.paddle.height * scaleFactor),
+        offset: Math.round(originalDimensions.paddle.offset * scaleFactor),
       },
       ball: {
-        radius: Math.floor(originalDimensions.ball.radius * scaleFactor),
+        radius: Math.round(originalDimensions.ball.radius * scaleFactor),
       },
       scaleFactor,
-    });
+    };
 
-    this.gamePositionsSig[1]({
+    this.gameDimensionsSig[1](newDimensions);
+
+    const initialPositions = {
       ball: {
         x: originalPositions.ball.x * scaleFactor,
         y: originalPositions.ball.y * scaleFactor,
       },
       player1Position: originalPositions.player1Position * scaleFactor,
       player2Position: originalPositions.player2Position * scaleFactor,
-    });
-    console.log('Game Dimensions:', this.gameDimensionsSig[0]());
-    console.log('Game Positions:', this.gamePositionsSig[0]());
+    };
+
+    this.gamePositionsSig[1](initialPositions);
+
+    this.previousPositions = { ...initialPositions };
+    this.targetPositions = { ...initialPositions };
   }
 
   /**
@@ -190,7 +187,9 @@ export default class GameManager {
    */
   connectWebSocket() {
     return new Promise((resolve, reject) => {
+      console.log('Inside connect WebSocket connection befor check ws');
       if (this.ws && this.ws.readyState === WebSocket.OPEN) return resolve();
+      console.log('Inside connect WebSocket connection after check ws');
 
       this.ws = new WebSocket(`${this.apiUrl}/ws/game/${this.gameData.id}/`);
 
@@ -204,6 +203,9 @@ export default class GameManager {
 
       this.ws.onerror = (error) => {
         console.error('Game Engine WebSocket error:', error);
+        this.ws.close();
+        this.isConnected = false;
+        this.ws = null;
         reject(error);
       };
 
@@ -231,19 +233,46 @@ export default class GameManager {
           bytes[i] = binaryString.charCodeAt(i);
         }
 
-        this.partialState = JSON.parse(pako.inflate(bytes, { to: 'string' }));
+        const partialState = JSON.parse(pako.inflate(bytes, { to: 'string' }));
 
         // Update the current game state
         this.currentGameState = {
           ...this.currentGameState,
-          ...this.partialState,
+          ...partialState,
         };
+
+        // Update game positions with scaling
+        if (
+          'ball_x_position' in partialState ||
+          'ball_y_position' in partialState ||
+          'player_1_position' in partialState ||
+          'player_2_position' in partialState
+        ) {
+          const { scaleFactor } = this.gameDimensionsSig[0]();
+          this.previousPositions = {
+            player1Position: this.gamePositionsSig[0]().player1Position,
+            player2Position: this.gamePositionsSig[0]().player2Position,
+            ball: { ...this.gamePositionsSig[0]().ball },
+          };
+
+          // Update target positions
+          this.targetPositions = {
+            player1Position:
+              this.currentGameState.player_1_position * 10 * scaleFactor,
+            player2Position:
+              this.currentGameState.player_2_position * 10 * scaleFactor,
+            ball: {
+              x: this.currentGameState.ball_x_position * 10 * scaleFactor,
+              y: this.currentGameState.ball_y_position * 10 * scaleFactor,
+            },
+          };
+        }
 
         // Update scores if needed
         if (
-          'player_1_score' in this.partialState ||
-          'player_2_score' in this.partialState ||
-          'max_score' in this.partialState
+          'player_1_score' in partialState ||
+          'player_2_score' in partialState ||
+          'max_score' in partialState
         ) {
           this.gameScoreSig[1]((prevScore) => ({
             ...prevScore,
@@ -252,11 +281,6 @@ export default class GameManager {
             maxScore: this.currentGameState.max_score,
           }));
         }
-
-        // Run update callbacks
-        // this.updateCallbacks.forEach((callback) =>
-        //   callback(this.currentGameState)
-        // );
       } catch (error) {
         console.error('Error processing game state update:', error);
       }
@@ -273,7 +297,6 @@ export default class GameManager {
    */
   toggleGame() {
     if (this.ws) {
-      console.log('Toggling Game:', this.gameData.id);
       this.ws.send(
         JSON.stringify({
           action: 'toggle',
@@ -357,35 +380,9 @@ export default class GameManager {
   }
 
   update(delta) {
-    // Update game positions with scaling
-    if (
-      'ball_x_position' in this.partialState ||
-      'ball_y_position' in this.partialState ||
-      'player_1_position' in this.partialState ||
-      'player_2_position' in this.partialState
-    ) {
-      const { scaleFactor } = this.gameDimensionsSig[0]();
-      this.previousPositions = {
-        player1Position: this.gamePositionsSig[0]().player1Position,
-        player2Position: this.gamePositionsSig[0]().player2Position,
-        ball: { ...this.gamePositionsSig[0]().ball },
-      };
+    const interpolationFactor = 0.333;
 
-      // Update target positions
-      this.targetPositions = {
-        player1Position:
-          this.currentGameState.player_1_position * 10 * scaleFactor,
-        player2Position:
-          this.currentGameState.player_2_position * 10 * scaleFactor,
-        ball: {
-          x: this.currentGameState.ball_x_position * 10 * scaleFactor,
-          y: this.currentGameState.ball_y_position * 10 * scaleFactor,
-        },
-      };
-    }
-
-    const interpolationFactor = 0.3;
-
+    // Update game positions with interpolation
     this.gamePositionsSig[1]({
       player1Position: lerp(
         this.previousPositions.player1Position,
@@ -413,19 +410,19 @@ export default class GameManager {
 
     this.frameCounter++;
     if (this.frameCounter >= this.sendEveryNFrames) {
-      const gameScore = this.gameScoreSig[0]();
+      const players = this.gameScoreSig[0]().players;
 
       if (this.keys['ArrowUp']) {
-        this.updatePlayerPosition(gameScore.players.player1.id, -1);
+        this.updatePlayerPosition(players.player1.id, -1);
       }
       if (this.keys['ArrowDown']) {
-        this.updatePlayerPosition(gameScore.players.player1.id, 1);
+        this.updatePlayerPosition(players.player1.id, 1);
       }
-      if (this.keys['w']) {
-        this.updatePlayerPosition(gameScore.players.player2.id, -1);
+      if (this.keys['w'] && this.gameData.type === 'local_match') {
+        this.updatePlayerPosition(players.player2.id, -1);
       }
-      if (this.keys['s']) {
-        this.updatePlayerPosition(gameScore.players.player2.id, 1);
+      if (this.keys['s'] && this.gameData.type === 'local_match') {
+        this.updatePlayerPosition(players.player2.id, 1);
       }
       this.frameCounter = 0;
     }
