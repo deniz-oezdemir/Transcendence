@@ -293,12 +293,12 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     }));
   }
 
-  const gameList = createComponent("ul");
+  const remoteMatchGameList = createComponent("ul");
   createEffect(() => {
     const m = matches();
-    const t = tournaments();
+
   
-    gameList.element.innerHTML = '';
+    remoteMatchGameList.element.innerHTML = '';
   
     // Append match buttons
     m.forEach((match) => {
@@ -311,9 +311,16 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
           }
         }
       });
-      gameList.element.appendChild(matchButton.element);
+      remoteMatchGameList.element.appendChild(matchButton.element);
     });
-  
+  });
+
+  const tournamentGameList = createComponent("ul");
+  createEffect(() => {
+    const t = tournaments();
+
+    tournamentGameList.element.innerHTML = '';
+    
     // Append tournament buttons
     t.forEach((tournament) => {
       const tournamentButton = createComponent('button', {
@@ -325,7 +332,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
           }
         }
       });
-      gameList.element.appendChild(tournamentButton.element);
+      tournamentGameList.element.appendChild(tournamentButton.element);
     });
   });
 
@@ -339,45 +346,23 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
       }).element);
   });
 
-  // dropdown for game creation type
-  const creatGame = createComponent("ul");
+  const remoteMatch = createComponent("ul");
   createEffect(() => {
-    creatGame.element.innerHTML = '';
-    creatGame.element.appendChild(createComponent('div', {
-      className: styles.dropdownContainer,
-      children: [
-        createComponent('select', {
-          className: styles.dropdown,
-          events: {
-            change: (event) => {
-              selectedGameType = event.target.value;
-            }
-          },
-          children: [
-            createComponent('option', { content: 'Select Game Mode', attributes: { value: '' } }),
-            createComponent('option', { content: '1v1 Match', attributes: { value: 'match' } }),
-            createComponent('option', { content: 'Tournament (4 Players)', attributes: { value: 'tournament4' } }),
-            createComponent('option', { content: 'Tournament (8 Players)', attributes: { value: 'tournament8' } }),
-          ]
-        }),
-        createComponent('button', {
-          className: styles.createButton,
-          content: 'Create Game',
-          events: {
-            click: () => {
-              if (selectedGameType === 'match') {
-                createRegularMatch();
-              } else if (selectedGameType === 'tournament4') {
-                createFourTournament();
-              } else if (selectedGameType === 'tournament8') {
-                createEightTournament();
-              } else {
-                alert('Please select a game type!');
-              }
-            }
-          }
-        })
-      ]
+    remoteMatch.element.innerHTML = '';
+    remoteMatch.element.appendChild(createComponent('button', {
+      className: styles.createButton,
+      content: '1v1 Match',
+      events: { click: createRegularMatch }
+    }).element);
+  });
+
+  const tournament = createComponent("ul");
+  createEffect(() => {
+    tournament.element.innerHTML = '';
+    tournament.element.appendChild(createComponent('button', {
+      className: styles.createButton,
+      content: 'Tournament',
+      events: { click: createFourTournament }
     }).element);
   });
 
@@ -443,27 +428,38 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
         createComponent('div', {
           className: styles.leftSection,
           children: [
-            creatGame,
+            remoteMatch,
+            createComponent('div', {
+              className: styles.matchList,
+              children: [
+                createComponent('pre', {
+                  style: { color: 'white' },
+                  content: '1v1',
+                }),
+                remoteMatchGameList,
+              ],
+            }),
             localGame,
             botMatch,
-            checkAvailableGames,
-            deleteAllGames,
           ],
         }),
         // Right Section (Match List)
         createComponent('div', {
           className: styles.matchListContainer,
           children: [
+            tournament,
             createComponent('div', {
               className: styles.matchList,
               children: [
                 createComponent('pre', {
                   style: { color: 'white' },
-                  content: 'Waiting Room',
+                  content: 'Tournament',
                 }),
-                gameList,
+                tournamentGameList,
               ],
             }),
+            checkAvailableGames,
+            deleteAllGames,
           ],
         }),
       ],
