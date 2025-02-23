@@ -8,112 +8,19 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
   const [socket, setSocket] = createSignal(null);
-
-  const [socket, setSocket] = createSignal(null);
   const hostname = window.location.hostname;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
   const port = 8000;
   const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
 
-  createEffect(() => {
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log('Connected to matchmaking service');
-      console.log('username:', localStorage.getItem('username'));
-      console.log('userId:', localStorage.getItem('userId'));
-      setSocket(ws);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received:', data);
-
-        switch (data.type) {
-          case 'initial_games':
-            setMatches(data.games.matches || []);
-            setTournaments(data.games.tournaments || []);
-            break;
-
-          case 'match_created':
-          case 'tournament_created':
-          case 'games_deleted':
-            setMatches(data.available_games?.matches || []);
-            setTournaments(data.available_games?.tournaments || []);
-            if (data.is_local_match === true) {
-              console.log('Local match created:', data);
-              setGameId(data.id);
-              setCreatorId(data.creator_id);
-              setCreatorName(data.creator_name);
-              setPlayerId(data.guest_id);
-              setPlayerName(data.guest_name);
-              setGameType('local_match');
-              onStartGame(data.game, data.id);
-            } else if (data.is_ai_match === true) {
-              console.log('AI match created:', data);
-              setGameId(data.id);
-              setCreatorId(data.available_games.matches[0].player_1_id);
-              setCreatorName(data.available_games.matches[0].player_1_name);
-              setPlayerId(data.available_games.matches[0].player_2_id);
-              setPlayerName(data.available_games.matches[0].player_2_name);
-              setGameType('AI_match');
-              onStartGame(data.game, data.id);
-            }
-            break;
-
-            case 'player_joined':
-              console.log('Player joined:', data.available_games);
-
-              if (data.available_games) {
-                if (data.available_games.matches && data.available_games.matches.length > 0) {
-                  switch (data.available_games.matches[0].status) {
-                    case 'active':
-                      console.log('Match Started');
-                      setGameId(data.game_id);
-                      setCreatorId(data.available_games.matches[0].player_1_id);
-                      setCreatorName(data.available_games.matches[0].player_1_name);
-                      setPlayerId(data.available_games.matches[0].player_2_id);
-                      setPlayerName(data.available_games.matches[0].player_2_name);
-                      setGameType('match');
-                      onStartGame(data.game, data.game_id);
-
-                      break;
-                    case 'pending':
-                      console.log('Match Pending');
-                      break;
-                    default:
-                      console.log('Match Status:', data.available_games.matches[0].status);
-                  }
-                } else {
-                  console.log('No matches available');
-                }
-
-                if (data.available_games.tournaments && data.available_games.tournaments.length > 0) {
-                  switch (data.available_games.tournaments[0].status) {
-                    case 'pending':
-                      console.log('Tournament Pending');
-                      break;
-                    default:
-                      console.log('Tournament Status:', data.available_games.tournaments[0].status);
-                  }
-                } else {
-                  console.log('No tournaments available');
-                }
-              } else {
-                console.log('No available games data found');
-              }
-
-              break;
-
-            case 'tournament_started':
-              console.log('Tournament Started TEST');
-
   let userData = { id: null, username: null };
 
-  const user = getUser();
+  createEffect(async () => {
+
+  const user = await getUser();
   userData.id = user.id;
   userData.name = user.name;
+  });
 
 
   //createEffect(() => {
@@ -270,35 +177,6 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                   onStartGame(data.game, tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
                 }
               break;
-
-          case 'error':
-            alert(data.message);
-            console.log('error', data.message);
-            break;
-
-          default:
-            console.warn('Unknown message type:', data.type);
-        }
-
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket Error:', error);
-    };
-
-    ws.onclose = (event) => {
-      console.warn('WebSocket closed:', event);
-      setSocket(null);
-    };
-
-    return () => {
-      ws?.close();
-      setSocket(null);
-    };
-  });
             case 'error':
               alert(data.message);
               console.log('error', data.message);
@@ -416,10 +294,6 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   const remoteMatchGameList = createComponent("ul");
   createEffect(() => {
     const m = matches();
-    const t = tournaments();
-
-    gameList.element.innerHTML = '';
-
 
 
     remoteMatchGameList.element.innerHTML = '';
@@ -437,7 +311,6 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
       });
       remoteMatchGameList.element.appendChild(matchButton.element);
     });
-
   });
 
   const tournamentGameList = createComponent("ul");
@@ -524,24 +397,6 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   let selectedGameType = '';
   const finalComponent = createComponent('div', {
     className: styles.waitingRoom,
-    children: [
-      creatGame,
-      localGame,
-      botMatch,
-      checkAvailableGames,
-      deleteAllGames,
-      createComponent('div', {
-        className: styles.matchList,
-        children: [
-          createComponent('pre', {
-            style: 'color: white;',
-            content: 'Waiting Room', tournaments, matches,
-          }),
-          gameList,
-        ],
-      }),
-    ]
-  });
   });
 
   createEffect(() => {

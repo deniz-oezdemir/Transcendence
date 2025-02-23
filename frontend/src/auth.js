@@ -50,8 +50,19 @@ async function getUser() {
   if (userData) return userData;
 
   const token = localStorage.getItem('authToken');
-  return !!token;
-  // return true;
+  if (!token) return null;
+
+  await validateToken(token);
+  return userData;
+}
+
+async function checkAuth() {
+  if (isAuth()) return true;
+
+  const token = localStorage.getItem('authToken');
+  if (!token) return false;
+
+  return await validateToken(token);
 }
 
 async function login(username, password) {
