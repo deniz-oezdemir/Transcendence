@@ -6,22 +6,22 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
   const [socket, setSocket] = createSignal(null);
-  
+
   const hostname = window.location.hostname;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
-  const port = 8001;
+  const port = 8000;
   const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
 
   createEffect(() => {
     const ws = new WebSocket(wsUrl);
-  
+
     ws.onopen = () => {
       console.log('Connected to matchmaking service');
       console.log('username:', localStorage.getItem('username'));
       console.log('userId:', localStorage.getItem('userId'));
       setSocket(ws);
     };
-  
+
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -32,7 +32,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
             setMatches(data.games.matches || []);
             setTournaments(data.games.tournaments || []);
             break;
-          
+
           case 'match_created':
           case 'tournament_created':
           case 'games_deleted':
@@ -58,10 +58,10 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
               onStartGame(data.game, data.id);
             }
             break;
-          
+
             case 'player_joined':
               console.log('Player joined:', data.available_games);
-            
+
               if (data.available_games) {
                 if (data.available_games.matches && data.available_games.matches.length > 0) {
                   switch (data.available_games.matches[0].status) {
@@ -85,7 +85,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                 } else {
                   console.log('No matches available');
                 }
-            
+
                 if (data.available_games.tournaments && data.available_games.tournaments.length > 0) {
                   switch (data.available_games.tournaments[0].status) {
                     case 'pending':
@@ -100,12 +100,12 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
               } else {
                 console.log('No available games data found');
               }
-            
+
               break;
-            
+
             case 'tournament_started':
               console.log('Tournament Started TEST');
-              
+
               break;
 
           case 'error':
@@ -121,16 +121,16 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
         console.error('Error parsing WebSocket message:', err);
       }
     };
-  
+
     ws.onerror = (error) => {
       console.error('WebSocket Error:', error);
     };
-  
+
     ws.onclose = (event) => {
       console.warn('WebSocket closed:', event);
       setSocket(null);
     };
-  
+
     return () => {
       ws?.close();
       setSocket(null);
@@ -224,9 +224,9 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   createEffect(() => {
     const m = matches();
     const t = tournaments();
-  
+
     gameList.element.innerHTML = '';
-  
+
     // Append match buttons
     m.forEach((match) => {
       const matchButton = createComponent('button', {
@@ -240,7 +240,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
       });
       gameList.element.appendChild(matchButton.element);
     });
-  
+
     // Append tournament buttons
     t.forEach((tournament) => {
       const tournamentButton = createComponent('button', {
@@ -358,5 +358,5 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
         ],
       }),
     ]
-  });  
+  });
 }

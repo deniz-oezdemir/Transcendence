@@ -9,7 +9,7 @@ import pako from 'pako';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // Use HTTP(S) for fetch requests
-const port = 8002;
+const port = 8000;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
 export default function OnlinePongGamePage({ navigate }) {

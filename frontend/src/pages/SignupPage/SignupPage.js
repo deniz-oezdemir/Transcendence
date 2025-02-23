@@ -5,7 +5,7 @@ import { validateUsername, validatePassword, matchPasswords, validateEmail } fro
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const port = 8007;
+const port = 8000;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
 export default function SignupPage() {
@@ -48,7 +48,7 @@ export default function SignupPage() {
           password: password()
         })
       });
-      
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Registration failed');

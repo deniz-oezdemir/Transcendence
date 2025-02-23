@@ -5,8 +5,8 @@ import { validateUsername, validatePassword, matchPasswords } from '../../core/u
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const UAMport = 8007;
-const historyPort = 8006;
+const UAMport = 8000;
+const historyPort = 8000;
 const accountUrl = `${protocol}//${hostname}:${UAMport}`;
 const historyUrl = `${protocol}//${hostname}:${historyPort}`;
 
@@ -113,7 +113,7 @@ function friendListComponent(user_data, setReload) {
   async function unfollowFriend(friend_username) {
     try {
       console.log("Sending unfollow request to", friend_username);
-  
+
       const response = await fetch(`http://localhost:8000/api/uam/friend-request/`, {
         method: "DELETE",
         headers: {
@@ -122,7 +122,7 @@ function friendListComponent(user_data, setReload) {
         },
         body: JSON.stringify({ friend_username }),
       });
-  
+
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error);
@@ -202,7 +202,7 @@ function changeUsernameComponent(user_data, setReload) {
         },
         body: JSON.stringify({ new_username }),
       });
-  
+
       const data = await response.json();
       setUsernameButtonPressed(false);
       setReload(true);
@@ -287,7 +287,7 @@ function changePasswordComponent(user_data, setReload) {
         },
         body: JSON.stringify({ new_password }),
       });
-  
+
       const data = await response.json();
       setPasswordButtonPressed(false);
       setReload(true);
@@ -396,7 +396,7 @@ function changeAvatarComponent(user_data, setReload) {
         },
         body: formData,
       });
-      
+
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error);
@@ -447,7 +447,7 @@ function changeAvatarComponent(user_data, setReload) {
         }),
       ],
     });
-    
+
   } else {
     changeAvatarComponent = [createComponent('button', {
       className: styles.changeButton,
@@ -478,7 +478,7 @@ function dynamicData(user_data, user_stats, setReload) {
       content: 'Error loading profile data',
     });
   }
-  
+
   return createComponent('div', {
     className: styles.profileContainer,
     children: [
@@ -612,7 +612,7 @@ export default function ProfilePage({ params, query }) {
       throw error;
     }
   }
-  
+
   createEffect(() => {
     if (reload()) {
     fetchUserData().catch(err => console.error('Failed to load profile:', err));
