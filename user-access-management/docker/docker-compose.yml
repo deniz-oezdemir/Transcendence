@@ -4,8 +4,8 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    ports:
-      - "8007:8000"
+    # ports:
+    #   - "8007:8007"
     volumes:
       - ..:/app
       - avatar_storage:/usr/share/nginx/images
