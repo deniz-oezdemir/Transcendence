@@ -14,10 +14,10 @@ class PongGameEngine:
         self.paddle_height = game_state.paddle_height
         self.paddle_width = game_state.paddle_width
         self.paddle_offset = game_state.paddle_offset
-        self.paddle_1_x_position = self.paddle_width + self.paddle_offset
-        self.paddle_2_x_position = self.game_width - (
+        self.paddle_1_x_position = self.game_width - (
             self.paddle_width + self.paddle_offset
         )
+        self.paddle_2_x_position = self.paddle_width + self.paddle_offset
         self.ball_radius = game_state.ball_radius
         self.ball_speed = game_state.ball_speed
         self.player_move_step = game_state.move_step
@@ -146,18 +146,18 @@ class PongGameEngine:
 
         if (
             self.paddle_offset
-            <= self.game_state.ball_x_position - self.ball_radius
-            <= self.paddle_1_x_position
-        ):
-            # ball might hit paddle player_1
-            player_id_to_check = self.game_state.player_1_id
-        elif (
-            self.paddle_2_x_position
             <= self.game_state.ball_x_position + self.ball_radius
-            <= self.game_state.game_width - self.paddle_offset
+            <= self.paddle_2_x_position
         ):
             # ball might hit paddle player_2
             player_id_to_check = self.game_state.player_2_id
+        elif (
+            self.paddle_1_x_position
+            <= self.game_state.ball_x_position
+            <= self.game_state.game_width - self.paddle_offset
+        ):
+            # ball might hit paddle player_1
+            player_id_to_check = self.game_state.player_1_id
         else:
             # No possibility of hit
             return
@@ -209,23 +209,36 @@ class PongGameEngine:
 
         paddle_bottom = paddle_top + self.paddle_height
         paddle_middle = (paddle_top + paddle_bottom) / 2
-        ball_y = self.game_state.ball_y_position
-        if ball_y < paddle_top or ball_y > paddle_bottom:
-            logger.debug("Bally Y position outside of paddle")
+        ball_y_center = self.game_state.ball_y_position
+        ball_y_top = ball_y_center - self.ball_radius
+        ball_y_bottom = ball_y_center + self.ball_radius
+
+        if ball_y_bottom < paddle_top or ball_y_top > paddle_bottom:
+            logger.debug(f"Ball Y position {ball_y_center} outside of paddle")
             return False
+
+         # Determine the contact point on the ball
+        contact_point = ball_y_center
+        if paddle_top < ball_y_top < paddle_bottom:
+            contact_point = ball_y_top
+        if paddle_top < ball_y_bottom < paddle_bottom:
+            if contact_point == ball_y_top:
+                contact_point = ball_y_center
+            else:
+                contact_point = ball_y_bottom
 
         # For cases where ball is "inside" paddle
         self.handle_ball_paddle_collision(
             player_id,
-            self.paddle_1_x_position
+            self.paddle_2_x_position
             if player_id == self.game_state.player_1_id
-            else self.paddle_2_x_position,
+            else self.paddle_1_x_position,
             self.game_state.ball_x_position,
             self.ball_radius,
             self.game_state.ball_x_direction,
         )
 
-        hit_distance_to_center = ball_y - paddle_middle
+        hit_distance_to_center = contact_point - paddle_middle
         max_y_speed = (
             self.ball_speed * 0.6
         )  # Max percentage of ball_speed that can be "used" in the Y direction
