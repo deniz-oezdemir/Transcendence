@@ -51,6 +51,11 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                 setIsPending(true);
                 console.log('isPending:', isPending());
               }
+              if (data.winner_id == userData.id) {
+                alert('You won the match!');
+              } else {
+                alert('You lost the match!');
+              }
               break;
             
             case 'tournament_round_started':
