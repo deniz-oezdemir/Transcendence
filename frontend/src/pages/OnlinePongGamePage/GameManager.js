@@ -286,7 +286,7 @@ export default class GameManager {
       }
     } else if (data.type === 'connection_closed') {
       console.log(`Connection closed by server for game ${this.gameData.id}.`);
-     // this.ws.close();
+      // this.ws.close();
       this.ws = null;
       this.updateCallbacks.forEach((callback) => callback());
     }
@@ -411,18 +411,28 @@ export default class GameManager {
     this.frameCounter++;
     if (this.frameCounter >= this.sendEveryNFrames) {
       const players = this.gameScoreSig[0]().players;
+      console.log('players:', players);
+      console.log('UserId:', this.UserId);
 
-      if (this.keys['ArrowUp']) {
-        this.updatePlayerPosition(players.player1.id, -1);
+      if (this.UserId == players.player1.id) {
+        console.log('inside player 1');
+        if (this.keys['ArrowUp']) {
+          this.updatePlayerPosition(players.player1.id, -1);
+        }
+        if (this.keys['ArrowDown']) {
+          this.updatePlayerPosition(players.player1.id, 1);
+        }
       }
-      if (this.keys['ArrowDown']) {
-        this.updatePlayerPosition(players.player1.id, 1);
-      }
-      if (this.keys['w'] && this.gameData.type === 'local_match') {
-        this.updatePlayerPosition(players.player2.id, -1);
-      }
-      if (this.keys['s'] && this.gameData.type === 'local_match') {
-        this.updatePlayerPosition(players.player2.id, 1);
+      if (
+        this.UserId == players.player2.id ||
+        this.gameData.type === 'local_match'
+      ) {
+        if (this.keys['w']) {
+          this.updatePlayerPosition(players.player2.id, -1);
+        }
+        if (this.keys['s']) {
+          this.updatePlayerPosition(players.player2.id, 1);
+        }
       }
       this.frameCounter = 0;
     }
