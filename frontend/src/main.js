@@ -29,21 +29,30 @@ import '@styles/global.css';
 import { checkAuth } from './auth';
 
 // Authentication Middleware
-const authentication = (path, context) => {
-  const isAuthenticated = checkAuth();
-  console.log('isAuthenticated in middleware:', isAuthenticated);
-  if (
-    context.nextPath === '/' ||
-    context.nextPath === '/login' ||
-    context.nextPath === '/signup'
-  ) {
+const authentication = async (path, context) => {
+  const isAuthenticated = await checkAuth();
+  // console.log('isAuthenticated in middleware:', isAuthenticated);
+
+  const publicRoutes = ['/', '/login', '/signup'];
+
+  if (publicRoutes.includes(context.nextPath)) {
+    if (
+      isAuthenticated &&
+      (context.nextPath === '/login' || context.nextPath === '/signup')
+    ) {
+      // console.log('User already authenticated, redirecting to home...');
+      router.navigate('/');
+      return false;
+    }
     return true;
   }
+
   if (!isAuthenticated) {
     console.log('Unauthorized access. Redirecting to login page...');
     router.navigate('/login');
     return false;
   }
+
   return true;
 };
 
@@ -81,9 +90,7 @@ const router = new Router({
 });
 
 // // Run the Auth middleware on initial page load
-if (!authentication({}, { next: window.location.pathname })) {
-  router.navigate('/login');
-}
+authentication({}, { next: window.location.pathname });
 
 // Expose router to the window object
 window.router = router;

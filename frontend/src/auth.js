@@ -39,6 +39,7 @@ async function validateToken(token) {
       localStorage.removeItem('authToken');
       userData = null;
       setIsAuth(false);
+      window.router.navigate('/login');
       return false;
     })
     .finally(() => {
