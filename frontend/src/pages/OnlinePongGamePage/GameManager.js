@@ -311,7 +311,6 @@ export default class GameManager {
   endGame() {
     if (this.gameData.id < 0) return false;
 
-    console.log('Ending Game:', this.gameData.id);
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -411,11 +410,11 @@ export default class GameManager {
     this.frameCounter++;
     if (this.frameCounter >= this.sendEveryNFrames) {
       const players = this.gameScoreSig[0]().players;
-      console.log('players:', players);
-      console.log('UserId:', this.UserId);
+      //console.log('players:', players);
+      //console.log('UserId:', this.UserId);
 
       if (this.UserId == players.player1.id) {
-        console.log('inside player 1');
+        //console.log('inside player 1');
         if (this.keys['ArrowUp']) {
           this.updatePlayerPosition(players.player1.id, -1);
         }

@@ -36,8 +36,8 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('Received:', data);
-  
+          //console.log('Received:', data);
+
           switch (data.type) {
             case 'initial_games':
               setMatches(data.games.matches || []);
@@ -98,9 +98,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                 // Remove popup after 3 seconds
                 setTimeout(() => {
                   document.body.removeChild(popup.element);
-                }, 3000);
-              } else {
-                alert('You lost the match!');
+                }, 2000);
               }
               break;
             
@@ -124,8 +122,54 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
               break;
             
             case 'tournament_finished':
-                alert('Tournament Finished! Winner:', data.winner_id);
                 setIsPending(false);
+                const popup = createComponent('div', {
+                    className: styles.popup,
+                 children: [
+                   createComponent('h2', {
+                     content: '🎉 Tournament Finished! 🎉',
+                     style: {
+                       fontSize: '2rem',
+                       marginBottom: '1rem',
+                       color: '#ffd700'
+                     }
+                   }),
+                   createComponent('p', {
+                     content: data.winner_id + ' won the tournament!',
+                     style: {
+                       fontSize: '1.5rem',
+                       color: '#fff'
+                     }
+                   })
+                 ]
+               });
+             
+              // Create fireworks
+              for (let i = 0; i < 30; i++) {
+               const angle = (i * 12) * Math.PI / 180;
+               const velocity = 50 + Math.random() * 50;
+               const hue = Math.random() * 360;
+ 
+               const particle = createComponent('div', {
+                   className: styles.fireworkParticle,
+                   style: {
+                   background: `hsl(${hue}, 100%, 50%)`,
+                   left: '50%',
+                   top: '50%',
+                   transform: `translate(-50%, -50%) rotate(${angle}rad)`,
+                   animation: `firework ${1 + Math.random() * 0.5}s ease-out forwards`
+                 }
+                });
+ 
+                 popup.element.appendChild(particle.element);
+                }
+               
+                document.body.appendChild(popup.element);
+               
+                // Remove popup after 3 seconds
+                setTimeout(() => {
+                  document.body.removeChild(popup.element);
+                }, 2000);
                 break;
 
             case 'match_created':
@@ -365,8 +409,10 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
 
   const remoteMatchGameList = createComponent("ul");
   createEffect(() => {
-    const m = matches();
-
+    const m = matches().filter(match => 
+      match.status === 'pending' && // Only show pending matches
+      match.player_1_id !== userData.id // Don't show matches created by current user
+    );
   
     remoteMatchGameList.element.innerHTML = '';
   
@@ -387,7 +433,10 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
 
   const tournamentGameList = createComponent("ul");
   createEffect(() => {
-    const t = tournaments();
+    const t = tournaments().filter(tournament => 
+      tournament.status === 'pending' && // Only show pending tournaments
+      !tournament.players?.includes(userData.id) // Don't show tournaments user already joined
+    );
 
     tournamentGameList.element.innerHTML = '';
     
