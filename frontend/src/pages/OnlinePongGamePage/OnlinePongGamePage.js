@@ -55,6 +55,7 @@ export default function OnlinePongGamePage() {
   });
 
   const game = createComponent('div', {
+    className: 'z-n1',
     children: [
       Score({ gameScore: gameManager.gameScoreSig[0] }),
       GameBoard({

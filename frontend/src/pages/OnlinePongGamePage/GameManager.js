@@ -121,10 +121,12 @@ export default class GameManager {
           id: parseInt(this.gameData.p1Id),
           name: this.gameData.p1Name,
         },
-        player2: { id: this.gameData.p2Id, name: this.gameData.p2Name },
+        player2: {
+          id: parseInt(this.gameData.p2Id),
+          name: this.gameData.p2Name,
+        },
       },
     });
-    console.log('Game Score:', this.gameScoreSig[0]());
   }
 
   /**
