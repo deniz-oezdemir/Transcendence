@@ -5,12 +5,12 @@ import lerp from '@/game/utils/lerp.js';
 const BASE_SCALE = 10;
 const originalDimensions = {
   game: { width: 600, height: 400 },
-  paddle: { width: 15, height: 50, offset: 15 },
+  paddle: { width: 20, height: 50, offset: 10 },
   ball: { radius: 10 },
   scaleFactor: 1,
 };
 const originalPositions = {
-  ball: { x: 290, y: 190 },
+  ball: { x: 300, y: 200 },
   player1Position: 175,
   player2Position: 175,
 };

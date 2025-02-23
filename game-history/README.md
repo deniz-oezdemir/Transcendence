@@ -55,7 +55,7 @@ curl -X GET http://127.0.0.1:8006/api/finished-game/1/
 
 **URL:** `/api/player/<int:player_id>/`  
 **Method:** `GET`  
-**Description:** Retrieve statistics for a specific player.
+**Description:** Retrieve statistics for a specific player. It will include list of games played.
 
 **Example `curl` Command:**
 ```sh
