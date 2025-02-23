@@ -4,6 +4,7 @@
   padding: 0.2rem !important;
   /* padding: 0.15rem 0 0.25rem 0 !important; */
   font-size: var(--step--1);
+  z-index: 9999;
 }
 
 .customBtn {
