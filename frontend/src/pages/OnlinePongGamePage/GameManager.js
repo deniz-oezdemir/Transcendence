@@ -355,7 +355,7 @@ export default class GameManager {
     if (!this.ws) return;
     e.preventDefault();
     this.keys[e.key] = true;
-
+    console.log('Key Pressed:', e.key);
     switch (e.key) {
       case ' ':
         this.toggleGame();

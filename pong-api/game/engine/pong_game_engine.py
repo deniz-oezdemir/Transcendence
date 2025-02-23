@@ -74,7 +74,7 @@ class PongGameEngine:
         return self.game_state
 
     def move_player(self, player_id, direction):
-        logger.debug(
+        logger.info(
             "Game Engine: Moving player: player_id=%s, direction=%s",
             player_id,
             direction,

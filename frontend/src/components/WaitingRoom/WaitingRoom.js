@@ -52,7 +52,53 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                 console.log('isPending:', isPending());
               }
               if (data.winner_id == userData.id) {
-                alert('You won the match!');
+                const popup = createComponent('div', {
+                  className: styles.popup,
+                  children: [
+                    createComponent('h2', {
+                      content: '🎉 Congratulations! 🎉',
+                      style: {
+                        fontSize: '2rem',
+                        marginBottom: '1rem',
+                        color: '#ffd700'
+                      }
+                    }),
+                    createComponent('p', {
+                      content: 'You won the match!',
+                      style: {
+                        fontSize: '1.5rem',
+                        color: '#fff'
+                      }
+                    })
+                  ]
+                });
+              
+                // Create fireworks
+                for (let i = 0; i < 30; i++) {
+                  const angle = (i * 12) * Math.PI / 180;
+                  const velocity = 50 + Math.random() * 50;
+                  const hue = Math.random() * 360;
+
+                  const particle = createComponent('div', {
+                    className: styles.fireworkParticle,
+                    style: {
+                      background: `hsl(${hue}, 100%, 50%)`,
+                      left: '50%',
+                      top: '50%',
+                      transform: `translate(-50%, -50%) rotate(${angle}rad)`,
+                      animation: `firework ${1 + Math.random() * 0.5}s ease-out forwards`
+                    }
+                  });
+
+                  popup.element.appendChild(particle.element);
+                }
+              
+                document.body.appendChild(popup.element);
+              
+                // Remove popup after 3 seconds
+                setTimeout(() => {
+                  document.body.removeChild(popup.element);
+                }, 3000);
               } else {
                 alert('You lost the match!');
               }
@@ -220,6 +266,30 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     };*/
 
   //});
+
+  const createFireworks = (container) => {
+    const colors = ['#ff0', '#ff3', '#f62', '#f24', '#f6f', '#63f', '#36f', '#2ff'];
+    const particleCount = 40;
+  
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (i * (360 / particleCount)) * Math.PI / 180;
+      const velocity = 200 + Math.random() * 100;
+      const tx = Math.cos(angle) * velocity;
+      const ty = Math.sin(angle) * velocity;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      
+      const particle = createComponent('div', {
+        className: styles.fireworkParticle,
+        style: {
+          background: color,
+          '--tx': `${tx}px`,
+          '--ty': `${ty}px`
+        }
+      });
+      
+      container.element.appendChild(particle.element);
+    }
+  };
 
   const deleteGames = () => {
     if (!socket()) return;
