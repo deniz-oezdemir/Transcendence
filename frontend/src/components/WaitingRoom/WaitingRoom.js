@@ -71,7 +71,12 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                   console.log('No match found');
                 }
               break;
-  
+            
+            case 'tournament_finished':
+                alert('Tournament Finished! Winner:', data.winner_id);
+                setIsPending(false);
+                break;
+
             case 'match_created':
             case 'tournament_created':
             case 'games_deleted':
@@ -256,16 +261,6 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     }));
   };
 
-  const createEightTournament = () => {
-    if (!socket()) return;
-    socket().send(JSON.stringify({
-      type: 'create_tournament',
-      max_players: 8,
-      player_id: userData.id,
-      player_name: userData.name,
-    }));
-  };
-
   const joinGame = () => {
     if (!socket()) return;
     socket().send(JSON.stringify({
@@ -404,6 +399,17 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   createEffect(() => {
     finalComponent.element.innerHTML = '';
     let content;
+    if (isPending()) {
+      content = createComponent('div', {
+        className: styles.container,
+        children: [
+          createComponent('h1', {
+            content: 'Waiting for next round to start...',
+          }),
+        ],
+      });
+      finalComponent.element.appendChild(content.element);
+    }
     content = createComponent('div', {
       className: styles.container,
       children: [
