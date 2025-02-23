@@ -11,15 +11,18 @@ import GameManager from './GameManager.js';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // Use HTTP(S) for fetch requests
-const port = 8002;
+const port = 8000;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
 export default function OnlinePongGamePage() {
   const cleanup = createCleanupContext();
 
   const [isWaitingRoom, setWaitingRoom] = createSignal(true);
-
-  const { id } = getUser();
+  let id;
+  createEffect(async () => {
+    const user = await getUser();
+    id = user.id;
+  });
 
   const gameManager = new GameManager(apiUrl, id);
   gameManager.handleResize();

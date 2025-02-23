@@ -7,23 +7,26 @@ import styles from './WaitingRoom.module.css';
 export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setCreatorName, setPlayerId, setPlayerName, setGameType }) {
   const [matches, setMatches] = createSignal([]);
   const [tournaments, setTournaments] = createSignal([]);
-  const [socket, setSocket] = createSignal(null);  
+  const [socket, setSocket] = createSignal(null);
   const hostname = window.location.hostname;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
-  const port = 8001;
+  const port = 8000;
   const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
 
   let userData = { id: null, username: null };
- 
-  const user = getUser();
+
+  createEffect(async () => {
+
+  const user = await getUser();
   userData.id = user.id;
   userData.name = user.name;
+  });
 
 
   //createEffect(() => {
     const socketConnection = () => {
       const ws = new WebSocket(wsUrl);
-  
+
       ws.onopen = () => {
         console.log('Connected to matchmaking service');
         console.log('username:', userData.name);
@@ -32,18 +35,18 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
         if (!socket()) return;
         socket().send(JSON.stringify({ type: 'get_games' }));
       };
-    
+
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           console.log('Received:', data);
-  
+
           switch (data.type) {
             case 'initial_games':
               setMatches(data.games.matches || []);
               setTournaments(data.games.tournaments || []);
               break;
-            
+
             case 'match_finished':
               console.log('Match Finished:', data);
               if (data.tournament_id) {
@@ -52,7 +55,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                 console.log('isPending:', isPending());
               }
               break;
-            
+
             case 'tournament_round_started':
               console.log('Tournament Round Started:', data);
               setIsPending(false);
@@ -71,7 +74,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                   console.log('No match found');
                 }
               break;
-            
+
             case 'tournament_finished':
                 alert('Tournament Finished! Winner:', data.winner_id);
                 setIsPending(false);
@@ -112,10 +115,10 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                 onStartGame(data.game, data.match_id);
               }
               break;
-            
+
               case 'player_joined':
                 console.log('Player joined:', data.available_games);
-              
+
                 if (data.available_games) {
                   if (data.available_games.matches && data.available_games.matches.length > 0) {
                     switch (data.status) {
@@ -141,7 +144,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                   } else {
                     console.log('No matches available');
                   }
-              
+
                   if (data.available_games.tournaments && data.available_games.tournaments.length > 0) {
                     switch (data.available_games.tournaments[0].status) {
                       case 'pending':
@@ -156,12 +159,12 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
                 } else {
                   console.log('No available games data found');
                 }
-              
+
                 break;
-              
+
               case 'tournament_started':
                 console.log('Tournament Started:', data);
-  
+
                 const tournament = data.available_games.tournaments.find(t => t.tournament_id == data.tournament_id);
                 if (tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id)) {
                   console.log('Tournament Match Started');
@@ -178,25 +181,25 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
               alert(data.message);
               console.log('error', data.message);
               break;
-  
+
             default:
               console.warn('Unknown message type:', data.type);
           }
-  
+
         } catch (err) {
           console.error('Error parsing WebSocket message:', err);
         }
       };
-    
+
       ws.onerror = (error) => {
         console.error('WebSocket Error:', error);
       };
-    
+
       ws.onclose = (event) => {
         console.warn('WebSocket closed:', event);
         setSocket(null);
       };
-  
+
       const handlekeydown = (event) => {
         if (event.key == 'Escape') {
           event.preventDefault();
@@ -206,7 +209,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
       }
       document.addEventListener('keydown', handlekeydown);
     }
-   
+
     socketConnection();
     /*return () => {
       //ws?.close();
@@ -292,9 +295,9 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
   createEffect(() => {
     const m = matches();
 
-  
+
     remoteMatchGameList.element.innerHTML = '';
-  
+
     // Append match buttons
     m.forEach((match) => {
       const matchButton = createComponent('button', {
@@ -315,7 +318,7 @@ export default function WaitingRoom({ onStartGame, setGameId, setCreatorId, setC
     const t = tournaments();
 
     tournamentGameList.element.innerHTML = '';
-    
+
     // Append tournament buttons
     t.forEach((tournament) => {
       const tournamentButton = createComponent('button', {

@@ -1,75 +1,68 @@
 import { createComponent, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './ProfilePage.module.css';
-import {
-  validateUsername,
-  validatePassword,
-  matchPasswords,
-} from '../../core/utils';
+import { validateUsername, validatePassword, matchPasswords } from '../../core/utils';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const UAMport = 8007;
-const historyPort = 8006;
+const UAMport = 8000;
+const historyPort = 8000;
 const accountUrl = `${protocol}//${hostname}:${UAMport}`;
 const historyUrl = `${protocol}//${hostname}:${historyPort}`;
 
-const [usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
-const [passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
-const [avatarButtonPressed, setAvatarButtonPressed] = createSignal(false);
+const[usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
+const[passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
+const[avatarButtonPressed, setAvatarButtonPressed] = createSignal(false);
 
 //*********************************************************************************************//
 
 async function handleDeleteAccount() {
-  if (
-    !confirm(
-      'Are you sure you want to delete your account? This action cannot be undone.'
-    )
-  ) {
+  if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
     return;
   }
 
   try {
-    const response = await fetch(`${accountUrl}/profile/`, {
-      method: 'DELETE',
+    const response = await fetch(`http://localhost:8000/profile/`, {
+      method: "DELETE",
       headers: {
-        Authorization: `Token ${localStorage.getItem('authToken')}`,
+        "Authorization": `Token ${localStorage.getItem("authToken")}`,
+        "Content-Type": "application/json",
       },
     });
 
     if (response.ok) {
-      alert('Your account has been deleted.');
-      localStorage.removeItem('authToken');
-      window.location.href = '/';
+      alert("Your account has been deleted.");
+      localStorage.removeItem("authToken");
+      window.location.href = "/";
     } else {
       const data = await response.json();
-      alert('Error: ' + (data.error || 'Failed to delete account.'));
+      alert("Error: " + (data.error || "Failed to delete account."));
       throw new Error(data.error);
     }
   } catch (error) {
-    console.error('Delete account error:', error);
-    alert('Something went wrong.');
+    console.error("Delete account error:", error);
+    alert("Something went wrong.");
   }
 }
 
 //*********************************************************************************************//
 
 function friendRequestForm(setReload) {
-  const [username, setUsername] = createSignal('');
-  const [usernameError, setUsernameError] = createSignal('');
+  const [username, setUsername] = createSignal("");
+  const [usernameError, setUsernameError] = createSignal("");
 
   async function sendFriendRequest() {
     if (!username() || !validateUsername(username(), setUsernameError)) {
-      return alert('Please enter a valid username!');
+      return alert("Please enter a valid username!");
     }
 
     try {
-      console.log('Sending friend request to', username());
-      const response = await fetch(`${accountUrl}/friend-request/`, {
-        method: 'POST',
+      console.log("Sending friend request to", username());
+      const response = await fetch(`http://localhost:8000/api/uam/friend-request/`, {
+        method: "POST",
         headers: {
-          Authorization: `Token ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ friend_username: username() }),
       });
@@ -78,37 +71,37 @@ function friendRequestForm(setReload) {
       if (!response.ok) {
         throw new Error(data.error);
       }
-      setUsername('');
+      setUsername("");
       setReload(true);
     } catch (error) {
-      console.error('Error sending friend request:', error);
-      alert('Error: ' + error.message);
+      console.error("Error sending friend request:", error);
+      alert("Error: " + error.message);
     }
   }
 
-  return createComponent('div', {
+  return createComponent("div", {
     className: styles.friendRequestBox,
     children: [
-      createComponent('input', {
+      createComponent("input", {
         className: styles.friendInput,
         attributes: {
-          type: 'text',
-          placeholder: 'Enter username...',
+          type: "text",
+          placeholder: "Enter username...",
           value: username(),
         },
         events: {
           input: (event) => setUsername(event.target.value),
         },
       }),
-      createComponent('button', {
+      createComponent("button", {
         className: styles.friendButton,
-        content: 'Add Friend',
+        content: "Add Friend",
         events: {
-          click: (event) => {
+          click : (event) => {
             console.log('Calling send friend request...');
             sendFriendRequest(event);
-          },
-        },
+          }
+        }
       }),
     ],
   });
@@ -119,13 +112,13 @@ function friendRequestForm(setReload) {
 function friendListComponent(user_data, setReload) {
   async function unfollowFriend(friend_username) {
     try {
-      console.log('Sending unfollow request to', friend_username);
+      console.log("Sending unfollow request to", friend_username);
 
-      const response = await fetch(`${accountUrl}/friend-request/`, {
-        method: 'DELETE',
+      const response = await fetch(`http://localhost:8000/api/uam/friend-request/`, {
+        method: "DELETE",
         headers: {
-          Authorization: `Token ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ friend_username }),
       });
@@ -136,8 +129,8 @@ function friendListComponent(user_data, setReload) {
       }
       setReload(true);
     } catch (error) {
-      console.error('Error unfollowing friend:', error);
-      alert('Something went wrong.');
+      console.error("Error unfollowing friend:", error);
+      alert("Something went wrong.");
     }
   }
 
@@ -145,7 +138,7 @@ function friendListComponent(user_data, setReload) {
   if (user_data.friends && user_data.friends.length > 0) {
     friendsComponents = user_data.friends.map((friend, index) => {
       if (friend.avatar_url && friend.username) {
-        console.log('Friend status:', friend.status);
+        console.log("Friend status:", friend.status);
         return createComponent('div', {
           key: `friend-${index}`,
           className: styles.friend,
@@ -166,9 +159,9 @@ function friendListComponent(user_data, setReload) {
               content: 'Unfollow',
               events: {
                 click: (event) => {
-                  console.log('Unfollow button clicked for:', friend.username);
+                  console.log("Unfollow button clicked for:", friend.username);
                   unfollowFriend(friend.username);
-                },
+                }
               },
             }),
           ],
@@ -177,9 +170,7 @@ function friendListComponent(user_data, setReload) {
       return createComponent('p', { content: 'Invalid friend data' });
     });
   } else {
-    friendsComponents = [
-      createComponent('p', { content: 'No friends added yet' }),
-    ];
+    friendsComponents = [createComponent('p', { content: 'No friends added yet' })];
   }
 
   return createComponent('div', {
@@ -191,23 +182,23 @@ function friendListComponent(user_data, setReload) {
 //*********************************************************************************************//
 
 function changeUsernameComponent(user_data, setReload) {
-  const [username, setUsername] = createSignal('');
-  const [usernameError, setUsernameError] = createSignal('');
+  const[username, setUsername] = createSignal("");
+  const[usernameError, setUsernameError] = createSignal("");
 
   async function handleChangeUsername(setReload) {
     if (!username() || !validateUsername(username(), setUsernameError)) {
       setUsernameButtonPressed(false);
       setReload(true);
-      return alert('Please enter a valid username!');
+      return alert("Please enter a valid username!");
     }
     try {
-      console.log('Sending change username request');
+      console.log("Sending change username request");
       let new_username = username();
-      const response = await fetch(`${accountUrl}/change-username/`, {
-        method: 'PUT',
+      const response = await fetch(`http://localhost:8000/change-username/`, {
+        method: "PUT",
         headers: {
-          Authorization: `Token ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ new_username }),
       });
@@ -219,56 +210,52 @@ function changeUsernameComponent(user_data, setReload) {
         throw new Error(data.error);
       }
     } catch (error) {
-      console.error('Change username error:', error);
-      alert('Something went wrong.');
+      console.error("Change username error:", error);
+      alert("Something went wrong.");
     }
   }
 
   let changeUsernameComponent = [];
   if (usernameButtonPressed()) {
-    return createComponent('div', {
+    return createComponent("div", {
       className: styles.changeBox,
       children: [
-        createComponent('input', {
+        createComponent("input", {
           className: styles.changeInput,
           attributes: {
-            type: 'text',
-            placeholder: 'Enter new username...',
+            type: "text",
+            placeholder: "Enter new username...",
             value: username(),
           },
           events: {
             input: (event) => setUsername(event.target.value),
           },
         }),
-        createComponent('button', {
+        createComponent("button", {
           className: styles.changeButton,
-          content: 'Change Username',
+          content: "Change Username",
           events: {
-            click: (event) => {
+            click : (event) => {
               console.log('Changing username...');
               handleChangeUsername(setReload);
-            },
-          },
+            }
+          }
         }),
       ],
     });
   } else {
-    changeUsernameComponent = [
-      createComponent('button', {
-        className: styles.changeButton,
-        content: 'Change Username',
-        events: {
-          click: (event) => {
-            console.log(
-              'Change Username button clicked for:',
-              user_data.username
-            );
-            setUsernameButtonPressed(true);
-            setReload(true);
-          },
-        },
-      }),
-    ];
+    changeUsernameComponent = [createComponent('button', {
+      className: styles.changeButton,
+      content: 'Change Username',
+      events: {
+        click: (event) => {
+          console.log("Change Username button clicked for:", user_data.username);
+          setUsernameButtonPressed(true);
+          setReload(true);
+        }
+      },
+    }),
+  ];
   }
 
   return createComponent('div', {
@@ -280,26 +267,23 @@ function changeUsernameComponent(user_data, setReload) {
 //*********************************************************************************************//
 
 function changePasswordComponent(user_data, setReload) {
-  const [password, setPassword] = createSignal('');
-  const [passwordRepeat, setPasswordRepeat] = createSignal('');
-  const [passwordError, setPasswordError] = createSignal('');
+  const[password, setPassword] = createSignal("");
+  const[passwordRepeat, setPasswordRepeat] = createSignal("");
+  const[passwordError, setPasswordError] = createSignal("");
 
   async function handleChangePassword(setReload) {
     try {
-      if (
-        !validatePassword(password(), setPasswordError) ||
-        !matchPasswords(password(), passwordRepeat(), setPasswordError)
-      ) {
+      if (!validatePassword(password(), setPasswordError) || !matchPasswords(password(), passwordRepeat(), setPasswordError)) {
         setPasswordButtonPressed(false);
         setReload(true);
         return alert(passwordError());
       }
       let new_password = password();
-      const response = await fetch(`${accountUrl}/change-password/`, {
-        method: 'PUT',
+      const response = await fetch(`http://localhost:8000/api/uam/change-password/`, {
+        method: "PUT",
         headers: {
-          Authorization: `Token ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ new_password }),
       });
@@ -310,69 +294,65 @@ function changePasswordComponent(user_data, setReload) {
       if (!response.ok) {
         throw new Error(data.error);
       }
-      alert('Password changed successfully.');
+      alert("Password changed successfully.");
     } catch (error) {
-      console.error('Change password error:', error);
-      alert('Something went wrong.');
+      console.error("Change password error:", error);
+      alert("Something went wrong.");
     }
   }
 
   let changePasswordComponent = [];
   if (passwordButtonPressed()) {
-    return createComponent('div', {
+    return createComponent("div", {
       className: styles.changeBox,
       children: [
-        createComponent('input', {
+        createComponent("input", {
           className: styles.changeInput,
           attributes: {
-            type: 'password',
-            placeholder: 'Enter new password...',
+            type: "password",
+            placeholder: "Enter new password...",
             value: password(),
           },
           events: {
             input: (event) => setPassword(event.target.value),
           },
         }),
-        createComponent('input', {
+        createComponent("input", {
           className: styles.changeInput,
           attributes: {
-            type: 'password',
-            placeholder: 'Repeat new password...',
+            type: "password",
+            placeholder: "Repeat new password...",
             value: passwordRepeat(),
           },
           events: {
             input: (event) => setPasswordRepeat(event.target.value),
           },
         }),
-        createComponent('button', {
+        createComponent("button", {
           className: styles.changeButton,
-          content: 'Change Password',
+          content: "Change Password",
           events: {
-            click: (event) => {
+            click : (event) => {
               console.log('Changing password...');
               handleChangePassword(setReload);
-            },
-          },
+            }
+          }
         }),
       ],
     });
   } else {
-    changePasswordComponent = [
-      createComponent('button', {
-        className: styles.changeButton,
-        content: 'Change Password',
-        events: {
-          click: (event) => {
-            console.log(
-              'Change password button clicked for:',
-              user_data.username
-            );
-            setPasswordButtonPressed(true);
-            setReload(true);
-          },
-        },
-      }),
-    ];
+    changePasswordComponent = [createComponent('button', {
+      className: styles.changeButton,
+      content: 'Change Password',
+      events: {
+        click: (event) => {
+          console.log("Change password button clicked for:", user_data.username);
+          setPasswordButtonPressed(true);
+          setReload(true);
+        }
+      },
+    }),
+  ];
   }
 
   return createComponent('div', {
@@ -384,34 +364,35 @@ function changePasswordComponent(user_data, setReload) {
 //*********************************************************************************************//
 
 function changeAvatarComponent(user_data, setReload) {
-  const [avatar, setAvatar] = createSignal('');
+  const[avatar, setAvatar] = createSignal("");
 
   function validateImage(file) {
-    const allowedTypes = ['image/jpeg', 'image/png'];
+    const allowedTypes = ["image/jpeg", "image/png"];
     const maxSize = 2 * 1024 * 1024;
     if (!file) return false;
     if (!allowedTypes.includes(file.type)) {
-      alert('Only JPG and PNG are allowed.');
-      return false;
+        alert("Only JPG and PNG are allowed.");
+        return false;
     }
     if (file.size > maxSize) {
-      alert('File must be less than 2MB.');
-      return false;
+        alert("File must be less than 2MB.");
+        return false;
     }
     return true;
   }
 
   const handleChangeAvatar = async (file, setReload) => {
+
     try {
-      console.log('Uploading avatar...', file);
+      console.log("Uploading avatar...", file);
 
       const formData = new FormData();
-      formData.append('avatar', file);
+      formData.append("avatar", file);
 
-      const response = await fetch(`${accountUrl}/change-avatar/`, {
-        method: 'PUT',
+      const response = await fetch(`http://localhost:8000/api/uam/change-avatar/`, {
+        method: "PUT",
         headers: {
-          Authorization: `Token ${localStorage.getItem('authToken')}`,
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
         },
         body: formData,
       });
@@ -420,69 +401,66 @@ function changeAvatarComponent(user_data, setReload) {
       if (!response.ok) {
         throw new Error(data.error);
       }
-      console.log('Avatar changed successfully!');
+      console.log("Avatar changed successfully!");
       setReload((prev) => !prev);
     } catch (error) {
-      console.error('Change avatar error:', error);
+      console.error("Change avatar error:", error);
       setReload((prev) => !prev);
-      alert('Something went wrong.');
+      alert("Something went wrong.");
     }
   };
 
   let changeAvatarComponent = [];
   if (avatarButtonPressed()) {
-    return createComponent('div', {
+    return createComponent("div", {
       className: styles.changeBox,
       children: [
-        createComponent('input', {
+        createComponent("input", {
           className: styles.changeInput,
           attributes: {
-            type: 'file',
-            accept: 'image/*',
+            type: "file",
+            accept: "image/*",
           },
           events: {
             change: (event) => {
               const file = event.target.files[0];
               if (validateImage(file)) {
-                console.log('Selected file:', file.name);
+                console.log("Selected file:", file.name);
                 setAvatar(file);
               }
             },
           },
         }),
-        createComponent('button', {
+        createComponent("button", {
           className: styles.changeButton,
-          content: 'Change Avatar',
+          content: "Change Avatar",
           events: {
             click: async () => {
               if (!avatar()) {
-                alert('Please select an image first.');
+                alert("Please select an image first.");
                 return;
               }
-              console.log('Calling avatar handler...');
+              console.log("Calling avatar handler...");
               await handleChangeAvatar(avatar(), setReload);
             },
           },
         }),
       ],
     });
+
   } else {
-    changeAvatarComponent = [
-      createComponent('button', {
-        className: styles.changeButton,
-        content: 'Change Avatar',
-        events: {
-          click: (event) => {
-            console.log(
-              'Change Avatar button clicked for:',
-              user_data.username
-            );
-            setAvatarButtonPressed(true);
-            setReload(true);
-          },
-        },
-      }),
-    ];
+    changeAvatarComponent = [createComponent('button', {
+      className: styles.changeButton,
+      content: 'Change Avatar',
+      events: {
+        click: (event) => {
+          console.log("Change Avatar button clicked for:", user_data.username);
+          setAvatarButtonPressed(true);
+          setReload(true);
+        }
+      },
+    }),
+  ];
   }
 
   return createComponent('div', {
@@ -512,7 +490,7 @@ function dynamicData(user_data, user_stats, setReload) {
             attributes: {
               src: user_data.avatar_url,
               alt: `${user_data.username}'s avatar`,
-            },
+            }
           }),
           createComponent('h1', {
             className: styles.username,
@@ -524,11 +502,11 @@ function dynamicData(user_data, user_stats, setReload) {
         className: styles.deleteButton,
         content: 'Delete Account',
         events: {
-          click: (event) => {
+          click : (event) => {
             console.log('Delete Account button clicked');
             handleDeleteAccount(event);
-          },
-        },
+          }
+        }
       }),
 
       changeUsernameComponent(user_data, setReload),
@@ -578,29 +556,31 @@ function dynamicData(user_data, user_stats, setReload) {
 export default function ProfilePage({ params, query }) {
   const cleanup = createCleanupContext();
 
-  const [content, setContent] = createSignal(null);
-  const [error, setError] = createSignal(null);
-  const [reload, setReload] = createSignal(true);
+  const[content, setContent] = createSignal(null);
+  const[error, setError] = createSignal(null);
+  const[reload, setReload] = createSignal(true);
   const [stats, setStats] = createSignal(null);
 
   async function fetchUserData() {
     try {
       console.log('Fetching user data...');
-      const response = await fetch(`${accountUrl}/profile/`, {
+      const response = await fetch(`http://localhost:8000/profile/`, {
         method: 'GET',
         headers: {
-          Authorization: `Token ${localStorage.getItem('authToken')}`,
+          'Authorization': `Token ${localStorage.getItem('authToken')}`,
           'Content-Type': 'application/json',
         },
       });
+      console.log('Fetched user data:', response);
       if (!response.ok) {
         console.log('Failed to fetch user data');
         // throw new Error('Failed to fetch user data');
       }
       const data = await response.json();
-      const userStats = await fetchStats(data.id);
-      console.log('userStats:', userStats);
-      setContent(dynamicData(data, userStats, setReload));
+      console.log('User data:', data);
+      // const userStats = await fetchStats(data.id);
+      // console.log('userStats:', userStats);
+      setContent(dynamicData(data, null, setReload));
     } catch (error) {
       console.error('fetch user data fails with error: ', error);
       setError(error.message);
@@ -613,7 +593,7 @@ export default function ProfilePage({ params, query }) {
       console.log('Fetching user stats...');
       const userID = id;
       const data = '';
-      const response = await fetch(`${historyUrl}/api/player/${userID}`, {
+      const response = await fetch(`http://localhost:8000/api/game-history/api/player/${userID}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -635,10 +615,8 @@ export default function ProfilePage({ params, query }) {
 
   createEffect(() => {
     if (reload()) {
-      fetchUserData().catch((err) =>
-        console.error('Failed to load profile:', err)
-      );
-      setReload(false);
+    fetchUserData().catch(err => console.error('Failed to load profile:', err));
+    setReload(false);
     }
   });
 
@@ -648,6 +626,6 @@ export default function ProfilePage({ params, query }) {
     cleanup,
   });
 
-  return wrapper;
+console.log('ProfilePage.js: wrapper:', wrapper);
+return wrapper;
 }
-
