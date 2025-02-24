@@ -37,9 +37,11 @@ export default function WaitingRoom({
       console.log('Connected to matchmaking service');
       console.log('username:', userData.name);
       console.log('userId:', userData.id);
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'get_games' }));
+        console.log('Requesting available games...');
+      }
       setSocket(ws);
-      if (!socket()) return;
-      socket().send(JSON.stringify({ type: 'get_games' }));
     };
 
     ws.onmessage = (event) => {
@@ -55,6 +57,10 @@ export default function WaitingRoom({
 
           case 'match_finished':
             console.log('Match Finished:', data);
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'get_games' }));
+              console.log('Requesting available games...');
+            }
             if (data.tournament_id) {
               console.log('Tournament ID:', data.tournament_id);
               setIsPending(true);

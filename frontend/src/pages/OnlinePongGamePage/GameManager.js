@@ -411,15 +411,15 @@ export default class GameManager {
     this.frameCounter++;
     if (this.frameCounter >= this.sendEveryNFrames) {
       const players = this.gameScoreSig[0]().players;
-      console.log('players:', players);
-      console.log('UserId:', this.userData.id);
-      console.log('User:', this.userData);
+      //console.log('players:', players);
+      //console.log('UserId:', this.userData.id);
+      //console.log('User:', this.userData);
 
       if (
         this.userData.id == players.player1.id ||
         this.gameData.type === 'local_match'
       ) {
-        console.log('inside player 1');
+        //console.log('inside player 1');
         if (this.keys['ArrowUp']) {
           this.updatePlayerPosition(players.player1.id, -1);
         }
