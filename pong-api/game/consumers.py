@@ -38,43 +38,66 @@ class GameConsumer(AsyncWebsocketConsumer):
             logger.info(f"Started periodic updates for game: {self.game_id}")
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
+        try:
+            await self.channel_layer.group_discard(
+                self.game_group_name, self.channel_name
+            )
 
-        connected_clients = cache.get(f"{self.game_id}_connected_clients", 0) - 1
-        cache.set(f"{self.game_id}_connected_clients", connected_clients)
-        logger.debug(
-            f"Client disconnected: {self.channel_name}, Total connected clients: {connected_clients}"
-        )
+            connected_clients = cache.get(f"{self.game_id}_connected_clients", 0) - 1
+            cache.set(f"{self.game_id}_connected_clients", connected_clients)
+            logger.debug(
+                f"Client disconnected: {self.channel_name}, Total connected clients: {connected_clients}"
+            )
 
-        if connected_clients == 0:
-            await self.game_state_manager.stop_periodic_updates()
-            logger.debug(f"Stopped periodic updates for game: {self.game_id}")
+            if connected_clients == 0:
+                await self.game_state_manager.stop_periodic_updates()
+                logger.debug(f"Stopped periodic updates for game: {self.game_id}")
 
-        # Notify all clients that the connection has ended
-        await self.channel_layer.group_send(
-            self.game_group_name,
-            {"type": "connection_closed", "message": "Connection closed by server."},
-        )
+            # Notify all clients that the connection has ended
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    "type": "connection_closed",
+                    "message": "Connection closed by server.",
+                },
+            )
+        except Exception as e:
+            logger.error(
+                f"disconnect exception: {e}",
+                exc_info=True,
+            )
 
     async def connection_closed(self, event):
-        # Handle the connection closed event
-        logger.info(f"connection_closed message received for game {self.game_id}")
-        await self.send(text_data=json.dumps({"type": "connection_closed"}))
-        await self.close_all_connections()
-        await self.close()
+        try:
+            # Handle the connection closed event
+            logger.info(f"connection_closed message received for game {self.game_id}")
+            await self.send(text_data=json.dumps({"type": "connection_closed"}))
+            await self.close_all_connections()
+            await self.close()
+        except Exception as e:
+            logger.error(
+                f"connection_closed handler exception: {e}",
+                exc_info=True,
+            )
 
     async def close_all_connections(self):
-        # Notify all clients that the connection has ended
-        logger.info(f"Closing all connections for game {self.game_id}")
-        self.game_state_manager.game_state.delete()
-        await self.channel_layer.group_send(
-            self.game_group_name,
-            {
-                "type": "connection_closed",
-            },
-        )
-        await self.disconnect(0)
-        await self.close()
+        try:
+            # Notify all clients that the connection has ended
+            logger.info(f"Closing all connections for game {self.game_id}")
+            self.game_state_manager.game_state.delete()
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    "type": "connection_closed",
+                },
+            )
+            await self.disconnect(0)
+            await self.close()
+        except Exception as e:
+            logger.error(
+                f"close_all_connections exception: {e}",
+                exc_info=True,
+            )
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
@@ -102,21 +125,29 @@ class GameConsumer(AsyncWebsocketConsumer):
             )
 
     async def game_state_update(self, event):
-        encoded_data = event["state"]
-        compressed_data = base64.b64decode(encoded_data)
-        game_state_data = json.loads(zlib.decompress(compressed_data).decode())
-        for key, value in game_state_data.items():
-            setattr(self.game_state_manager.game_state, key, value)
-
-        await self.send(
-            text_data=json.dumps({"type": "game_state_update", "state": encoded_data})
-        )
-        logger.debug(f"Game state update sent to client: {self.channel_name}")
         try:
-            if self.game_state_manager.game_state.is_game_ended:
-                await self.close_all_connections()
+            encoded_data = event["state"]
+            compressed_data = base64.b64decode(encoded_data)
+            game_state_data = json.loads(zlib.decompress(compressed_data).decode())
+            for key, value in game_state_data.items():
+                setattr(self.game_state_manager.game_state, key, value)
+
+            await self.send(
+                text_data=json.dumps(
+                    {"type": "game_state_update", "state": encoded_data}
+                )
+            )
+            logger.debug(f"Game state update sent to client: {self.channel_name}")
+            try:
+                if self.game_state_manager.game_state.is_game_ended:
+                    await self.close_all_connections()
+            except Exception as e:
+                logger.error(
+                    f"Error disconnecting and sending game to matchmaking: {str(e)}",
+                    exc_info=True,
+                )
         except Exception as e:
             logger.error(
-                f"Error disconnecting and sending game to matchmaking: {str(e)}",
+                f"game_state_update exception: {e}",
                 exc_info=True,
             )
