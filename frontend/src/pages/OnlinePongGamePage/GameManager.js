@@ -3,6 +3,7 @@ import pako from 'pako';
 import lerp from '@/game/utils/lerp.js';
 
 const BASE_SCALE = 10;
+const SEND_INTERVAL_MS = 10;
 const originalDimensions = {
   game: { width: 600, height: 400 },
   paddle: { width: 20, height: 50, offset: 10 },
@@ -16,9 +17,8 @@ const originalPositions = {
 };
 
 export default class GameManager {
-  constructor(apiUrl, userData) {
+  constructor(userData) {
     // Core game state
-    this.apiUrl = apiUrl;
     this.gameData = {
       id: null,
       p1Id: null,
@@ -31,11 +31,11 @@ export default class GameManager {
     this.isRunning = false;
     this.updateCallbacks = [];
     this.currentGameState = {};
-    this.frameCounter = 0;
-    this.sendEveryNFrames = 2;
+    this.lastSendTime = 0;
+    this.animationId = null;
 
     // Key stroke
-    this.keys = {};
+    this.keys = new Set();
 
     // WebSocket connection
     this.ws = null;
@@ -47,8 +47,8 @@ export default class GameManager {
     this.gamePositionsSig = createSignal({
       ...originalPositions,
     });
-    this.previousPositions = {};
-    this.targetPositions = {};
+    this.previousPositions = { ...originalPositions };
+    this.targetPositions = { ...originalPositions };
 
     this.gameScoreSig = createSignal({
       player1: { score: 0 },
@@ -70,6 +70,9 @@ export default class GameManager {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
     window.addEventListener('resize', this.handleResize.bind(this));
+
+    // Throttled resize handler
+    this.resizeTimeout = null;
   }
 
   // Setter methods for game configuration
@@ -133,53 +136,61 @@ export default class GameManager {
    * Handles window resize events and recalculates game dimensions
    */
   handleResize() {
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-
-    const aspectRatio =
-      originalDimensions.game.width / originalDimensions.game.height;
-
-    let gameWidth = windowWidth * 0.5;
-    let gameHeight = gameWidth / aspectRatio;
-
-    if (gameHeight > windowHeight * 0.7) {
-      gameHeight = windowHeight * 0.7;
-      gameWidth = gameHeight * aspectRatio;
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
     }
 
-    const scaleFactor = gameWidth / originalDimensions.game.width;
+    this.resizeTimeout = setTimeout(() => {
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
 
-    const newDimensions = {
-      game: {
-        width: Math.round(gameWidth),
-        height: Math.round(gameHeight),
-      },
-      paddle: {
-        width: Math.round(originalDimensions.paddle.width * scaleFactor),
-        height: Math.round(originalDimensions.paddle.height * scaleFactor),
-        offset: Math.round(originalDimensions.paddle.offset * scaleFactor),
-      },
-      ball: {
-        radius: Math.round(originalDimensions.ball.radius * scaleFactor),
-      },
-      scaleFactor,
-    };
+      const aspectRatio =
+        originalDimensions.game.width / originalDimensions.game.height;
 
-    this.gameDimensionsSig[1](newDimensions);
+      let gameWidth = windowWidth * 0.5;
+      let gameHeight = gameWidth / aspectRatio;
 
-    const initialPositions = {
-      ball: {
-        x: originalPositions.ball.x * scaleFactor,
-        y: originalPositions.ball.y * scaleFactor,
-      },
-      player1Position: originalPositions.player1Position * scaleFactor,
-      player2Position: originalPositions.player2Position * scaleFactor,
-    };
+      if (gameHeight > windowHeight * 0.7) {
+        gameHeight = windowHeight * 0.7;
+        gameWidth = gameHeight * aspectRatio;
+      }
 
-    this.gamePositionsSig[1](initialPositions);
+      const scaleFactor = gameWidth / originalDimensions.game.width;
 
-    this.previousPositions = { ...initialPositions };
-    this.targetPositions = { ...initialPositions };
+      const newDimensions = {
+        game: {
+          width: Math.round(gameWidth),
+          height: Math.round(gameHeight),
+        },
+        paddle: {
+          width: Math.round(originalDimensions.paddle.width * scaleFactor),
+          height: Math.round(originalDimensions.paddle.height * scaleFactor),
+          offset: Math.round(originalDimensions.paddle.offset * scaleFactor),
+        },
+        ball: {
+          radius: Math.round(originalDimensions.ball.radius * scaleFactor),
+        },
+        scaleFactor,
+      };
+
+      this.gameDimensionsSig[1](newDimensions);
+
+      const initialPositions = {
+        ball: {
+          x: originalPositions.ball.x * scaleFactor,
+          y: originalPositions.ball.y * scaleFactor,
+        },
+        player1Position: originalPositions.player1Position * scaleFactor,
+        player2Position: originalPositions.player2Position * scaleFactor,
+      };
+
+      this.gamePositionsSig[1](initialPositions);
+
+      this.previousPositions = { ...initialPositions };
+      this.targetPositions = { ...initialPositions };
+
+      this.resizeTimeout = null;
+    }, 100);
   }
 
   /**
@@ -187,11 +198,13 @@ export default class GameManager {
    */
   connectWebSocket() {
     return new Promise((resolve, reject) => {
-      console.log('Inside connect WebSocket connection befor check ws');
       if (this.ws && this.ws.readyState === WebSocket.OPEN) return resolve();
-      console.log('Inside connect WebSocket connection after check ws');
 
-      this.ws = new WebSocket(`${this.apiUrl}/ws/game/${this.gameData.id}/`);
+      // Usar URL websocket más eficiente
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      this.ws = new WebSocket(
+        `${wsProtocol}//${window.location.hostname}:8000/ws/game/${this.gameData.id}/`
+      );
 
       this.ws.onopen = () => {
         console.log('Game Engine WebSocket connected.');
@@ -203,7 +216,6 @@ export default class GameManager {
 
       this.ws.onerror = (error) => {
         console.error('Game Engine WebSocket error:', error);
-        this.ws.close();
         this.isConnected = false;
         this.ws = null;
         reject(error);
@@ -225,15 +237,20 @@ export default class GameManager {
 
     if (data.type === 'game_state_update') {
       try {
-        // Decompress and parse the game state
+        // Decompress and parse the game state - Optimizar decompresión
         const binaryString = atob(data.state);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
 
         const partialState = JSON.parse(pako.inflate(bytes, { to: 'string' }));
+
+        // Detect the state of the game
+        if ('is_game_running' in partialState) {
+          console.log('is running:', partialState.is_game_running);
+          this.isGameRunning = partialState.is_game_running;
+        }
 
         // Update the current game state
         this.currentGameState = {
@@ -258,12 +275,22 @@ export default class GameManager {
           // Update target positions
           this.targetPositions = {
             player1Position:
-              this.currentGameState.player_1_position * 10 * scaleFactor,
+              this.currentGameState.player_1_position *
+              BASE_SCALE *
+              scaleFactor,
             player2Position:
-              this.currentGameState.player_2_position * 10 * scaleFactor,
+              this.currentGameState.player_2_position *
+              BASE_SCALE *
+              scaleFactor,
             ball: {
-              x: this.currentGameState.ball_x_position * 10 * scaleFactor,
-              y: this.currentGameState.ball_y_position * 10 * scaleFactor,
+              x:
+                this.currentGameState.ball_x_position *
+                BASE_SCALE *
+                scaleFactor,
+              y:
+                this.currentGameState.ball_y_position *
+                BASE_SCALE *
+                scaleFactor,
             },
           };
         }
@@ -286,9 +313,13 @@ export default class GameManager {
       }
     } else if (data.type === 'connection_closed') {
       console.log(`Connection closed by server for game ${this.gameData.id}.`);
-      // this.ws.close();
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.close();
       this.ws = null;
       this.updateCallbacks.forEach((callback) => callback());
+      if (this.animationId) {
+        cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+      }
     }
   }
 
@@ -296,12 +327,13 @@ export default class GameManager {
    * Toggle the game state between running and paused
    */
   toggleGame() {
-    if (this.ws) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(
         JSON.stringify({
           action: 'toggle',
         })
       );
+      this.isGameRunning = !this.isGameRunning;
     }
   }
 
@@ -312,19 +344,32 @@ export default class GameManager {
     if (this.gameData.id < 0) return false;
 
     console.log('Ending Game:', this.gameData.id);
-    if (this.ws) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.close();
-      this.ws = null;
     }
+    this.ws = null;
 
     // Reset game state
     this.gameData.id = -1;
     this.isRunning = false;
+    this.isPaused = false;
+
+    // Reset animation
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+
+    // Clear timeout if exists
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = null;
+    }
 
     // Remove event listeners
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
-    window.removeEventListener('resize', this.handleResize.bind(this));
+    window.removeEventListener('resize', this.handleResize);
 
     return true;
   }
@@ -333,7 +378,7 @@ export default class GameManager {
    * Update player position with throttling to prevent message flooding
    */
   updatePlayerPosition(playerId, direction) {
-    if (!this.ws) return;
+    if (!this.ws || !this.ws.readyState === WebSocket.OPEN) return;
 
     this.ws.send(
       JSON.stringify({
@@ -345,16 +390,21 @@ export default class GameManager {
   }
 
   handleKeyUp(e) {
-    this.keys[e.key] = false;
+    this.keys.delete(e.key);
   }
 
   /**
    * Handle keyboard input for game controls
    */
   handleKeyDown(e) {
-    if (!this.ws) return;
-    e.preventDefault();
-    this.keys[e.key] = true;
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+
+    // Solo prevenir eventos por defecto para teclas de juego específicas
+    if (['ArrowUp', 'ArrowDown', 'w', 's', ' ', 'Escape'].includes(e.key)) {
+      e.preventDefault();
+    }
+
+    this.keys.add(e.key);
 
     switch (e.key) {
       case ' ':
@@ -380,7 +430,9 @@ export default class GameManager {
   }
 
   update(delta) {
-    const interpolationFactor = 0.333;
+    if (!this.isGameRunning) return;
+
+    const interpolationFactor = 0.4;
 
     // Update game positions with interpolation
     this.gamePositionsSig[1]({
@@ -408,37 +460,44 @@ export default class GameManager {
       },
     });
 
-    this.frameCounter++;
-    if (this.frameCounter >= this.sendEveryNFrames) {
-      const players = this.gameScoreSig[0]().players;
-      console.log('players:', players);
-      console.log('UserId:', this.userData.id);
-      console.log('User:', this.userData);
+    if (this.isGameRunning) {
+      const now = performance.now();
+      if (now - this.lastSendTime >= SEND_INTERVAL_MS) {
+        const players = this.gameScoreSig[0]().players;
+        const userId = this.userData.id;
 
-      if (
-        this.userData.id == players.player1.id ||
-        this.gameData.type === 'local_match'
-      ) {
-        console.log('inside player 1');
-        if (this.keys['ArrowUp']) {
-          this.updatePlayerPosition(players.player1.id, -1);
+        if (this.gameData.type === 'local_match') {
+          if (this.keys.has('ArrowUp')) {
+            this.updatePlayerPosition(players.player1.id, -1);
+          }
+          if (this.keys.has('ArrowDown')) {
+            this.updatePlayerPosition(players.player1.id, 1);
+          }
+          if (this.keys.has('w')) {
+            this.updatePlayerPosition(players.player2.id, -1);
+          }
+          if (this.keys.has('s')) {
+            this.updatePlayerPosition(players.player2.id, 1);
+          }
+        } else {
+          if (userId == players.player1.id) {
+            if (this.keys.has('ArrowUp')) {
+              this.updatePlayerPosition(players.player1.id, -1);
+            }
+            if (this.keys.has('ArrowDown')) {
+              this.updatePlayerPosition(players.player1.id, 1);
+            }
+          } else if (userId == players.player2.id) {
+            if (this.keys.has('ArrowUp')) {
+              this.updatePlayerPosition(players.player2.id, -1);
+            }
+            if (this.keys.has('ArrowDown')) {
+              this.updatePlayerPosition(players.player2.id, 1);
+            }
+          }
         }
-        if (this.keys['ArrowDown']) {
-          this.updatePlayerPosition(players.player1.id, 1);
-        }
+        this.lastSendTime = now;
       }
-      if (
-        this.userData.id == players.player2.id ||
-        this.gameData.type === 'local_match'
-      ) {
-        if (this.keys['w']) {
-          this.updatePlayerPosition(players.player2.id, -1);
-        }
-        if (this.keys['s']) {
-          this.updatePlayerPosition(players.player2.id, 1);
-        }
-      }
-      this.frameCounter = 0;
     }
   }
 }

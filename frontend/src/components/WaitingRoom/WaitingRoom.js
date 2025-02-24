@@ -21,12 +21,14 @@ export default function WaitingRoom({
   const port = 8000;
   const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
 
-  let userData = { id: null, username: null };
+  let userData = { id: null, name: null };
 
   createEffect(async () => {
     const user = await getUser();
+    console.log('user data:', user);
     userData.id = user.id;
     userData.name = user.username;
+    console.log('user data:', userData);
   });
 
   //createEffect(() => {
@@ -321,13 +323,6 @@ export default function WaitingRoom({
   };
 
   socketConnection();
-  /*return () => {
-      //ws?.close();
-      //setSocket(null);
-      document.removeEventListener('keydown', handlekeydown);
-    };*/
-
-  //});
 
   const deleteGames = () => {
     if (!socket()) return;

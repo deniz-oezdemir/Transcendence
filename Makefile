@@ -21,6 +21,7 @@ clean:
 
 fclean:
 	@docker compose -p $(NAME) -f $(COMPOSE) down --rmi all --volumes --remove-orphans
+	@docker system prune -f -a
 	@echo " $(FULLY_CLEANED)"
 
 status:
