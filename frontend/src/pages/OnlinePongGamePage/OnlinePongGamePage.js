@@ -44,16 +44,19 @@ export default function OnlinePongGamePage() {
 
   const waitingRoom = WaitingRoom({
     onStartGame: async () => {
+
       // use that in case of bad behavior server side
-      if (gameManager.ws) {
-        gameManager.ws.close();
-        gameManager.ws = null;
-      }
-      await gameManager.connectWebSocket();
-      gameManager.initializeGame();
-      setWaitingRoom(false);
-      gameManager.toggleGame();
-      requestAnimationFrame(animate);
+      setTimeout(async() => {
+        if (gameManager.ws) {
+          gameManager.ws.close();
+          gameManager.ws = null;
+        }
+        await gameManager.connectWebSocket();
+        gameManager.initializeGame();
+        setWaitingRoom(false);
+        gameManager.toggleGame();
+        requestAnimationFrame(animate);
+      }, 100);
     },
     setGameId: (id) => gameManager.setGameId(id),
     setCreatorId: (id) => gameManager.setCreatorId(id),

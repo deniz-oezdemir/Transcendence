@@ -311,7 +311,6 @@ export default class GameManager {
   endGame() {
     if (this.gameData.id < 0) return false;
 
-    console.log('Ending Game:', this.gameData.id);
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -355,7 +354,7 @@ export default class GameManager {
     if (!this.ws) return;
     e.preventDefault();
     this.keys[e.key] = true;
-
+    console.log('Key Pressed:', e.key);
     switch (e.key) {
       case ' ':
         this.toggleGame();
