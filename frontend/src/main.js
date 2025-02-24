@@ -31,7 +31,7 @@ import { checkAuth } from './auth';
 // Authentication Middleware
 const authentication = async (path, context) => {
   const isAuthenticated = await checkAuth();
-  // console.log('isAuthenticated in middleware:', isAuthenticated);
+  console.log('isAuthenticated in middleware:', isAuthenticated);
 
   const publicRoutes = ['/', '/login', '/signup'];
 

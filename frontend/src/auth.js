@@ -10,51 +10,58 @@ const [isAuth, setIsAuth] = createSignal(false);
 setIsAuth(await checkAuth());
 
 async function validateToken(token) {
-  if (!token) return Promise.resolve(false);
+  if (!token) return false;
 
-  return fetch(`http://localhost:8000/profile/`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Token ${token}`,
-      'Content-Type': 'application/json',
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        console.warn('Invalid token, logging out...');
-        localStorage.removeItem('authToken');
-        userData = null;
-        setIsAuth(false);
-        return false;
-      }
-      return response.json();
-    })
-    .then((data) => {
-      userData = { id: data.id, username: data.username };
-      setIsAuth(true);
-      return true;
-    })
-    .catch((error) => {
-      console.error('Token validation failed:', error);
+  try {
+    const response = await fetch(`http://localhost:8000/profile/`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Token ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn('Invalid token, logging out...');
       localStorage.removeItem('authToken');
       userData = null;
       setIsAuth(false);
       window.router.navigate('/login');
       return false;
-    })
-    .finally(() => {
+    }
+
+    const data = await response.json();
+    // Asegurarse de que ambos campos existen antes de actualizar userData
+    if (data && data.id !== undefined && data.username) {
+      userData = { id: data.id, username: data.username };
+      setIsAuth(true);
       return true;
-    });
+    } else {
+      console.warn('Incomplete user data received');
+      return false;
+    }
+  } catch (error) {
+    console.error('Token validation failed:', error);
+    localStorage.removeItem('authToken');
+    userData = null;
+    setIsAuth(false);
+    window.router.navigate('/login');
+    return false;
+  }
 }
 
 async function getUser() {
-  if (userData) return userData;
-
   const token = localStorage.getItem('authToken');
   if (!token) return null;
 
-  await validateToken(token);
-  return userData;
+  // Si userData existe pero hay campos undefined, volvemos a validar
+  if (userData && userData.id !== undefined && userData.username) {
+    return userData;
+  }
+
+  // Si no hay datos completos, validamos de nuevo
+  const isValid = await validateToken(token);
+  return isValid ? userData : null;
 }
 
 async function checkAuth() {

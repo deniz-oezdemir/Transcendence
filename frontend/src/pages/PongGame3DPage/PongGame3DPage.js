@@ -97,11 +97,11 @@ export default function PongGame3DPage() {
     },
   };
 
-  // createEffect(async () => {
-  const user = getUser();
-  params.user.id = user.id;
-  params.user.name = user.name;
-  // });
+  createEffect(async () => {
+    const user = getUser();
+    params.user.id = user.id;
+    params.user.name = user.name;
+  });
 
   const gameRef = { current: null };
   const clock = new Clock();
