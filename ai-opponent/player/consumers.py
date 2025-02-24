@@ -65,6 +65,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
                     partial_state = json.loads(
                         zlib.decompress(compressed_state).decode()
                     )
+                    logger.debug(f"Received partial update: {partial_state}")
                     self.current_game_state.update(
                         partial_state
                     )  # Merge partial update
@@ -74,9 +75,12 @@ class WebSocketClient(AsyncWebsocketConsumer):
                 else:
                     partial_state = {}
 
-                is_game_running = self.current_game_state.get("is_game_running", True)
-                is_game_ended = self.current_game_state.get("is_game_ended", False)
+                is_game_running = self.current_game_state.get("is_game_running")
+                is_game_ended = self.current_game_state.get("is_game_ended")
                 if not is_game_running or is_game_ended:
+                    logger.debug(
+                        f"Game is not running or has ended: is_game_running: {is_game_running} is_game_ended: {is_game_ended}"
+                    )
                     self.game_running = False
                 current_time = time.time()
                 if current_time - self.last_update_time >= 1:  # Only once per second
@@ -111,7 +115,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
             self.predicted_ball_y = game_height / 2
 
         if not is_game_running or is_game_ended:
-            logger.debug("Game has ended or is paused. Stopping AI.")
+            logger.info("Game has ended or is paused. Stopping AI.")
             self.game_running = False
             if self.move_task is not None:
                 self.move_task.cancel()
@@ -120,12 +124,15 @@ class WebSocketClient(AsyncWebsocketConsumer):
             self.game_running = True
 
         ai_player_position = None
+        ai_player_side = "left"
 
         # Find the AI player's position
         if self.ai_player.ai_player_id == player_1_id:
             ai_player_position = player_1_position
+            ai_player_side = "right"
         elif self.ai_player.ai_player_id == player_2_id:
             ai_player_position = player_2_position
+
         # Because in game engine position is top of paddle, set it to middle:
         ai_player_position += paddle_height / 2
 
@@ -145,14 +152,16 @@ class WebSocketClient(AsyncWebsocketConsumer):
                 self.ball_x_direction_sign = new_ball_x_direction_sign
                 logger.debug("Ball direction sign changed, updating prediction")
                 if (
-                    self.ai_player.ai_player_id == player_1_id
+                    self.ai_player.ai_player_id
+                    == player_2_id  # WARNING: player_2 now is on left side
                     and self.ball_x_direction_sign < 0
                 ) or (
-                    self.ai_player.ai_player_id == player_2_id
+                    self.ai_player.ai_player_id == player_1_id
                     and self.ball_x_direction_sign > 0
                 ):
                     # Ball is moving towards the AI player
-                    new_predicted_y = self.predict_ball_y(
+                    self.predicted_ball_y = self.predict_ball_y(
+                        ai_player_side,
                         ball_x_position,
                         ball_y_position,
                         new_ball_x_direction,
@@ -160,8 +169,6 @@ class WebSocketClient(AsyncWebsocketConsumer):
                         game_width,
                         game_height,
                     )
-                    if math.fabs(self.predicted_ball_y - new_predicted_y) > 10:
-                        self.predicted_ball_y = new_predicted_y
                 else:
                     # Ball is moving away from the AI player, move towards the center
                     self.predicted_ball_y = game_height / 2
@@ -184,6 +191,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
     def predict_ball_y(
         self,
+        ai_player_side,
         ball_x,
         ball_y,
         ball_x_direction,
@@ -191,9 +199,14 @@ class WebSocketClient(AsyncWebsocketConsumer):
         game_width,
         game_height,
     ):
-        logger.debug("Predicting ball Y position")
+        logger.debug(
+            f"Predicting ball Y position with arguments: ai_player_side={ai_player_side}, ball_x={ball_x}, ball_y={ball_y}, ball_x_direction={ball_x_direction}, ball_y_direction={ball_y_direction}, game_width={game_width}, game_height={game_height}"
+        )
+
         # Predict the Y position of the ball when it reaches the AI player's goal line
-        while ball_x < game_width:
+        while (ai_player_side == "left" and ball_x > 0) or (
+            ai_player_side == "right" and ball_x < game_width
+        ):
             ball_x += ball_x_direction
             ball_y += ball_y_direction
 
@@ -201,27 +214,42 @@ class WebSocketClient(AsyncWebsocketConsumer):
             if ball_y <= 0 or ball_y >= game_height:
                 ball_y_direction = -ball_y_direction  # Reverse the Y direction
 
+        logger.debug(f"Ball predicted to hit on Y: {ball_y}")
         return ball_y
 
     async def continuous_move(self, ai_player_position):
         try:
             while self.game_running:
                 if (
-                    math.fabs(ai_player_position - self.predicted_ball_y) < 10
-                ):  # TODO: remove magic number
+                    math.fabs(ai_player_position - self.predicted_ball_y)
+                    < self.move_step / 2
+                ):
+                    logger.debug(
+                        f"ai-opponent sufficiently close, not moving. ai_player_position: {ai_player_position}, predicted_ball_y: {self.predicted_ball_y}, move_step: {self.move_step}"
+                    )
                     break
                 elif ai_player_position < self.predicted_ball_y:
                     await self.send_move_command(1)  # Move down
                     ai_player_position += self.move_step
+                    logger.debug(
+                        f"Move down towards: {self.predicted_ball_y}, current: {ai_player_position}"
+                    )
                 elif ai_player_position > self.predicted_ball_y:
                     await self.send_move_command(-1)  # Move up
+                    logger.debug(
+                        f"Move up towards: {self.predicted_ball_y}, current: {ai_player_position}"
+                    )
                     ai_player_position -= self.move_step
                 else:
+                    logger.debug(
+                        "ai-opponent reached predicted ball Y postion, stop moving"
+                    )
                     break  # Target position reached
 
                 # Wait for a short interval before sending the next move command
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.1)
         except asyncio.CancelledError:
+            logger.warning("Continuous move exception")
             pass
 
     async def send_move_command(self, direction):
