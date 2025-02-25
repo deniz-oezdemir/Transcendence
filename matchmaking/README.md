@@ -362,11 +362,11 @@ Note: The `matches` array in tournaments contains only active matches for that t
     ```
 
 
-**Delete User Pending Games**
+**Delete User Games**
 - **Send:**
     ```json
     {
-        "type": "delete_user_pending_games",
+        "type": "delete_user_games",
         "user_id": int
     }
     ```
