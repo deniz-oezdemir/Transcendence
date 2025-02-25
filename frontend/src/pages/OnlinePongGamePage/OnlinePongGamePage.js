@@ -9,11 +9,6 @@ import GameControls from '@/components/GameControls/GameControls';
 import { getUser } from '@/auth.js';
 import GameManager from './GameManager.js';
 
-const hostname = window.location.hostname;
-const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'; // Use HTTP(S) for fetch requests
-const port = 8000;
-const apiUrl = `${protocol}//${hostname}:${port}`;
-
 export default function OnlinePongGamePage() {
   const cleanup = createCleanupContext();
 
@@ -21,7 +16,7 @@ export default function OnlinePongGamePage() {
 
   let gameManager = null;
 
-  let userData = { id: null, username: null };
+  let userData = { id: null, name: null };
 
   createEffect(async () => {
     const user = await getUser();
@@ -29,7 +24,7 @@ export default function OnlinePongGamePage() {
     userData.name = user.username;
   });
 
-  gameManager = new GameManager(apiUrl, userData);
+  gameManager = new GameManager(userData);
   gameManager.handleResize();
   gameManager.onUpdate(() => setWaitingRoom(true));
 
@@ -46,17 +41,15 @@ export default function OnlinePongGamePage() {
     onStartGame: async () => {
 
       // use that in case of bad behavior server side
-      setTimeout(async() => {
-        if (gameManager.ws) {
-          gameManager.ws.close();
-          gameManager.ws = null;
-        }
-        await gameManager.connectWebSocket();
-        gameManager.initializeGame();
-        setWaitingRoom(false);
-        gameManager.toggleGame();
-        requestAnimationFrame(animate);
-      }, 100);
+      if (gameManager.ws) {
+        gameManager.ws.close();
+        gameManager.ws = null;
+      }
+      await gameManager.connectWebSocket();
+      gameManager.initializeGame();
+      setWaitingRoom(false);
+      // gameManager.toggleGame();
+      gameManager.animationId = requestAnimationFrame(animate);
     },
     setGameId: (id) => gameManager.setGameId(id),
     setCreatorId: (id) => gameManager.setCreatorId(id),

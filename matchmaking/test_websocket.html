@@ -1,351 +1,538 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <title>Matchmaking Test</title>
+    <style>
+      .container {
+        margin: 20px;
+      }
 
-<head>
-	<title>Matchmaking Test</title>
-	<style>
-		.container {
-			margin: 20px;
-		}
+      .section {
+        margin-bottom: 30px;
+      }
 
-		.section {
-			margin-bottom: 30px;
-		}
+      #messages {
+        height: 400px;
+        overflow-y: scroll;
+        border: 1px solid #ccc;
+        padding: 10px;
+      }
 
-		#messages {
-			height: 400px;
-			overflow-y: scroll;
-			border: 1px solid #ccc;
-			padding: 10px;
-		}
+      .danger-button {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
 
-		.danger-button {
-			background-color: #dc3545;
-			color: white;
-			border: none;
-			padding: 8px 16px;
-			border-radius: 4px;
-			cursor: pointer;
-		}
+      .danger-button:hover {
+        background-color: #c82333;
+      }
 
-		.danger-button:hover {
-			background-color: #c82333;
-		}
+      .player-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 15px;
+      }
 
-		.player-grid {
-			display: grid;
-			grid-template-columns: repeat(4, 1fr);
-			gap: 10px;
-			margin-bottom: 15px;
-		}
+      .player-button {
+        padding: 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+        transition: background-color 0.3s;
+      }
 
-		.player-button {
-			padding: 10px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			background-color: #4CAF50;
-			color: white;
-			transition: background-color 0.3s;
-		}
+      .player-button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
 
-		.player-button:hover {
-			background-color: #45a049;
-		}
-	</style>
-</head>
+  <body>
+    <div class="container">
+      <div class="section">
+        <h3>Create Match/Tournament</h3>
+        <select id="gameType">
+          <option value="match">Regular Match (2 Players)</option>
+          <option value="ai_match">Match vs AI</option>
+          <option value="local_match">Local Match (vs Guest)</option>
+          <option value="tournament4">Tournament (4 Players)</option>
+          <option value="tournament8">Tournament (8 Players)</option>
+        </select>
+        <div class="player-grid">
+          <button class="player-button" onclick="createGame(1)">
+            Player 1
+          </button>
+          <button class="player-button" onclick="createGame(2)">
+            Player 2
+          </button>
+          <button class="player-button" onclick="createGame(3)">
+            Player 3
+          </button>
+          <button class="player-button" onclick="createGame(4)">
+            Player 4
+          </button>
+          <button class="player-button" onclick="createGame(5)">
+            Player 5
+          </button>
+          <button class="player-button" onclick="createGame(6)">
+            Player 6
+          </button>
+          <button class="player-button" onclick="createGame(7)">
+            Player 7
+          </button>
+          <button class="player-button" onclick="createGame(8)">
+            Player 8
+          </button>
+          <button class="player-button" onclick="createGame(9)">
+            Player 9
+          </button>
+          <button class="player-button" onclick="createGame(10)">
+            Player 10
+          </button>
+          <button class="player-button" onclick="createGame(11)">
+            Player 11
+          </button>
+          <button class="player-button" onclick="createGame(12)">
+            Player 12
+          </button>
+        </div>
+      </div>
 
-<body>
-	<div class="container">
-		<div class="section">
-			<h3>Create Match/Tournament</h3>
-			<select id="gameType">
-				<option value="match">Regular Match (2 Players)</option>
-				<option value="ai_match">Match vs AI</option>
-				<option value="local_match">Local Match (vs Guest)</option>
-				<option value="tournament4">Tournament (4 Players)</option>
-				<option value="tournament8">Tournament (8 Players)</option>
-			</select>
-			<div class="player-grid">
-				<button class="player-button" onclick="createGame(1)">Player 1</button>
-				<button class="player-button" onclick="createGame(2)">Player 2</button>
-				<button class="player-button" onclick="createGame(3)">Player 3</button>
-				<button class="player-button" onclick="createGame(4)">Player 4</button>
-				<button class="player-button" onclick="createGame(5)">Player 5</button>
-				<button class="player-button" onclick="createGame(6)">Player 6</button>
-				<button class="player-button" onclick="createGame(7)">Player 7</button>
-				<button class="player-button" onclick="createGame(8)">Player 8</button>
-				<button class="player-button" onclick="createGame(9)">Player 9</button>
-				<button class="player-button" onclick="createGame(10)">Player 10</button>
-				<button class="player-button" onclick="createGame(11)">Player 11</button>
-				<button class="player-button" onclick="createGame(12)">Player 12</button>
-			</div>
-		</div>
+      <div class="section">
+        <h3>Join Game</h3>
+        <select id="gameList">
+          <option value="">Select a game to join...</option>
+        </select>
+        <div class="player-grid">
+          <button class="player-button" onclick="joinGame(1)">Player 1</button>
+          <button class="player-button" onclick="joinGame(2)">Player 2</button>
+          <button class="player-button" onclick="joinGame(3)">Player 3</button>
+          <button class="player-button" onclick="joinGame(4)">Player 4</button>
+          <button class="player-button" onclick="joinGame(5)">Player 5</button>
+          <button class="player-button" onclick="joinGame(6)">Player 6</button>
+          <button class="player-button" onclick="joinGame(7)">Player 7</button>
+          <button class="player-button" onclick="joinGame(8)">Player 8</button>
+          <button class="player-button" onclick="joinGame(9)">Player 9</button>
+          <button class="player-button" onclick="joinGame(10)">
+            Player 10
+          </button>
+          <button class="player-button" onclick="joinGame(11)">
+            Player 11
+          </button>
+          <button class="player-button" onclick="joinGame(12)">
+            Player 12
+          </button>
+        </div>
+      </div>
 
-		<div class="section">
-			<h3>Join Game</h3>
-			<select id="gameList">
-				<option value="">Select a game to join...</option>
-			</select>
-			<div class="player-grid">
-				<button class="player-button" onclick="joinGame(1)">Player 1</button>
-				<button class="player-button" onclick="joinGame(2)">Player 2</button>
-				<button class="player-button" onclick="joinGame(3)">Player 3</button>
-				<button class="player-button" onclick="joinGame(4)">Player 4</button>
-				<button class="player-button" onclick="joinGame(5)">Player 5</button>
-				<button class="player-button" onclick="joinGame(6)">Player 6</button>
-				<button class="player-button" onclick="joinGame(7)">Player 7</button>
-				<button class="player-button" onclick="joinGame(8)">Player 8</button>
-				<button class="player-button" onclick="joinGame(9)">Player 9</button>
-				<button class="player-button" onclick="joinGame(10)">Player 10</button>
-				<button class="player-button" onclick="joinGame(11)">Player 11</button>
-				<button class="player-button" onclick="joinGame(12)">Player 12</button>
-			</div>
-		</div>
+      <div class="section">
+        <button class="danger-button" onclick="deleteAllGames()">
+          Delete All Games
+        </button>
+      </div>
 
-		<div class="section">
-			<button class="danger-button" onclick="deleteAllGames()">Delete All Games</button>
-		</div>
+      <div id="messages"></div>
+    </div>
 
-		<div id="messages"></div>
-	</div>
+    <div class="section">
+      <button class="danger-button" onclick="deleteAllGames()">
+        Delete All Games
+      </button>
+      <div style="margin-top: 10px">
+        <input
+          type="number"
+          id="userIdInput"
+          placeholder="Enter User ID"
+          style="padding: 8px; margin-right: 8px"
+        />
+        <button class="danger-button" onclick="deleteUserPendingGames()">
+          Delete User's Pending Games
+        </button>
+      </div>
+    </div>
 
-	<div class="container">
-		<div class="section">
-			<div
-				style="background-color: #fff3cd; color: #856404; padding: 10px; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 15px;">
-				⚠️ Warning: The messages window above is deprecated. Please use the browser's console (F12) to view logs
-				instead.
-			</div>
-		</div>
-	</div>
+    <div class="container">
+      <div class="section">
+        <div
+          style="
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+            margin-bottom: 15px;
+          "
+        >
+          ⚠️ Warning: The messages window above is deprecated. Please use the
+          browser's console (F12) to view logs instead.
+        </div>
+      </div>
+    </div>
 
+<<<<<<< HEAD
 	<script>
 		const socket = new WebSocket('ws://localhost:8000/ws/waiting-room/');
+=======
+    <script>
+      const socket = new WebSocket("ws://localhost:8000/ws/waiting-room/");
+>>>>>>> origin/main
 
-		function createGame(playerId) {
-			const gameType = document.getElementById('gameType').value;
-			console.log("Selected game type:", gameType);
-			const message = {
-				type: gameType === 'match' ? 'create_match' :
-					gameType === 'ai_match' ? 'create_AI_match' :
-						gameType === 'local_match' ? 'create_local_match' : 'create_tournament',
-				player_id: playerId,
-				player_name: `Name_${playerId}`,
-				max_players: gameType === 'tournament4' ? 4 :
-					gameType === 'tournament8' ? 8 : null
-			};
-			console.log("Sending message:", message);
-			socket.send(JSON.stringify(message));
-		}
+      function createGame(playerId) {
+        const gameType = document.getElementById("gameType").value;
+        console.log("Selected game type:", gameType);
+        const message = {
+          type:
+            gameType === "match"
+              ? "create_match"
+              : gameType === "ai_match"
+              ? "create_AI_match"
+              : gameType === "local_match"
+              ? "create_local_match"
+              : "create_tournament",
+          player_id: playerId,
+          player_name: `Name_${playerId}`,
+          max_players:
+            gameType === "tournament4"
+              ? 4
+              : gameType === "tournament8"
+              ? 8
+              : null,
+        };
+        console.log("Sending message:", message);
+        socket.send(JSON.stringify(message));
+      }
 
-		function joinGame(playerId) {
-			const select = document.getElementById('gameList');
-			if (!select.value) {
-				addMessage('Error', 'Please select a game', true);
-				return;
-			}
+      function joinGame(playerId) {
+        const select = document.getElementById("gameList");
+        if (!select.value) {
+          addMessage("Error", "Please select a game", true);
+          return;
+        }
 
-			const [type, id] = select.value.split('-');
-			const message = {
-				type: type === 'match' ? 'join_match' : 'join_tournament',
-				player_id: playerId,
-				player_name: `Name_${playerId}`,
-				[type === 'match' ? 'match_id' : 'tournament_id']: parseInt(id)
-			};
+        const [type, id] = select.value.split("-");
+        const message = {
+          type: type === "match" ? "join_match" : "join_tournament",
+          player_id: playerId,
+          player_name: `Name_${playerId}`,
+          [type === "match" ? "match_id" : "tournament_id"]: parseInt(id),
+        };
 
-			socket.send(JSON.stringify(message));
-		}
+        socket.send(JSON.stringify(message));
+      }
 
-		function deleteAllGames() {
-			if (confirm('Are you sure you want to delete all matches and tournaments?')) {
-				const message = {
-					type: 'delete_all_games'
-				};
-				socket.send(JSON.stringify(message));
-			}
-		}
+      function deleteAllGames() {
+        if (
+          confirm(
+            "Are you sure you want to delete all matches and tournaments?"
+          )
+        ) {
+          const message = {
+            type: "delete_all_games",
+          };
+          socket.send(JSON.stringify(message));
+        }
+      }
 
-		function updateGameList(data) {
-			const select = document.getElementById('gameList');
-			select.innerHTML = '<option value="">Select a game to join...</option>';
+      function deleteUserPendingGames() {
+        const userId = document.getElementById("userIdInput").value;
+        if (!userId) {
+          addMessage("Error", "Please enter a User ID", true);
+          return;
+        }
+        if (
+          confirm(
+            `Are you sure you want to delete all pending games for User ${userId}?`
+          )
+        ) {
+          const message = {
+            type: "delete_user_pending_games",
+            user_id: parseInt(userId),
+          };
+          socket.send(JSON.stringify(message));
+        }
+      }
 
-			// Add only joinable matches (not full, not AI, not local)
-			data.matches?.filter(m =>
-				m.player_2_id == null //&& // not full
-				// !m.is_ai_match && // not AI match
-				// !m.is_local_match // not local match
-			).forEach(match => {
-				select.innerHTML += `
+      function updateGameList(data) {
+        const select = document.getElementById("gameList");
+        select.innerHTML = '<option value="">Select a game to join...</option>';
+
+        // Add only joinable matches (not full, not AI, not local)
+        data.matches
+          ?.filter(
+            (m) => m.player_2_id == null //&& // not full
+            // !m.is_ai_match && // not AI match
+            // !m.is_local_match // not local match
+          )
+          .forEach((match) => {
+            select.innerHTML += `
             <option value="match-${match.match_id}">
                 Match ${match.match_id} (Created by Player ${match.player_1_id})
             </option>
         `;
-			});
+          });
 
-			// Add only available tournaments (not full)
-			data.tournaments?.filter(t =>
-				t.status === 'pending' &&
-				t.players.length < t.max_players
-			).forEach(tournament => {
-				const playerCount = tournament.players.length;
-				select.innerHTML += `
+        // Add only available tournaments (not full)
+        data.tournaments
+          ?.filter(
+            (t) => t.status === "pending" && t.players.length < t.max_players
+          )
+          .forEach((tournament) => {
+            const playerCount = tournament.players.length;
+            select.innerHTML += `
             <option value="tournament-${tournament.tournament_id}">
                 ${tournament.max_players}-Player Tournament ${tournament.tournament_id}
                 (${playerCount}/${tournament.max_players} players)
             </option>
         `;
-			});
-		}
+          });
+      }
 
-		function addGameDataMessage(type, data) {
-			addMessage('Info', `Matches: ${JSON.stringify(data.available_games?.matches)}`, false);
-			addMessage('Info', `Tournaments: ${JSON.stringify(data.available_games?.tournaments)}`, false);
-		}
-		socket.onmessage = function (e) {
-			const data = JSON.parse(e.data);
-			console.log('Received:', data);
+      function addGameDataMessage(type, data) {
+        addMessage(
+          "Info",
+          `Matches: ${JSON.stringify(data.available_games?.matches)}`,
+          false
+        );
+        addMessage(
+          "Info",
+          `Tournaments: ${JSON.stringify(data.available_games?.tournaments)}`,
+          false
+        );
+      }
+      socket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        console.log("Received:", data);
 
-			switch (data.type) {
-				case 'error':
-					addMessage('Error', data.message, true);
-					break;
+        switch (data.type) {
+          case "error":
+            addMessage("Error", data.message, true);
+            break;
 
-				case 'initial_games':
-					addMessage('Info', `Matches: ${JSON.stringify(data.games.matches)}`, false);
-					addMessage('Info', `Tournaments: ${JSON.stringify(data.games.tournaments)}`, false);
-					updateGameList(data.games);
-					break;
+          case "initial_games":
+            addMessage(
+              "Info",
+              `Matches: ${JSON.stringify(data.games.matches)}`,
+              false
+            );
+            addMessage(
+              "Info",
+              `Tournaments: ${JSON.stringify(data.games.tournaments)}`,
+              false
+            );
+            updateGameList(data.games);
+            break;
 
-				case 'match_created':
-					console.log("Raw match created data:", data);
-					// Add these debug lines
-					console.log("is_ai_match:", data.is_ai_match);
-					console.log("is_local_match:", data.is_local_match);
-					console.log("ai_id:", data.ai_id);
+          case "match_created":
+            console.log("Raw match created data:", data);
+            // Add these debug lines
+            console.log("is_ai_match:", data.is_ai_match);
+            console.log("is_local_match:", data.is_local_match);
+            console.log("ai_id:", data.ai_id);
 
-					const matchType = data.is_ai_match ? "AI Match" :
-						data.is_local_match ? "Local Match" : "Match";
-					const opponent = data.is_ai_match ? `vs AI ${data.player_2_id}` :
-						data.is_local_match ? "vs Guest" : "";
-					addMessage('Success', `${matchType} ${data.match_id} created by Player ${data.player_1_id} ${opponent}`);
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
+            const matchType = data.is_ai_match
+              ? "AI Match"
+              : data.is_local_match
+              ? "Local Match"
+              : "Match";
+            const opponent = data.is_ai_match
+              ? `vs AI ${data.player_2_id}`
+              : data.is_local_match
+              ? "vs Guest"
+              : "";
+            addMessage(
+              "Success",
+              `${matchType} ${data.match_id} created by Player ${data.player_1_id} ${opponent}`
+            );
+            addGameDataMessage("Info", data);
+            updateGameList(data.available_games);
+            break;
 
-				case 'tournament_created':
-					addMessage('Success', `Tournament ${data.id} created by Player ${data.creator_id}`);
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
+          case "tournament_created":
+            addMessage(
+              "Success",
+              `Tournament ${data.id} created by Player ${data.creator_id}`
+            );
+            addGameDataMessage("Info", data);
+            updateGameList(data.available_games);
+            break;
 
-				case 'player_joined':
-					addMessage('Success', `Player ${data.player_id} joined ${data.game_type} ${data.game_id}`);
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
+          case "player_joined":
+            addMessage(
+              "Success",
+              `Player ${data.player_id} joined ${data.game_type} ${data.game_id}`
+            );
+            addGameDataMessage("Info", data);
+            updateGameList(data.available_games);
+            break;
 
-				case 'tournament_started':
-					// Display tournament start message
-					addMessage('Info', `Tournament ${data.tournament_id} started!`);
+          case "tournament_started":
+            // Display tournament start message
+            addMessage("Info", `Tournament ${data.tournament_id} started!`);
 
-					// Display matches by round with cleaner formatting
-					data.matches.forEach(roundData => {
-						// Show round header with match IDs
-						const matchIds = roundData.matches
-							.filter(id => typeof id === 'number')
-							.join(', ');
-						addMessage('Info', `Round ${roundData.round} (Match IDs: ${matchIds}):`);
+            // Display matches by round with cleaner formatting
+            data.matches.forEach((roundData) => {
+              // Show round header with match IDs
+              const matchIds = roundData.matches
+                .filter((id) => typeof id === "number")
+                .join(", ");
+              addMessage(
+                "Info",
+                `Round ${roundData.round} (Match IDs: ${matchIds}):`
+              );
 
-						// Display match details
-						const roundMatches = roundData.matches
-							.map(matchId => {
-								const match = data.available_games.matches.find(m => m.match_id === matchId);
-								if (match) {
-									const player1Name = data.player_names[match.player_1_id] || 'Unknown';
-									const player2Name = data.player_names[match.player_2_id] || 'Unknown';
-									return `Match ${matchId}: ${player1Name} vs ${player2Name}`;
-								}
-								return null;
-							})
-							.filter(Boolean); // Remove null entries
+              // Display match details
+              const roundMatches = roundData.matches
+                .map((matchId) => {
+                  const match = data.available_games.matches.find(
+                    (m) => m.match_id === matchId
+                  );
+                  if (match) {
+                    const player1Name =
+                      data.player_names[match.player_1_id] || "Unknown";
+                    const player2Name =
+                      data.player_names[match.player_2_id] || "Unknown";
+                    return `Match ${matchId}: ${player1Name} vs ${player2Name}`;
+                  }
+                  return null;
+                })
+                .filter(Boolean); // Remove null entries
 
-						// Display matches in this round
-						roundMatches.forEach(matchText => {
-							addMessage('Info', matchText);
-						});
-					});
+              // Display matches in this round
+              roundMatches.forEach((matchText) => {
+                addMessage("Info", matchText);
+              });
+            });
 
-					// Show available games immediately
-					addGameDataMessage('Info', data);
-					updateGameList(data.available_games);
-					break;
+            // Show available games immediately
+            addGameDataMessage("Info", data);
+            updateGameList(data.available_games);
+            break;
 
-				case 'match_finished':
-					addMessage('Info', `Match ${data.match_id} finished! Winner: Player ${data.winner_id}`);
-					addMessage('Info', `Final Score: ${data.player_1_score} - ${data.player_2_score}`);
-					break;
+          case "match_finished":
+            addMessage(
+              "Info",
+              `Match ${data.match_id} finished! Winner: Player ${data.winner_id}`
+            );
+            addMessage(
+              "Info",
+              `Final Score: ${data.player_1_score} - ${data.player_2_score}`
+            );
+            break;
 
-				case 'tournament_round_started':
-					addMessage('Info', `Tournament ${data.tournament_id} Round ${data.round} started!`);
-					data.matches.forEach(match => {
-						addMessage('Info',
-							`Match ${match.match_id}: ${match.player_1_name} vs ${match.player_2_name}`
-						);
-					});
+          case "tournament_round_started":
+            addMessage(
+              "Info",
+              `Tournament ${data.tournament_id} Round ${data.round} started!`
+            );
+            data.matches.forEach((match) => {
+              addMessage(
+                "Info",
+                `Match ${match.match_id}: ${match.player_1_name} vs ${match.player_2_name}`
+              );
+            });
 
-					// Update available games list immediately
-					if (data.available_games) {
-						addMessage('Info', `Matches: ${JSON.stringify(data.available_games.matches)}`);
-						addMessage('Info', `Tournaments: ${JSON.stringify(data.available_games.tournaments)}`);
-						updateGameList(data.available_games);
-					}
-					break;
+            // Update available games list immediately
+            if (data.available_games) {
+              addMessage(
+                "Info",
+                `Matches: ${JSON.stringify(data.available_games.matches)}`
+              );
+              addMessage(
+                "Info",
+                `Tournaments: ${JSON.stringify(
+                  data.available_games.tournaments
+                )}`
+              );
+              updateGameList(data.available_games);
+            }
+            break;
 
-				case 'tournament_finished':
-					addMessage('Info', `Tournament ${data.tournament_id} finished! Winner: Player ${data.winner_id}`);
+          case "tournament_finished":
+            addMessage(
+              "Info",
+              `Tournament ${data.tournament_id} finished! Winner: Player ${data.winner_id}`
+            );
 
-					// Update available games list immediately
-					if (data.available_games) {
-						addMessage('Info', `Matches: ${JSON.stringify(data.available_games.matches)}`);
-						addMessage('Info', `Tournaments: ${JSON.stringify(data.available_games.tournaments)}`);
-						updateGameList(data.available_games);
-					}
-					break;
+            // Update available games list immediately
+            if (data.available_games) {
+              addMessage(
+                "Info",
+                `Matches: ${JSON.stringify(data.available_games.matches)}`
+              );
+              addMessage(
+                "Info",
+                `Tournaments: ${JSON.stringify(
+                  data.available_games.tournaments
+                )}`
+              );
+              updateGameList(data.available_games);
+            }
+            break;
 
-				case 'games_deleted':
-					addMessage('Success', 'All games successfully deleted');
-					addMessage('Info', `Matches: ${JSON.stringify(data.available_games.matches)}`);
-					addMessage('Info', `Tournaments: ${JSON.stringify(data.available_games.tournaments)}`);
-					updateGameList(data.available_games);
-					break;
-			}
-		};
+          case "games_deleted":
+            addMessage("Success", "All games successfully deleted");
+            addMessage(
+              "Info",
+              `Matches: ${JSON.stringify(data.available_games.matches)}`
+            );
+            addMessage(
+              "Info",
+              `Tournaments: ${JSON.stringify(data.available_games.tournaments)}`
+            );
+            updateGameList(data.available_games);
+            break;
 
-		function requestInitialGameData() {
-			socket.send(JSON.stringify({
-				'type': 'get_games'
-			}));
-		}
+          case "user_games_deleted":
+            addMessage(
+              "Success",
+              `All pending games deleted for User ${data.user_id}`
+            );
+            addMessage(
+              "Info",
+              `Matches: ${JSON.stringify(data.available_games.matches)}`
+            );
+            addMessage(
+              "Info",
+              `Tournaments: ${JSON.stringify(data.available_games.tournaments)}`
+            );
+            updateGameList(data.available_games);
+            break;
+        }
+      };
 
-		socket.onopen = () => {
-			addMessage('System', 'Connected to server');
-			requestInitialGameData();
-		};
-		socket.onerror = (e) => addMessage('Error', 'WebSocket error occurred', true);
-		socket.onclose = () => addMessage('System', 'Connection closed');
+      function requestInitialGameData() {
+        socket.send(
+          JSON.stringify({
+            type: "get_games",
+          })
+        );
+      }
 
-		function addMessage(type, text, isError = false) {
-			const messages = document.getElementById('messages');
-			const time = new Date().toLocaleTimeString();
-			messages.innerHTML += `
-                <p style="color: ${isError ? 'red' : 'black'}">
+      socket.onopen = () => {
+        addMessage("System", "Connected to server");
+        requestInitialGameData();
+      };
+      socket.onerror = (e) =>
+        addMessage("Error", "WebSocket error occurred", true);
+      socket.onclose = () => addMessage("System", "Connection closed");
+
+      function addMessage(type, text, isError = false) {
+        const messages = document.getElementById("messages");
+        const time = new Date().toLocaleTimeString();
+        messages.innerHTML += `
+                <p style="color: ${isError ? "red" : "black"}">
                     [${time}] <strong>${type}:</strong> ${text}
                 </p>
             `;
-			messages.scrollTop = messages.scrollHeight;
-		}
-	</script>
-</body>
-
+        messages.scrollTop = messages.scrollHeight;
+      }
+    </script>
+  </body>
 </html>
