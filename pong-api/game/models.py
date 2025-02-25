@@ -32,7 +32,7 @@ class GameState(models.Model):
     player_2_position = models.FloatField(default=17.5)
 
     # Ball state
-    ball_radius = models.IntegerField(default=1)
+    ball_radius = models.FloatField(default=0.5)
     ball_x_position = models.FloatField(default=30)
     ball_y_position = models.FloatField(default=20)
     ball_x_direction = models.FloatField(default=0.3)
