@@ -362,6 +362,27 @@ Note: The `matches` array in tournaments contains only active matches for that t
     ```
 
 
+**Delete User Pending Games**
+- **Send:**
+    ```json
+    {
+        "type": "delete_user_pending_games",
+        "user_id": int
+    }
+    ```
+- **Receive:**
+    ```json
+    {
+        "type": "user_games_deleted",
+        "user_id": int,
+        "available_games": {
+            "matches": [],
+            "tournaments": []
+        }
+    }
+    ```
+
+
 ## Goals
 First version: support only matches - done
 
