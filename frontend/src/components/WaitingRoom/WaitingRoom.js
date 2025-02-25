@@ -22,7 +22,6 @@ export default function WaitingRoom({
   const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
 
   let userData = { id: null, name: null };
-
   createEffect(async () => {
     const user = await getUser();
     console.log('user data:', user);
@@ -87,25 +86,7 @@ export default function WaitingRoom({
               });
             
               // Create fireworks
-              for (let i = 0; i < 30; i++) {
-                const angle = (i * 12) * Math.PI / 180;
-                const velocity = 50 + Math.random() * 50;
-                const hue = Math.random() * 360;
-
-                const particle = createComponent('div', {
-                  className: styles.fireworkParticle,
-                  style: {
-                    background: `hsl(${hue}, 100%, 50%)`,
-                    left: '50%',
-                    top: '50%',
-                    transform: `translate(-50%, -50%) rotate(${angle}rad)`,
-                    animation: `firework ${1 + Math.random() * 0.5}s ease-out forwards`
-                  }
-                });
-
-                popup.element.appendChild(particle.element);
-              }
-            
+              createFireworks(popup);
               document.body.appendChild(popup.element);
             
               // Remove popup after 3 seconds
@@ -158,32 +139,14 @@ export default function WaitingRoom({
              });
            
             // Create fireworks
-            for (let i = 0; i < 30; i++) {
-             const angle = (i * 12) * Math.PI / 180;
-             const velocity = 50 + Math.random() * 50;
-             const hue = Math.random() * 360;
-
-             const particle = createComponent('div', {
-                 className: styles.fireworkParticle,
-                 style: {
-                 background: `hsl(${hue}, 100%, 50%)`,
-                 left: '50%',
-                 top: '50%',
-                 transform: `translate(-50%, -50%) rotate(${angle}rad)`,
-                 animation: `firework ${1 + Math.random() * 0.5}s ease-out forwards`
-               }
-              });
-
-               popup.element.appendChild(particle.element);
-              }
+            createFireworks(popup);
+            document.body.appendChild(popup.element);
              
-              document.body.appendChild(popup.element);
-             
-              // Remove popup after 3 seconds
-              setTimeout(() => {
-                document.body.removeChild(popup.element);
-              }, 2000);
-              break;
+            // Remove popup after 3 seconds
+            setTimeout(() => {
+              document.body.removeChild(popup.element);
+            }, 2000);
+            break;
 
           case 'match_created':
           case 'tournament_created':
@@ -344,7 +307,8 @@ const createFireworks = (container) => {
 const deleteGames = () => {
   if (!socket()) return;
   socket().send(JSON.stringify({
-    type: 'delete_all_games',
+    type: 'delete_user_games',
+    user_id: userData.id,
   }));
 };
 
@@ -386,21 +350,21 @@ const createFourTournament = () => {
   }));
 };
 
-const joinGame = () => {
+const joinGame = (id) => {
   if (!socket()) return;
   socket().send(JSON.stringify({
     type: 'join_match',
-    match_id: matches().find(m => m.status === 'pending').match_id,
+    match_id: id,
     player_id: userData.id,
     player_name: userData.name,
   }));
 };
 
-const joinTournament = () => {
+const joinTournament = (id) => {
   if (!socket()) return;
   socket().send(JSON.stringify({
     type: 'join_tournament',
-    tournament_id: tournaments().find(t => t.status === 'pending').tournament_id,
+    tournament_id: id,
     player_id: userData.id,
     player_name: userData.name,
   }));
@@ -429,7 +393,7 @@ createEffect(() => {
       content: `Match ${match.match_id}`,
       events: {
         click: () => {
-          joinGame();
+          joinGame(match.match_id);
         }
       }
     });
@@ -453,7 +417,7 @@ createEffect(() => {
       content: `${tournament.max_players}-Player Tournament ${tournament.tournament_id}`,
       events: {
         click: () => {
-          joinTournament();
+          joinTournament(tournament.tournament_id);
         }
       }
     });
@@ -466,7 +430,7 @@ createEffect(() => {
   deleteAllGames.element.innerHTML = '';
   deleteAllGames.element.appendChild(createComponent('button', {
       className: styles.createButton,
-      content: 'DAG(TBdeleted)',
+      content: 'Delete All Games',
       events: { click: deleteGames }
     }).element);
 });
