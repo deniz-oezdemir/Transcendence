@@ -110,22 +110,22 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 },
             )
 
-        elif data["type"] == "delete_user_pending_games":
-            logger.info(f"Received request to delete pending games for user {data['user_id']}")
-            games_deleted = await self.delete_user_pending_games(data["user_id"])
+        elif data["type"] == "delete_user_games":
+            logger.info(f"Received request to delete games for user {data['user_id']}")
+            games_deleted = await self.delete_user_games(data["user_id"])
             if games_deleted:
-                logger.info(f"Successfully deleted pending games for user {data['user_id']}")
+                logger.info(f"Successfully deleted games for user {data['user_id']}")
             else:
-                logger.info(f"No pending games found for user {data['user_id']}")
+                logger.info(f"No games found for user {data['user_id']}")
 
             available_games = await self.get_available_games()
             await self.channel_layer.group_send(
-            "waiting_room",
-            {
-                "type": "user_games_deleted",
-                "user_id": data["user_id"],
-                "available_games": available_games,
-            },
+                "waiting_room",
+                {
+                    "type": "user_games_deleted",
+                    "user_id": data["user_id"],
+                    "available_games": available_games,
+                },
             )
 
         elif data["type"] == "create_match":
@@ -392,6 +392,9 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             )
 
     async def games_deleted(self, event):
+        await self.send(text_data=json.dumps(event))
+
+    async def user_games_deleted(self, event):
         await self.send(text_data=json.dumps(event))
 
     async def match_created(self, event):
@@ -662,19 +665,21 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         Tournament.objects.all().delete()
 
     @database_sync_to_async
-    def delete_user_pending_games(self, user_id):
-        """Deletes all pending matches and tournaments for a specific user"""
-        # Delete pending matches where user is player 1
-        Match.objects.filter(
+    def delete_user_games(self, user_id):
+        """Deletes all pending and active matches for a specific user"""
+        # Get matches to delete
+        matches_deleted = Match.objects.filter(
             player_1_id=user_id,
-            status=Match.PENDING
+            status__in=[Match.PENDING, Match.ACTIVE]
         ).delete()
+        logger.debug(f"Deleted {matches_deleted[0]} matches for user {user_id}")
 
-        # Delete pending tournaments created by user
-        Tournament.objects.filter(
+        # Delete tournaments created by user
+        tournaments_deleted = Tournament.objects.filter(
             creator_id=user_id,
             status=Tournament.PENDING
         ).delete()
+        logger.debug(f"Deleted {tournaments_deleted[0]} tournaments for user {user_id}")
 
     @database_sync_to_async
     def get_full_game_data(self):
