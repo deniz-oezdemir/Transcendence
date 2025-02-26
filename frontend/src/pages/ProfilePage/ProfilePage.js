@@ -143,8 +143,9 @@ function friendListComponent(user_data, setReload) {
       }
       setReload(true);
     } catch (error) {
-      console.error('Error unfollowing friend:', error);
-      alert('Something went wrong.');
+      // console.error('Error unfollowing friend:', error);
+      // alert('Something went wrong.');
+      setReload(true);
     }
   }
 
