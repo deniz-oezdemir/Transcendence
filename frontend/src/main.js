@@ -7,7 +7,6 @@ import ProfilePage from './pages/ProfilePage/ProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import PongGame3DPage from './pages/PongGame3DPage/PongGame3DPage';
 import SignupPage from './pages/SignupPage/SignupPage';
-import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
 import OnlinePongGamePage from './pages/OnlinePongGamePage/OnlinePongGamePage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
 
@@ -31,7 +30,7 @@ import { checkAuth } from './auth';
 // Authentication Middleware
 const authentication = async (path, context) => {
   const isAuthenticated = await checkAuth();
-  console.log('isAuthenticated in middleware:', isAuthenticated);
+  //console.log('isAuthenticated in middleware:', isAuthenticated);
 
   const publicRoutes = ['/', '/login', '/signup'];
 
@@ -48,7 +47,7 @@ const authentication = async (path, context) => {
   }
 
   if (!isAuthenticated) {
-    console.log('Unauthorized access. Redirecting to login page...');
+    //console.log('Unauthorized access. Redirecting to login page...');
     router.navigate('/login');
     return false;
   }
@@ -73,7 +72,6 @@ const routes = [
   { path: '/user/:username', component: ProfilePage },
   { path: '/online-pong-game', component: OnlinePongGamePage },
   { path: '/pong-game-3d', component: PongGame3DPage },
-  { path: '/leaderboard', component: LeaderboardPage },
 ];
 
 // Initialize Theme Manager
