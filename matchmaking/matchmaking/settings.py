@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,12 +22,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-_h%747czzi&@)_fm#7itn6vglk&0=qkhcg04$0ner$!tr78hh!"
+#SECRET_KEY = "django-insecure-_h%747czzi&@)_fm#7itn6vglk&0=qkhcg04$0ner$!tr78hh!"
+SECRET_KEY = config("SECRET_KEY", default="your-default-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", "pong-api"]
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="nginx").split(",")
 
 
 # Application definition
@@ -167,7 +169,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOW_ALL_ORIGINS = True  # TODO: Only for development
+CORS_ALLOW_ALL_ORIGINS = False  # TODO: Only for development
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]

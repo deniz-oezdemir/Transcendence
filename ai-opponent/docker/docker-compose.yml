@@ -8,6 +8,9 @@ services:
       - ":8000"
     volumes:
       - ..:/app
+    env_file:
+      - path: ./.env.example #TODO: change
+        required: true
     environment:
       - DJANGO_SETTINGS_MODULE=AIOpponent.settings
     networks:
