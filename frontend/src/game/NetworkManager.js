@@ -202,7 +202,7 @@ export default class NetworkManager {
 
   createMatch() {
     if (!this.matchmakingSocket) return;
-    console.log(this.userState.username);
+    //console.log(this.userState.username);
     this.sendMatchMakingMessage({
       type: 'create_match',
       player_id: this.userState.userId,
@@ -292,7 +292,7 @@ export default class NetworkManager {
           ...this.gameEngineState.state,
           ...partialGameState,
         };
-        console.log(this.gameEngineState.state);
+        //console.log(this.gameEngineState.state);
         break;
       default:
         console.warn('Unknown message type:', data.type);
@@ -305,7 +305,7 @@ export default class NetworkManager {
       return;
     }
     try {
-      console.log('before send message to Engine:', message);
+      //console.log('before send message to Engine:', message);
       this.gameEngineSocket.send(JSON.stringify(message));
     } catch (error) {
       this.handleError('Error sending message', error);

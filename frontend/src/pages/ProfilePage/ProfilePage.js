@@ -65,7 +65,7 @@ function friendRequestForm(setReload) {
     }
 
     try {
-      console.log('Sending friend request to', username());
+      //console.log('Sending friend request to', username());
       const response = await fetch(
         `http://localhost:8000/api/uam/friend-request/`,
         {
@@ -109,7 +109,7 @@ function friendRequestForm(setReload) {
         content: 'Add Friend',
         events: {
           click: (event) => {
-            console.log('Calling send friend request...');
+            //console.log('Calling send friend request...');
             sendFriendRequest(event);
           },
         },
@@ -123,7 +123,7 @@ function friendRequestForm(setReload) {
 function friendListComponent(user_data, setReload) {
   async function unfollowFriend(friend_username) {
     try {
-      console.log('Sending unfollow request to', friend_username);
+      //console.log('Sending unfollow request to', friend_username);
 
       const response = await fetch(
         `http://localhost:8000/api/uam/friend-request/`,
@@ -153,7 +153,7 @@ function friendListComponent(user_data, setReload) {
   if (user_data.friends && user_data.friends.length > 0) {
     friendsComponents = user_data.friends.map((friend, index) => {
       if (friend.avatar_url && friend.username) {
-        console.log('Friend status:', friend.status);
+        //console.log('Friend status:', friend.status);
         return createComponent('div', {
           key: `friend-${index}`,
           className: styles.friend,
@@ -174,7 +174,7 @@ function friendListComponent(user_data, setReload) {
               content: 'Unfollow',
               events: {
                 click: (event) => {
-                  console.log('Unfollow button clicked for:', friend.username);
+                  //console.log('Unfollow button clicked for:', friend.username);
                   unfollowFriend(friend.username);
                 },
               },
@@ -209,7 +209,7 @@ function changeUsernameComponent(user_data, setReload, usernameButtonPressed, se
       return alert('Please enter a valid username!');
     }
     try {
-      console.log('Sending change username request');
+      //console.log('Sending change username request');
       let new_username = username();
       const response = await fetch(`http://localhost:8000/change-username/`, {
         method: 'PUT',
@@ -253,7 +253,7 @@ function changeUsernameComponent(user_data, setReload, usernameButtonPressed, se
           content: 'Change Username',
           events: {
             click: (event) => {
-              console.log('Changing username...');
+              //console.log('Changing username...');
               handleChangeUsername(setReload);
             },
           },
@@ -267,10 +267,10 @@ function changeUsernameComponent(user_data, setReload, usernameButtonPressed, se
         content: 'Change Username',
         events: {
           click: (event) => {
-            console.log(
+            /*console.log(
               'Change Username button clicked for:',
               user_data.username
-            );
+            );*/
             setUsernameButtonPressed(true);
             setReload(true);
           },
@@ -360,7 +360,7 @@ function changePasswordComponent(user_data, setReload, passwordButtonPressed, se
           content: 'Change Password',
           events: {
             click: (event) => {
-              console.log('Changing password...');
+              //console.log('Changing password...');
               handleChangePassword(setReload);
             },
           },
@@ -374,10 +374,10 @@ function changePasswordComponent(user_data, setReload, passwordButtonPressed, se
         content: 'Change Password',
         events: {
           click: (event) => {
-            console.log(
+            /*console.log(
               'Change password button clicked for:',
               user_data.username
-            );
+            );*/
             setPasswordButtonPressed(true);
             setReload(true);
           },
@@ -414,7 +414,7 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
 
   const handleChangeAvatar = async (file, setReload) => {
     try {
-      console.log('Uploading avatar...', file);
+      //console.log('Uploading avatar...', file);
 
       const formData = new FormData();
       formData.append('avatar', file);
@@ -434,7 +434,7 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
       if (!response.ok) {
         throw new Error(data.error);
       }
-      console.log('Avatar changed successfully!');
+      //console.log('Avatar changed successfully!');
       setReload((prev) => !prev);
     } catch (error) {
       console.error('Change avatar error:', error);
@@ -458,7 +458,7 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
             change: (event) => {
               const file = event.target.files[0];
               if (validateImage(file)) {
-                console.log('Selected file:', file.name);
+                //console.log('Selected file:', file.name);
                 setAvatar(file);
               }
             },
@@ -473,7 +473,7 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
                 alert('Please select an image first.');
                 return;
               }
-              console.log('Calling avatar handler...');
+              //console.log('Calling avatar handler...');
               await handleChangeAvatar(avatar(), setReload);
             },
           },
@@ -487,10 +487,10 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
         content: 'Change Avatar',
         events: {
           click: (event) => {
-            console.log(
+            /*console.log(
               'Change Avatar button clicked for:',
               user_data.username
-            );
+            );*/
             setAvatarButtonPressed(true);
             setReload(true);
           },
@@ -572,7 +572,7 @@ function dynamicData(user_data, user_stats, setReload, usernameButtonPressed, se
         content: 'Delete Account',
         events: {
           click: (event) => {
-            console.log('Delete Account button clicked');
+            //console.log('Delete Account button clicked');
             handleDeleteAccount(event);
           },
         },
@@ -640,7 +640,7 @@ export default function ProfilePage({ params, query }) {
 
   async function fetchUserData() {
     try {
-      console.log('Fetching user data...');
+      //console.log('Fetching user data...');
       const response = await fetch(`http://localhost:8000/profile/`, {
         method: 'GET',
         headers: {
@@ -648,13 +648,13 @@ export default function ProfilePage({ params, query }) {
           'Content-Type': 'application/json',
         },
       });
-      console.log('Fetched user data:', response);
+      //console.log('Fetched user data:', response);
       if (!response.ok) {
-        console.log('Failed to fetch user data');
+        //console.log('Failed to fetch user data');
         // throw new Error('Failed to fetch user data');
       }
       let data = await response.json();
-      console.log('User data:', data);
+      //console.log('User data:', data);
       const userStats = await fetchStats(data.id);
       // console.log('userStats:', userStats);
       setContent(dynamicData(data, userStats, setReload, usernameButtonPressed, setUsernameButtonPressed, passwordButtonPressed, setPasswordButtonPressed, avatarButtonPressed, setAvatarButtonPressed));
@@ -667,11 +667,11 @@ export default function ProfilePage({ params, query }) {
 
   async function fetchStats(id) {
     try {
-      console.log('Fetching user stats...');
+      //console.log('Fetching user stats...');
       const userID = id;
       let data = '';
       const url = `http://localhost:8000/api/game-history/api/player/${userID}/`;
-      console.log('url to fecth is: ', url);
+      //console.log('url to fecth is: ', url);
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -679,9 +679,9 @@ export default function ProfilePage({ params, query }) {
         },
       });
       if (!response.ok) {
-        console.log('No stats for user');
+        //console.log('No stats for user');
       } else {
-        console.log('Response for stats: ', data);
+        //console.log('Response for stats: ', data);
         data = await response.json();
       }
       setStats(data);
@@ -708,6 +708,6 @@ export default function ProfilePage({ params, query }) {
     cleanup,
   });
 
-  console.log('ProfilePage.js: wrapper:', wrapper);
+  //console.log('ProfilePage.js: wrapper:', wrapper);
   return wrapper;
 }

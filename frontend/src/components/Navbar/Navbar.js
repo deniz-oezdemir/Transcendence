@@ -133,17 +133,6 @@ export default function Navbar({ location, navigate }) {
                     className: 'nav-item',
                     children: [
                       Link({
-                        href: '/leaderboard',
-                        content: 'Leaderboard',
-                        className: `nav-link ${path === '/leaderboard' ? 'active' : ''}`,
-                        attributes: { 'aria-current': 'page' },
-                      }),
-                    ],
-                  }),
-                  createComponent('li', {
-                    className: 'nav-item',
-                    children: [
-                      Link({
                         href: '/online-pong-game',
                         content: 'Online Pong Game',
                         className: `nav-link ${path === '/online-pong-game' ? 'active' : ''}`,
