@@ -43,7 +43,7 @@ export default function Ball({ gameDimensions, gamePositions }) {
 //   // Reactive updates for the ball's position
 //   createEffect(() => {
 //     const { ball: currentBallPosition } = gamePositions();
-//     // console.log('New ball position:', currentBallPosition);
+//     console.log('New ball position:', currentBallPosition);
 
 //     ballComponent.element.style.top = `${currentBallPosition.y}px`;
 //     ballComponent.element.style.left = `${currentBallPosition.x}px`;
