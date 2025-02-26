@@ -80,7 +80,7 @@ function friendRequestForm(setReload) {
       setReload(true);
     } catch (error) {
       console.error('Error sending friend request:', error);
-      alert('Error: ' + error.message);
+      alert(error.message);
     }
   }
 
@@ -222,7 +222,7 @@ function changeUsernameComponent(user_data, setReload, usernameButtonPressed, se
       }
     } catch (error) {
       console.error('Change username error:', error);
-      alert('Something went wrong.');
+      alert(error.message);
     }
   }
 
@@ -318,7 +318,7 @@ function changePasswordComponent(user_data, setReload, passwordButtonPressed, se
       alert('Password changed successfully.');
     } catch (error) {
       console.error('Change password error:', error);
-      alert('Something went wrong.');
+      alert(error.message);
     }
   }
 
@@ -425,15 +425,18 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
       );
 
       const data = await response.json();
+      setAvatarButtonPressed(false);
+      setReload(true);
       if (!response.ok) {
         throw new Error(data.error);
       }
       //console.log('Avatar changed successfully!');
-      setReload((prev) => !prev);
+      // setReload((prev) => !prev);
     } catch (error) {
       console.error('Change avatar error:', error);
-      setReload((prev) => !prev);
-      alert('Something went wrong.');
+      // setReload((prev) => !prev);
+      setReload(true);
+      alert(error.message);
     }
   };
 
