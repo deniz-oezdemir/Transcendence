@@ -13,6 +13,7 @@ import {
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { createNoise3D } from 'simplex-noise';
 
@@ -82,11 +83,13 @@ export default class PongTable {
       this.params.colors.ball,
       this.params.colors.bloomIntensity
     );
+    this.loader = new GLTFLoader();
   }
 
   async init() {
-    const [noiseTexture] = await Promise.all([
+    const [noiseTexture, floor] = await Promise.all([
       this.textureLoader.loadAsync('assets/textures/neon.webp'),
+      // this.loader.loadAsync('assets/models/cyberpunk_room_flooring.glb'),
     ]);
     noiseTexture.wrapS = noiseTexture.wrapT = RepeatWrapping;
 
@@ -153,6 +156,7 @@ export default class PongTable {
       this.player1Paddle.mesh,
       this.player2Paddle.mesh,
       this.ball.mesh
+      // floor.scene
     );
     this.scene.add(this.group);
   }
