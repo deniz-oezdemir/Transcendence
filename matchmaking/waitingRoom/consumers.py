@@ -111,7 +111,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             )
 
         elif data["type"] == "delete_user_games":
-            logger.info(f"Received request to delete games for user {data['user_id']}")
+            logger.debug(f"Received request to delete games for user {data['user_id']}")
             games_deleted = await self.delete_user_games(data["user_id"])
             if games_deleted:
                 logger.info(f"Successfully deleted games for user {data['user_id']}")
@@ -208,7 +208,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 return
 
             # First create game in pong-api and wait for response
-            logger.info(f"Creating game in pong-api for match {match.match_id}")
+            logger.debug(f"Creating game in pong-api for match {match.match_id}")
             success, game_data = await self.create_game_in_pong_api(match)
             if not success:
                 logger.error(
@@ -343,16 +343,16 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
             player_name = data.get("player_name", f"Player {data['player_id']}")
 
-            logger.info(f"Creating AI match for player {data['player_id']}")
+            logger.debug(f"Creating AI match for player {data['player_id']}")
             match = await self.create_match(
                 data["player_id"], player_name=player_name, is_ai_opponent=True
             )
-            logger.debug(
+            logger.info(
                 f"Created AI match {match.match_id} for player {data['player_id']}"
             )
 
             # First create game in pong-api and wait for response
-            logger.info(f"Creating game in pong-api for match {match.match_id}")
+            logger.debug(f"Creating game in pong-api for match {match.match_id}")
             success, game_data = await self.create_game_in_pong_api(match)
             if not success:
                 logger.error(
@@ -363,7 +363,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             logger.info(f"Created game in pong-api for match {match.match_id}")
 
             # Only create AI player after game is confirmed created
-            logger.info(f"Creating AI player for match {match.match_id}")
+            logger.debug(f"Creating AI player for match {match.match_id}")
             ai_success = await self.create_ai_player(match)
             if not ai_success:
                 logger.error(f"Failed to create AI player for match {match.match_id}")
