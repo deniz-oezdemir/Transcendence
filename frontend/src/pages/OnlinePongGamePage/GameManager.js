@@ -104,7 +104,7 @@ export default class GameManager {
    * Initialize game with player data and connect to WebSocket
    */
   initializeGame() {
-    /*console.log(
+    console.log(
       'Game Initialized:',
       this.gameData.id,
       this.gameData.p1Id,
@@ -112,7 +112,20 @@ export default class GameManager {
       this.gameData.p2Id,
       this.gameData.p2Name,
       this.gameData.type
-    );*/
+    );
+
+    // Get current scale factor
+    const { scaleFactor } = this.gameDimensionsSig[0]();
+
+    // Reset positions with current scale factor
+    this.gamePositionsSig[1]({
+      player1Position: originalPositions.player1Position * scaleFactor,
+      player2Position: originalPositions.player2Position * scaleFactor,
+      ball: {
+        x: originalPositions.ball.x * scaleFactor,
+        y: originalPositions.ball.y * scaleFactor,
+      },
+    });
 
     // Set initial game score with player information
     this.gameScoreSig[1]({
