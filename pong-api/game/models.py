@@ -79,7 +79,7 @@ class GameState(models.Model):
         if settings.USE_REDIS:
             cache_key = f"{self.id}"
             cache.delete(cache_key)
-            logger.info(f"Deleted game state from cache with key {cache_key}")
+            logger.debug(f"Deleted game state from cache with key {cache_key}")
 
     @classmethod
     def from_cache(cls, game_id):

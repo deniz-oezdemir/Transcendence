@@ -115,7 +115,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
             self.predicted_ball_y = game_height / 2
 
         if not is_game_running or is_game_ended:
-            logger.info("Game has ended or is paused. Stopping AI.")
+            logger.debug("Game has ended or is paused. Stopping AI.")
             self.game_running = False
             if self.move_task is not None:
                 self.move_task.cancel()
@@ -249,7 +249,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
                 # Wait for a short interval before sending the next move command
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError:
-            logger.warning("Continuous move exception")
+            logger.debug("Continuous move exception")
             pass
 
     async def send_move_command(self, direction):
@@ -276,7 +276,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
 
     def delete_ai_player(self):
         self.ai_player.delete()
-        logger.info(
+        logger.debug(
             f"AI player {self.ai_player.ai_player_id} deleted from database and Redis"
         )
 

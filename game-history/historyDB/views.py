@@ -15,7 +15,7 @@ class FinishedGameCreateView(generics.CreateAPIView):
     serializer_class = FinishedGameSerializer
 
     def create(self, request, *args, **kwargs):
-        logger.info("Creating a new finished game")
+        logger.debug("Creating a new finished game")
         response = super().create(request, *args, **kwargs)
         logger.info("Finished game created successfully")
         return response
@@ -27,7 +27,7 @@ class FinishedGameDetailView(generics.RetrieveAPIView):
 
     def get_object(self):
         game_id = self.kwargs.get('pk')
-        logger.info(f"Looking up finished game with game_id: {game_id}")
+        logger.debug(f"Looking up finished game with game_id: {game_id}")
         return get_object_or_404(FinishedGame, game_id=game_id)
 
     def retrieve(self, request, *args, **kwargs):
@@ -42,7 +42,7 @@ class FinishedGameDetailView(generics.RetrieveAPIView):
 
 @api_view(["GET"])
 def get_games_by_player(request, player_id):
-    logger.info(f"Fetching games for player with id: {player_id}")
+    logger.debug(f"Fetching games for player with id: {player_id}")
     player = get_object_or_404(Player, player_id=player_id)
     serializer = PlayerSerializer(player)
     logger.info(f"Games for player {player_id} fetched successfully")
@@ -51,7 +51,7 @@ def get_games_by_player(request, player_id):
 
 @api_view(["GET"])
 def top_ten_winners(request):
-    logger.info("Fetching top ten players by win ratio")
+    logger.debug("Fetching top ten players by win ratio")
     players = Player.objects.all().order_by("-win_ratio")[:10]
     serializer = PlayerSerializer(players, many=True)
     logger.info("Top ten players fetched successfully")

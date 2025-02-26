@@ -24,7 +24,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         connected_clients = cache.get(f"{self.game_id}_connected_clients", 0) + 1
         cache.set(f"{self.game_id}_connected_clients", connected_clients)
-        logger.info(
+        logger.debug(
             f"Client connected: {self.channel_name}, Total connected clients: {connected_clients}, For game: {self.game_id}"
         )
         await self.game_state_manager.send_full_game_state(
@@ -35,7 +35,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.game_state_manager.start_periodic_updates(
                 self.channel_layer, self.game_group_name
             )
-            logger.info(f"Started periodic updates for game: {self.game_id}")
+            logger.debug(f"Started periodic updates for game: {self.game_id}")
 
     async def disconnect(self, close_code):
         try:
@@ -70,7 +70,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def connection_closed(self, event):
         try:
             # Handle the connection closed event
-            logger.info(f"connection_closed message received for game {self.game_id}")
+            logger.debug(f"connection_closed message received for game {self.game_id}")
             await self.send(text_data=json.dumps({"type": "connection_closed"}))
             await self.close_all_connections()
             await self.close()
@@ -83,7 +83,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def close_all_connections(self):
         try:
             # Notify all clients that the connection has ended
-            logger.info(f"Closing all connections for game {self.game_id}")
+            logger.debug(f"Closing all connections for game {self.game_id}")
             self.game_state_manager.game_state.delete()
             await self.channel_layer.group_send(
                 self.game_group_name,
