@@ -1,7 +1,12 @@
 import { createComponent, Link, createCleanupContext } from '@component';
 import { createSignal, createEffect } from '@reactivity';
 import styles from './SignupPage.module.css';
-import { validateUsername, validatePassword, matchPasswords, validateEmail } from '../../core/utils';
+import {
+  validateUsername,
+  validatePassword,
+  matchPasswords,
+  validateEmail,
+} from '../../core/utils';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
@@ -31,13 +36,18 @@ export default function SignupPage() {
 
     setIsSigningUp(true);
 
-    if (!validateUsername(username(), setUsernameError) || !validateEmail(email(), setEmailError) || !validatePassword(password(), setPasswordError) || !matchPasswords(password(), passwordRepeat(), setPasswordError)) {
+    if (
+      !validateUsername(username(), setUsernameError) ||
+      !validateEmail(email(), setEmailError) ||
+      !validatePassword(password(), setPasswordError) ||
+      !matchPasswords(password(), passwordRepeat(), setPasswordError)
+    ) {
       setIsSigningUp(false);
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/uam/register/`, {
+      const response = await fetch(`https://localhost:8443/api/uam/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,8 +55,8 @@ export default function SignupPage() {
         body: JSON.stringify({
           username: username(),
           email: email(),
-          password: password()
-        })
+          password: password(),
+        }),
       });
 
       if (!response.ok) {
@@ -54,7 +64,9 @@ export default function SignupPage() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      setSubmitSuccess('User created successfully! Redirecting to login page...');
+      setSubmitSuccess(
+        'User created successfully! Redirecting to login page...'
+      );
       setTimeout(() => {
         setIsSigningUp(false);
         router.navigate('/login');
@@ -71,7 +83,7 @@ export default function SignupPage() {
     children: [
       createComponent('h2', {
         className: styles.formTitle,
-        content: 'Signup'
+        content: 'Signup',
       }),
       createComponent('form', {
         children: [
@@ -80,7 +92,7 @@ export default function SignupPage() {
             children: [
               createComponent('label', {
                 content: 'User Name',
-                htmlFor: 'username'
+                htmlFor: 'username',
               }),
               createComponent('input', {
                 className: styles.formGroupInput,
@@ -93,13 +105,13 @@ export default function SignupPage() {
                     const value = event.target.value;
                     setUsername(value);
                     validateUsername(value, setUsernameError);
-                  }
-                }
+                  },
+                },
               }),
               createComponent('div', {
                 className: styles.errorMessage,
-                content: () => usernameError()
-              })
+                content: () => usernameError(),
+              }),
             ],
           }),
           createComponent('div', {
@@ -107,7 +119,7 @@ export default function SignupPage() {
             children: [
               createComponent('label', {
                 content: 'Email',
-                htmlFor: 'email'
+                htmlFor: 'email',
               }),
               createComponent('input', {
                 className: styles.formGroupInput,
@@ -120,13 +132,13 @@ export default function SignupPage() {
                     const value = event.target.value;
                     setEmail(value);
                     validateEmail(value, setEmailError);
-                  }
-                }
+                  },
+                },
               }),
               createComponent('div', {
                 className: styles.errorMessage,
-                content: () => emailError()
-              })
+                content: () => emailError(),
+              }),
             ],
           }),
           createComponent('div', {
@@ -134,12 +146,12 @@ export default function SignupPage() {
             children: [
               createComponent('label', {
                 content: 'Password',
-                htmlFor: 'password'
+                htmlFor: 'password',
               }),
               createComponent('input', {
                 className: styles.formGroupInput,
                 attributes: {
-                  type: "password",
+                  type: 'password',
                   required: true,
                 },
                 events: {
@@ -147,36 +159,40 @@ export default function SignupPage() {
                     const value = event.target.value;
                     setPassword(value);
                     validatePassword(password(), setPasswordError);
-                  }
-                }
+                  },
+                },
               }),
               createComponent('input', {
                 className: styles.formGroupInput,
                 attributes: {
-                  type: "password",
+                  type: 'password',
                   required: true,
                 },
                 events: {
                   input: (event) => {
                     const value = event.target.value;
                     setPasswordRepeat(value);
-                    matchPasswords(password(), passwordRepeat(), setPasswordError);
-                  }
-                }
+                    matchPasswords(
+                      password(),
+                      passwordRepeat(),
+                      setPasswordError
+                    );
+                  },
+                },
               }),
               createComponent('div', {
                 className: styles.errorMessage,
-                content: () => passwordError()
-              })
+                content: () => passwordError(),
+              }),
             ],
           }),
           createComponent('div', {
             className: styles.errorMessage,
-            content: () => submitError()
+            content: () => submitError(),
           }),
           createComponent('div', {
             className: styles.successMessage,
-            content: () => submitSuccess()
+            content: () => submitSuccess(),
           }),
           createComponent('button', {
             type: 'submit',
@@ -186,8 +202,8 @@ export default function SignupPage() {
             events: {
               click: (event) => {
                 handleRegistration(event);
-              }
-            }
+              },
+            },
           }),
         ],
       }),

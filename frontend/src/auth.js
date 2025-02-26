@@ -13,7 +13,7 @@ async function validateToken(token) {
   if (!token) return false;
 
   try {
-    const response = await fetch(`http://localhost:8000/profile/`, {
+    const response = await fetch(`https://localhost:8443/profile/`, {
       method: 'GET',
       headers: {
         Authorization: `Token ${token}`,
@@ -75,7 +75,7 @@ async function checkAuth() {
 
 async function login(username, password) {
   try {
-    const response = await fetch(`http://localhost:8000/api/uam/login/`, {
+    const response = await fetch(`https://localhost:8443/api/uam/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
