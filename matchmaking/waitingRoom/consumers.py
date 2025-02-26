@@ -29,7 +29,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
-                    "http://pong-api:8000/game/create_game/",
+                    "http://nginx:8000/api/pong-api/game/create_game/",
                     json={
                         "id": match.match_id,
                         "max_score": 1,
@@ -63,7 +63,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 # Add timeout parameter to the request
                 timeout = aiohttp.ClientTimeout(total=5)  # 5 seconds timeout
                 async with session.post(
-                    "http://ai-opponent:8000/ai_player/create_ai_player/",
+                    "http://nginx:8000/api/ai-opponent/ai_player/create_ai_player/",
                     json={
                         "ai_player_id": match.player_2_id,
                         "target_game_id": match.match_id,
