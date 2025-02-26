@@ -129,7 +129,7 @@ export default function WaitingRoom({
                    }
                  }),
                  createComponent('p', {
-                   content: data.winner_id + ' won the tournament!',
+                   content: data.winner_name + ' won the tournament!',
                    style: {
                      fontSize: '1.5rem',
                      color: '#fff'
@@ -244,6 +244,12 @@ export default function WaitingRoom({
                 setGameType('tournament');
                 onStartGame(data.game, tournament.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
               }
+            break;
+          case 'user_games_deleted':
+            if (userData.id == data.user_id) {
+              alert('All your games have been deleted');
+            }
+            ws.send(JSON.stringify({ type: 'get_games' }));
             break;
           case 'error':
             alert(data.message);
