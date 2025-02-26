@@ -37,7 +37,7 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await fetch(`http://accountUrl/api/uam/register/`, {
+      const response = await fetch(`http://localhost:8000/api/uam/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
