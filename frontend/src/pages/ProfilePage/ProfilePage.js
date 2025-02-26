@@ -14,9 +14,9 @@ const historyPort = 8000;
 const accountUrl = `${protocol}//${hostname}:${UAMport}`;
 const historyUrl = `${protocol}//${hostname}:${historyPort}`;
 
-const [usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
-const [passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
-const [avatarButtonPressed, setAvatarButtonPressed] = createSignal(false);
+// const [usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
+// const [passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
+// const [avatarButtonPressed, setAvatarButtonPressed] = createSignal(false);
 
 //*********************************************************************************************//
 
@@ -198,7 +198,7 @@ function friendListComponent(user_data, setReload) {
 
 //*********************************************************************************************//
 
-function changeUsernameComponent(user_data, setReload) {
+function changeUsernameComponent(user_data, setReload, usernameButtonPressed, setUsernameButtonPressed) { 
   const [username, setUsername] = createSignal('');
   const [usernameError, setUsernameError] = createSignal('');
 
@@ -287,7 +287,7 @@ function changeUsernameComponent(user_data, setReload) {
 
 //*********************************************************************************************//
 
-function changePasswordComponent(user_data, setReload) {
+function changePasswordComponent(user_data, setReload, passwordButtonPressed, setPasswordButtonPressed) {
   const [password, setPassword] = createSignal('');
   const [passwordRepeat, setPasswordRepeat] = createSignal('');
   const [passwordError, setPasswordError] = createSignal('');
@@ -394,7 +394,7 @@ function changePasswordComponent(user_data, setReload) {
 
 //*********************************************************************************************//
 
-function changeAvatarComponent(user_data, setReload) {
+function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAvatarButtonPressed) {
   const [avatar, setAvatar] = createSignal('');
 
   function validateImage(file) {
@@ -507,13 +507,14 @@ function changeAvatarComponent(user_data, setReload) {
 
 //*********************************************************************************************//
 
-function dynamicData(user_data, user_stats, setReload) {
+function dynamicData(user_data, user_stats, setReload, usernameButtonPressed, setUsernameButtonPressed, passwordButtonPressed, setPasswordButtonPressed, avatarButtonPressed, setAvatarButtonPressed) {
   if (!user_data) {
     return createComponent('div', {
       className: styles.profileContainer,
       content: 'Error loading profile data',
     });
   }
+  
   function displayHistory(user_stats, data) {
     // console.log('Displaying player game history, user_stats: ', user_stats);
     const parent = createComponent('ul', {
@@ -577,9 +578,9 @@ function dynamicData(user_data, user_stats, setReload) {
         },
       }),
 
-      changeUsernameComponent(user_data, setReload),
-      changePasswordComponent(user_data, setReload),
-      changeAvatarComponent(user_data, setReload),
+      changeUsernameComponent(user_data, setReload, usernameButtonPressed, setUsernameButtonPressed),
+      changePasswordComponent(user_data, setReload, passwordButtonPressed, setPasswordButtonPressed),
+      changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAvatarButtonPressed),
       friendListComponent(user_data, setReload),
       friendRequestForm(setReload),
 
@@ -633,6 +634,9 @@ export default function ProfilePage({ params, query }) {
   const [error, setError] = createSignal(null);
   const [reload, setReload] = createSignal(true);
   const [stats, setStats] = createSignal(null);
+  const [usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
+  const [passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
+  const [avatarButtonPressed, setAvatarButtonPressed] = createSignal(false);
 
   async function fetchUserData() {
     try {
@@ -653,7 +657,7 @@ export default function ProfilePage({ params, query }) {
       console.log('User data:', data);
       const userStats = await fetchStats(data.id);
       // console.log('userStats:', userStats);
-      setContent(dynamicData(data, userStats, setReload));
+      setContent(dynamicData(data, userStats, setReload, usernameButtonPressed, setUsernameButtonPressed, passwordButtonPressed, setPasswordButtonPressed, avatarButtonPressed, setAvatarButtonPressed));
     } catch (error) {
       console.error('fetch user data fails with error: ', error);
       setError(error.message);
