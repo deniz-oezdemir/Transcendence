@@ -39,7 +39,7 @@ services:
       POSTGRES_USER: accounts
       POSTGRES_PASSWORD: accounts
     ports:
-      - "5433:5432"
+      - ":5432"
     volumes:
       - accounts-postgres_data:/var/lib/postgresql/data
     networks:

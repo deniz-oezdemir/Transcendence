@@ -18,8 +18,8 @@ export default function WaitingRoom({
   const [socket, setSocket] = createSignal(null);
   const hostname = window.location.hostname;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
-  const port = 8000;
-  const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
+  const nginxPort = 8000;
+  const wsUrl = `${protocol}//${hostname}:${nginxPort}/ws/waiting-room/`;
 
   let userData = { id: null, name: null };
   createEffect(async () => {

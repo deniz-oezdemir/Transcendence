@@ -9,14 +9,8 @@ import {
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const UAMport = 8000;
-const historyPort = 8000;
-const accountUrl = `${protocol}//${hostname}:${UAMport}`;
-const historyUrl = `${protocol}//${hostname}:${historyPort}`;
-
-// const [usernameButtonPressed, setUsernameButtonPressed] = createSignal(false);
-// const [passwordButtonPressed, setPasswordButtonPressed] = createSignal(false);
-// const [avatarButtonPressed, setAvatarButtonPressed] = createSignal(false);
+const nginxPort = 8000;
+const apiUrl = `${protocol}//${hostname}:${nginxPort}`;
 
 //*********************************************************************************************//
 
@@ -30,7 +24,7 @@ async function handleDeleteAccount() {
   }
 
   try {
-    const response = await fetch(`http://localhost:8000/profile/`, {
+    const response = await fetch(`${apiUrl}/api/uam/profile/`, {
       method: 'DELETE',
       headers: {
         Authorization: `Token ${localStorage.getItem('authToken')}`,
@@ -67,7 +61,7 @@ function friendRequestForm(setReload) {
     try {
       //console.log('Sending friend request to', username());
       const response = await fetch(
-        `http://localhost:8000/api/uam/friend-request/`,
+        `${apiUrl}/api/uam/friend-request/`,
         {
           method: 'POST',
           headers: {
@@ -86,7 +80,7 @@ function friendRequestForm(setReload) {
       setReload(true);
     } catch (error) {
       console.error('Error sending friend request:', error);
-      alert('Error: ' + error.message);
+      alert(error.message);
     }
   }
 
@@ -126,7 +120,7 @@ function friendListComponent(user_data, setReload) {
       //console.log('Sending unfollow request to', friend_username);
 
       const response = await fetch(
-        `http://localhost:8000/api/uam/friend-request/`,
+        `${apiUrl}/api/uam/friend-request/`,
         {
           method: 'DELETE',
           headers: {
@@ -211,7 +205,7 @@ function changeUsernameComponent(user_data, setReload, usernameButtonPressed, se
     try {
       //console.log('Sending change username request');
       let new_username = username();
-      const response = await fetch(`http://localhost:8000/change-username/`, {
+      const response = await fetch(`${apiUrl}/api/uam/change-username/`, {
         method: 'PUT',
         headers: {
           Authorization: `Token ${localStorage.getItem('authToken')}`,
@@ -228,7 +222,7 @@ function changeUsernameComponent(user_data, setReload, usernameButtonPressed, se
       }
     } catch (error) {
       console.error('Change username error:', error);
-      alert('Something went wrong.');
+      alert(error.message);
     }
   }
 
@@ -304,7 +298,7 @@ function changePasswordComponent(user_data, setReload, passwordButtonPressed, se
       }
       let new_password = password();
       const response = await fetch(
-        `http://localhost:8000/api/uam/change-password/`,
+        `${apiUrl}/api/uam/change-password/`,
         {
           method: 'PUT',
           headers: {
@@ -324,7 +318,7 @@ function changePasswordComponent(user_data, setReload, passwordButtonPressed, se
       alert('Password changed successfully.');
     } catch (error) {
       console.error('Change password error:', error);
-      alert('Something went wrong.');
+      alert(error.message);
     }
   }
 
@@ -420,7 +414,7 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
       formData.append('avatar', file);
 
       const response = await fetch(
-        `http://localhost:8000/api/uam/change-avatar/`,
+        `${apiUrl}/api/uam/change-avatar/`,
         {
           method: 'PUT',
           headers: {
@@ -431,15 +425,18 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
       );
 
       const data = await response.json();
+      setAvatarButtonPressed(false);
+      setReload(true);
       if (!response.ok) {
         throw new Error(data.error);
       }
       //console.log('Avatar changed successfully!');
-      setReload((prev) => !prev);
+      // setReload((prev) => !prev);
     } catch (error) {
       console.error('Change avatar error:', error);
-      setReload((prev) => !prev);
-      alert('Something went wrong.');
+      // setReload((prev) => !prev);
+      setReload(true);
+      alert(error.message);
     }
   };
 
@@ -641,7 +638,7 @@ export default function ProfilePage({ params, query }) {
   async function fetchUserData() {
     try {
       //console.log('Fetching user data...');
-      const response = await fetch(`http://localhost:8000/profile/`, {
+      const response = await fetch(`${apiUrl}/api/uam/profile/`, {
         method: 'GET',
         headers: {
           Authorization: `Token ${localStorage.getItem('authToken')}`,
@@ -670,7 +667,7 @@ export default function ProfilePage({ params, query }) {
       //console.log('Fetching user stats...');
       const userID = id;
       let data = '';
-      const url = `http://localhost:8000/api/game-history/api/player/${userID}/`;
+      const url = `${apiUrl}/api/game-history/api/player/${userID}/`;
       //console.log('url to fecth is: ', url);
       const response = await fetch(url, {
         method: 'GET',

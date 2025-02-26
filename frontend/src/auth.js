@@ -2,8 +2,8 @@ import { createSignal } from '@reactivity';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const port = 8000;
-const apiUrl = `${protocol}//${hostname}:${port}`;
+const nginxPort = 8000;
+const apiUrl = `${protocol}//${hostname}:${nginxPort}`;
 
 let userData = null;
 const [isAuth, setIsAuth] = createSignal(false);
@@ -13,7 +13,7 @@ async function validateToken(token) {
   if (!token) return false;
 
   try {
-    const response = await fetch(`http://localhost:8000/profile/`, {
+    const response = await fetch(`${apiUrl}/api/uam/profile/`, {
       method: 'GET',
       headers: {
         Authorization: `Token ${token}`,
@@ -75,7 +75,7 @@ async function checkAuth() {
 
 async function login(username, password) {
   try {
-    const response = await fetch(`http://localhost:8000/api/uam/login/`, {
+    const response = await fetch(`${apiUrl}/api/uam/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ async function login(username, password) {
 async function logout() {
   try {
     //console.log('loggin out');
-    const response = await fetch(`http://localhost:8000/api/uam/logout/`, {
+    const response = await fetch(`${apiUrl}/api/uam/logout/`, {
       method: 'POST',
       headers: {
         Authorization: `Token ${localStorage.getItem('authToken')}`,
