@@ -22,7 +22,39 @@ export default function Ball({ gameDimensions, gamePositions }) {
 
     ballComponent.element.style.top = `${currentBallPosition.y - ballDimensions.radius}px`;
     ballComponent.element.style.left = `${currentBallPosition.x - ballDimensions.radius}px`;
+    ballComponent.element.style.width = `${ballDimensions.radius * 2}px`;
+    ballComponent.element.style.height = `${ballDimensions.radius * 2}px`;
   });
 
   return ballComponent;
 }
+
+// export default function Ball({ gameDimensions, gamePositions }) {
+//   const { ball: ballPosition } = gamePositions();
+//   const { ball: ballDimensions } = gameDimensions();
+
+//   const ballComponent = createComponent('div', {
+//     className: styles.ball || 'ball',
+//     attributes: {
+//       style: `width: ${ballDimensions.radius * 2}px; height: ${ballDimensions.radius * 2}px; top: ${ballPosition.y}px; left: ${ballPosition.x}px;`,
+//     },
+//   });
+
+//   // Reactive updates for the ball's position
+//   createEffect(() => {
+//     const { ball: currentBallPosition } = gamePositions();
+//     // console.log('New ball position:', currentBallPosition);
+
+//     ballComponent.element.style.top = `${currentBallPosition.y}px`;
+//     ballComponent.element.style.left = `${currentBallPosition.x}px`;
+//   });
+
+//   createEffect(() => {
+//     const { ball: ballDimensions } = gameDimensions();
+
+//     ballComponent.element.style.width = `${ballDimensions.radius * 2}px`;
+//     ballComponent.element.style.height = `${ballDimensions.radius * 2}px`;
+//   });
+
+//   return ballComponent;
+// }
