@@ -9,8 +9,8 @@ import {
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const UAMport = 8000;
-const historyPort = 8000;
+const UAMport = 8443;
+const historyPort = 8443;
 const accountUrl = `${protocol}//${hostname}:${UAMport}`;
 const historyUrl = `${protocol}//${hostname}:${historyPort}`;
 
@@ -30,7 +30,7 @@ async function handleDeleteAccount() {
   }
 
   try {
-    const response = await fetch(`http://localhost:8000/profile/`, {
+    const response = await fetch(`${accountUrl}/profile/`, {
       method: 'DELETE',
       headers: {
         Authorization: `Token ${localStorage.getItem('authToken')}`,
@@ -66,17 +66,14 @@ function friendRequestForm(setReload) {
 
     try {
       console.log('Sending friend request to', username());
-      const response = await fetch(
-        `http://localhost:8000/api/uam/friend-request/`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Token ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ friend_username: username() }),
-        }
-      );
+      const response = await fetch(`${accountUrl}/api/uam/friend-request/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Token ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ friend_username: username() }),
+      });
 
       const data = await response.json();
       if (!response.ok) {
@@ -125,17 +122,14 @@ function friendListComponent(user_data, setReload) {
     try {
       console.log('Sending unfollow request to', friend_username);
 
-      const response = await fetch(
-        `http://localhost:8000/api/uam/friend-request/`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Token ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ friend_username }),
-        }
-      );
+      const response = await fetch(`${accountUrl}/api/uam/friend-request/`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Token ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ friend_username }),
+      });
 
       const data = await response.json();
       if (!response.ok) {
@@ -159,7 +153,10 @@ function friendListComponent(user_data, setReload) {
           children: [
             createComponent('img', {
               className: styles.friendAvatar,
-              attributes: { src: friend.avatar_url, alt: friend.username },
+              attributes: {
+                src: `${accountUrl}${friend.avatar_url}`,
+                alt: friend.username,
+              },
             }),
             createComponent('span', {
               className: styles.friendName,
@@ -210,7 +207,7 @@ function changeUsernameComponent(user_data, setReload) {
     try {
       console.log('Sending change username request');
       let new_username = username();
-      const response = await fetch(`http://localhost:8000/change-username/`, {
+      const response = await fetch(`${accountUrl}/change-username/`, {
         method: 'PUT',
         headers: {
           Authorization: `Token ${localStorage.getItem('authToken')}`,
@@ -302,17 +299,14 @@ function changePasswordComponent(user_data, setReload) {
         return alert(passwordError());
       }
       let new_password = password();
-      const response = await fetch(
-        `http://localhost:8000/api/uam/change-password/`,
-        {
-          method: 'PUT',
-          headers: {
-            Authorization: `Token ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ new_password }),
-        }
-      );
+      const response = await fetch(`${accountUrl}/api/uam/change-password/`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Token ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ new_password }),
+      });
 
       const data = await response.json();
       setPasswordButtonPressed(false);
@@ -418,16 +412,13 @@ function changeAvatarComponent(user_data, setReload) {
       const formData = new FormData();
       formData.append('avatar', file);
 
-      const response = await fetch(
-        `http://localhost:8000/api/uam/change-avatar/`,
-        {
-          method: 'PUT',
-          headers: {
-            Authorization: `Token ${localStorage.getItem('authToken')}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch(`${accountUrl}/api/uam/change-avatar/`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Token ${localStorage.getItem('authToken')}`,
+        },
+        body: formData,
+      });
 
       const data = await response.json();
       if (!response.ok) {
@@ -555,7 +546,8 @@ function dynamicData(user_data, user_stats, setReload) {
           createComponent('img', {
             className: styles.avatar,
             attributes: {
-              src: user_data.avatar_url,
+              // src: `${accountUrl}${user_data.avatar_url}`,
+              src: `https://localhost:8443/avatars/default.png`,
               alt: `${user_data.username}'s avatar`,
             },
           }),
@@ -636,7 +628,7 @@ export default function ProfilePage({ params, query }) {
   async function fetchUserData() {
     try {
       console.log('Fetching user data...');
-      const response = await fetch(`http://localhost:8000/profile/`, {
+      const response = await fetch(`${accountUrl}/profile/`, {
         method: 'GET',
         headers: {
           Authorization: `Token ${localStorage.getItem('authToken')}`,
@@ -665,7 +657,7 @@ export default function ProfilePage({ params, query }) {
       console.log('Fetching user stats...');
       const userID = id;
       let data = '';
-      const url = `http://localhost:8000/api/game-history/api/player/${userID}/`;
+      const url = `${historyUrl}/api/game-history/api/player/${userID}/`;
       console.log('url to fecth is: ', url);
       const response = await fetch(url, {
         method: 'GET',

@@ -203,7 +203,7 @@ export default class GameManager {
       // Usar URL websocket más eficiente
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       this.ws = new WebSocket(
-        `${wsProtocol}//${window.location.hostname}:8000/ws/game/${this.gameData.id}/`
+        `${wsProtocol}//${window.location.hostname}:8443/ws/game/${this.gameData.id}/`
       );
 
       this.ws.onopen = () => {
