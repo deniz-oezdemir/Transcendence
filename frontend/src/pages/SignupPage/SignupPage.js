@@ -5,8 +5,8 @@ import { validateUsername, validatePassword, matchPasswords, validateEmail } fro
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const port = 8000;
-const apiUrl = `${protocol}//${hostname}:${port}`;
+const nginxPort = 8000;
+const apiUrl = `${protocol}//${hostname}:${nginxPort}`;
 
 export default function SignupPage() {
 	const cleanup = createCleanupContext();
@@ -38,7 +38,7 @@ export default function SignupPage() {
 
 
     try {
-      const response = await fetch(`http://localhost:8000/api/uam/register/`, {
+      const response = await fetch(`${apiUrl}/api/uam/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
