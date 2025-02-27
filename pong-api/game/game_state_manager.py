@@ -75,9 +75,7 @@ class GameStateManager:
                     await self.send_game_result_to_matchmaking()
                     await self.send_connection_close(channel_layer, game_group_name)
         except Exception as e:
-            logger.error(
-                f"Error updating game state: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error updating game state: {str(e)}", exc_info=True)
 
     def calculate_diffs(self, current_state, previous_state):
         diffs = {}
@@ -158,7 +156,8 @@ class GameStateManager:
             )
         except Exception as e:
             logger.error(
-                f"Error sending connection closed message to clients: {str(e)}", exc_info=True
+                f"Error sending connection closed message to clients: {str(e)}",
+                exc_info=True,
             )
 
     async def _periodic_updates(self, channel_layer, game_group_name):

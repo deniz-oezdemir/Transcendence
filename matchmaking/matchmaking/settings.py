@@ -170,9 +170,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = True  # TODO: Only for development
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://localhost:8443"]
 
 # Security settings to allow WebSocket connections
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 CSP_DEFAULT_SRC = ["'self'", "'unsafe-inline'", "'unsafe-eval'"]
-CSP_CONNECT_SRC = ["'self'", "ws://localhost:8000"]
+CSP_CONNECT_SRC = ["'self'", "ws://localhost:8000", "wss://localhost:8443"]

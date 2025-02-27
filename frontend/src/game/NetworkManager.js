@@ -4,7 +4,7 @@ import pako from 'pako';
 export default class NetworkManager {
   constructor(params) {
     this.hostname = window.location.hostname;
-    this.protocol = window.location.protocol === 'htttps:' ? 'wss:' : 'ws:';
+    this.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 
     this.params = params;
     this.userState = {
@@ -62,7 +62,7 @@ export default class NetworkManager {
   initMatchmaking(timeout = 5000) {
     this.updateUserData();
     try {
-      const port = 8000;
+      const port = 8443;
       const wsUrl = `${this.protocol}//${this.hostname}:${port}/ws/waiting-room/`;
 
       this.matchmakingSocket = new WebSocket(wsUrl);
@@ -233,7 +233,7 @@ export default class NetworkManager {
   initGameEngine(timeout = 5000) {
     this.callbacks.onPlayerJoined?.();
     try {
-      const port = 8000;
+      const port = 8443;
       const wsUrl = `${this.protocol}//${this.hostname}:${port}/ws/game/${this.userState.match.id}/`;
 
       this.gameEngineSocket = new WebSocket(wsUrl);

@@ -2,7 +2,7 @@ import { createSignal } from '@reactivity';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const port = 8443;
+const port = protocol === 'https:' ? 8443 : 8000;
 const apiUrl = `${protocol}//${hostname}:${port}`;
 
 let userData = null;

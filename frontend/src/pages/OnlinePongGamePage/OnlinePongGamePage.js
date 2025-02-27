@@ -39,8 +39,7 @@ export default function OnlinePongGamePage() {
 
   const waitingRoom = WaitingRoom({
     onStartGame: async () => {
-
-      setTimeout(async() => {
+      setTimeout(async () => {
         if (gameManager.ws) {
           gameManager.ws.close();
           gameManager.ws = null;
@@ -48,7 +47,7 @@ export default function OnlinePongGamePage() {
         await gameManager.connectWebSocket();
         gameManager.initializeGame();
         setWaitingRoom(false);
-        gameManager.toggleGame();
+        // gameManager.toggleGame();
         requestAnimationFrame(animate);
       }, 100);
     },

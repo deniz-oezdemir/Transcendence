@@ -9,8 +9,8 @@ import {
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const UAMport = 8443;
-const historyPort = 8443;
+const UAMport = protocol === 'https:' ? 8443 : 8000;
+const historyPort = protocol === 'https:' ? 8443 : 8000;
 const accountUrl = `${protocol}//${hostname}:${UAMport}`;
 const historyUrl = `${protocol}//${hostname}:${historyPort}`;
 
@@ -546,8 +546,8 @@ function dynamicData(user_data, user_stats, setReload) {
           createComponent('img', {
             className: styles.avatar,
             attributes: {
-              // src: `${accountUrl}${user_data.avatar_url}`,
-              src: `https://localhost:8443/avatars/default.png`,
+              src: `${accountUrl}${user_data.avatar_url}`,
+              // src: `https://localhost:8443/avatars/default.png`,
               alt: `${user_data.username}'s avatar`,
             },
           }),

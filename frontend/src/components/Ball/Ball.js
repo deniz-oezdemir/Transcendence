@@ -22,6 +22,8 @@ export default function Ball({ gameDimensions, gamePositions }) {
 
     ballComponent.element.style.top = `${currentBallPosition.y - ballDimensions.radius}px`;
     ballComponent.element.style.left = `${currentBallPosition.x - ballDimensions.radius}px`;
+    ballComponent.element.style.width = `${ballDimensions.radius * 2}px`;
+    ballComponent.element.style.height = `${ballDimensions.radius * 2}px`;
   });
 
   return ballComponent;

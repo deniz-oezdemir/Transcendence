@@ -101,7 +101,7 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://localhost:8443"]
 
 ROOT_URLCONF = "gameHistory.urls"
 
