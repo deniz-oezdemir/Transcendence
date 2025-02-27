@@ -247,7 +247,7 @@ class WebSocketClient(AsyncWebsocketConsumer):
                     break  # Target position reached
 
                 # Wait for a short interval before sending the next move command
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.02)
         except asyncio.CancelledError:
             logger.debug("Continuous move exception")
             pass
