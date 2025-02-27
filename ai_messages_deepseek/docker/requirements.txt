@@ -1,8 +1,0 @@
-fastapi
-uvicorn
-numpy<2.0.0
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.1.2+cpu
-transformers>=4.39.3
-accelerate
-huggingface_hub>=0.17.0

@@ -9,7 +9,7 @@ services:
     volumes:
       - ..:/app
     env_file:
-      - path: ./.env.example #TODO: change
+      - path: ./.env
         required: true
     environment:
       - DJANGO_SETTINGS_MODULE=AIOpponent.settings

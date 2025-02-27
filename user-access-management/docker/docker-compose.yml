@@ -10,7 +10,7 @@ services:
       - ..:/app
       - avatar_storage:/usr/share/nginx/images
     env_file:
-      - path: ./.env_example
+      - path: ./.env
         required: true
     # environment:
     #   POSTGRES_DB: accounts
@@ -32,7 +32,7 @@ services:
     container_name: accounts-postgres
     restart: always
     env_file:
-      - path: ./.env_example
+      - path: ./.env
         required: true
     # environment:
     #   POSTGRES_DB: accounts

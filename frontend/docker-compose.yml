@@ -2,13 +2,13 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: ${DOCKER_FILE:-dockerfiles/Dockerfile.dev}
+      dockerfile: ${DOCKER_FILE:-dockerfiles/Dockerfile.prod}
     container_name: frontend
     volumes:
       - .:/app
       - /app/node_modules
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-80}
     ports:
       # - '8005:${PORT:-80}'

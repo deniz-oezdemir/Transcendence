@@ -1,4 +1,5 @@
 asgiref==3.8.1
+python-decouple
 attrs==24.3.0
 autobahn==24.4.2
 Automat==24.8.1
