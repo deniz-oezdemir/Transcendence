@@ -2,6 +2,11 @@ NAME        = transcendence
 COMPOSE     = ./docker-compose.yml
 HIDE        = /dev/null 2>&1
 
+# Get hostname dynamically
+HOSTNAME := $(shell hostname)
+# Export BASE_URL for docker-compose
+export BASE_URL=http://$(HOSTNAME):8000
+
 all: down up
 
 up:
