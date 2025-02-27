@@ -10,7 +10,7 @@ export BASE_URL=http://$(HOSTNAME):8000
 all: down up
 
 up:
-	@docker compose -p $(NAME) -f $(COMPOSE) up || (echo " $(BUILD_INTERRUPTED)" && exit 1)
+	@docker compose -p $(NAME) -f $(COMPOSE) up -d || (echo " $(BUILD_INTERRUPTED)" && exit 1)
 	@echo " $(CONTAINERS_STARTED)"
 
 down:
