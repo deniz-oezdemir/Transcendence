@@ -33,7 +33,7 @@ DEBUG = True
 # # SESSION_COOKIE_SECURE = True
 # # CSRF_COOKIE_SECURE = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "nginx"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "nginx", "*"]
 
 # CORS_ALLOW_ALL_ORIGINS = True
 

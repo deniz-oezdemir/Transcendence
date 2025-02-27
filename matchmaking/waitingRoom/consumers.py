@@ -1,5 +1,5 @@
-import json
 import aiohttp
+import json
 import asyncio
 import logging
 from django.conf import settings
@@ -63,7 +63,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 # Add timeout parameter to the request
                 timeout = aiohttp.ClientTimeout(total=5)  # 5 seconds timeout
                 async with session.post(
-                    "http://ai-opponent:8000/create_ai_player/",
+                    "http://ai-opponent:8000/ai_player/create_ai_player/",
                     json={
                         "ai_player_id": match.player_2_id,
                         "target_game_id": match.match_id,
