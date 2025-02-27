@@ -183,7 +183,7 @@ class GameStateManager:
             self.match_result_sent = True
             logger.debug(f"Preparing to send game result for game {self.game_id}")
             matchmaking_url = (
-                f"http://nginx:8000/api/matchmaking/api/match/{self.game_id}/result/"
+                f"http://matchmaking:8000/api/match/{self.game_id}/result/"
             )
             logger.debug(f"Matchmaking URL: {matchmaking_url}")
 

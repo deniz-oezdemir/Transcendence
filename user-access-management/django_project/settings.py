@@ -42,7 +42,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://nginx:8000",
 ]
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://nginx:8000']
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://nginx:8000"]
 
 
 # Application definition
@@ -117,8 +117,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://localhost:8443"]
 
-=======
->>>>>>> main
 ROOT_URLCONF = "django_project.urls"
 
 TEMPLATES = [
@@ -204,8 +202,8 @@ AUTH_USER_MODEL = "accounts.CustomUser"  # points to my custom user model
 
 # Uploaded avatars
 # MEDIA_ROOT = '/usr/share/nginx/static/'  # physical directory where files are stored.
-MEDIA_ROOT = '/usr/share/nginx/images/'  # physical directory where files are stored. 
-MEDIA_URL = '/avatars/'  # public URL where Nginx will serve the media files
+MEDIA_ROOT = "/usr/share/nginx/images/"  # physical directory where files are stored.
+MEDIA_URL = "/avatars/"  # public URL where Nginx will serve the media files
 
 NGINX_STORAGE_URL = "https://nginx:8443"
 NGINX_PUBLIC_URL = "https://localhost:8443"

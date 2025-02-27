@@ -29,7 +29,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
-                    "http://nginx:8000/api/pong-api/game/create_game/",
+                    "http://pong-api:8000/game/create_game/",
                     json={
                         "id": match.match_id,
                         "max_score": 1,

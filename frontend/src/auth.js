@@ -13,7 +13,7 @@ async function validateToken(token) {
   if (!token) return false;
 
   try {
-    const response = await fetch(`${apiUrl}/profile/`, {
+    const response = await fetch(`${apiUrl}/api/uam/profile/`, {
       method: 'GET',
       headers: {
         Authorization: `Token ${token}`,
