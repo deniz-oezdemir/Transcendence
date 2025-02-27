@@ -139,7 +139,6 @@ export class Router {
             this.currentComponent &&
             typeof this.currentComponent.cleanup === 'function'
           ) {
-            console.log('inside router before cleanup');
             this.currentComponent.cleanup();
           }
 

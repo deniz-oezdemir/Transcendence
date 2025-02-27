@@ -11,10 +11,10 @@ export default function HomePage() {
     children: [
       createComponent('h1', {
         className: styles.title, // Apply the title class
-        content: 'Home Page',
+        content: 'Pong Game',
       }),
       createComponent('p', {
-        content: 'Welcome to the Home Page!',
+        content: 'Welcome to the pong app!',
       }),
       Link({
         href: '/user/username',
