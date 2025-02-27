@@ -148,7 +148,7 @@ function friendListComponent(user_data, setReload) {
           children: [
             createComponent('img', {
               className: styles.friendAvatar,
-              attributes: { src: friend.avatar_url, alt: friend.username },
+              attributes: { src: `${apiUrl}${user_data.avatar_url}`, alt: friend.username },
             }),
             createComponent('span', {
               className: styles.friendName,
@@ -567,7 +567,7 @@ function dynamicData(
           createComponent('img', {
             className: styles.avatar,
             attributes: {
-              src: user_data.avatar_url,
+              src: `${apiUrl}${user_data.avatar_url}`,
               alt: `${user_data.username}'s avatar`,
             },
           }),

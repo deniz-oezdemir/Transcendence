@@ -4,20 +4,20 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    # ports:
-    #   - "8007:8007"
+    ports:
+      - ":8000"
     volumes:
       - ..:/app
       - avatar_storage:/usr/share/nginx/images
-    # env_file:
-    #   - path: ./.env
-    #     required: true
-    environment:
-      POSTGRES_DB: accounts
-      POSTGRES_USER: accounts
-      POSTGRES_PASSWORD: accounts
-      POSTGRES_HOST: accounts-postgres
-      POSTGRES_PORT: 5432
+    env_file:
+      - path: ./.env_example
+        required: true
+    # environment:
+    #   POSTGRES_DB: accounts
+    #   POSTGRES_USER: accounts
+    #   POSTGRES_PASSWORD: accounts
+    #   POSTGRES_HOST: accounts-postgres
+    #   POSTGRES_PORT: 5432
     #   - DJANGO_SETTINGS_MODULE=accounts.settings
     #   - PYTHONPATH=/app
     networks:
@@ -31,13 +31,13 @@ services:
     image: postgres:16
     container_name: accounts-postgres
     restart: always
-    # env_file:
-    #   - path: ./.env
-    #     required: true
-    environment:
-      POSTGRES_DB: accounts
-      POSTGRES_USER: accounts
-      POSTGRES_PASSWORD: accounts
+    env_file:
+      - path: ./.env_example
+        required: true
+    # environment:
+    #   POSTGRES_DB: accounts
+    #   POSTGRES_USER: accounts
+    #   POSTGRES_PASSWORD: accounts
     ports:
       - ":5432"
     volumes:

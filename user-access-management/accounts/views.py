@@ -96,19 +96,19 @@ class ProfileView(APIView):
     def delete(self, request):
         try:
             user = request.user
-            if user.avatar_url and settings.NGINX_PUBLIC_URL in user.avatar_url:
-                try:
-                    # Extract filename from the full URL
-                    filename = user.avatar_url.split(settings.MEDIA_URL)[-1]
-                    if filename != "default.png":
-                        # Construct path to avatar file in nginx images directory
-                        avatar_path = os.path.join(settings.MEDIA_ROOT, filename)
-                        # avatar_path = os.path.join(settings.NGINX_PUBLIC_URL, filename)
-                        if os.path.exists(avatar_path):
-                            os.remove(avatar_path)
-                            logger.info(f"Deleted avatar file: {avatar_path}")
-                except Exception as e:
-                    logger.error(f"Error deleting avatar file: {e}")
+            # if user.avatar_url and settings.NGINX_STORAGE_URL in user.avatar_url:
+            #     try:
+            # Extract filename from the full URL
+            filename = user.avatar_url.split(settings.MEDIA_URL)[-1]
+            if filename != "default.png":
+                # Construct path to avatar file in nginx images directory
+                avatar_path = os.path.join(settings.MEDIA_ROOT, filename)
+                # avatar_path = os.path.join(settings.NGINX_STORAGE_URL, filename)
+                if os.path.exists(avatar_path):
+                    os.remove(avatar_path)
+                    logger.info(f"Deleted avatar file: {avatar_path}")
+                # except Exception as e:
+                #     logger.error(f"Error deleting avatar file: {e}")
             user.delete()
             return Response(
                 {"message": "Account deleted successfully."},
@@ -151,7 +151,7 @@ class ChangeAvatarView(APIView):
                     raise Exception(f"Failed to copy file to NGINX container: {str(e)}")
                 os.remove(temp_path)
                 avatar_url = (
-                    f"{settings.NGINX_PUBLIC_URL}{settings.MEDIA_URL}{filename}"
+                    f"{settings.MEDIA_URL}{filename}"
                 )
                 serializer = ChangeAvatarSerializer(
                     data=request.data,

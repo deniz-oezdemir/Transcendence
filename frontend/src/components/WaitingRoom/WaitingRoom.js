@@ -48,7 +48,7 @@ export default function WaitingRoom({
 		ws.onmessage = (event) => {
 			try {
 				const data = JSON.parse(event.data);
-				//console.log('Received:', data);
+				// console.log('Received:', data);
 
 				switch (data.type) {
 					case 'initial_games':
@@ -232,7 +232,8 @@ export default function WaitingRoom({
 
 					case 'player_joined':
 						//console.log('Player joined:', data.available_games);
-
+						setMatches(data.available_games?.matches || []);
+						setTournaments(data.available_games?.tournaments || []);
 						if (data.available_games) {
 							if (
 								data.available_games.matches &&
@@ -481,7 +482,7 @@ export default function WaitingRoom({
 		m.forEach((match) => {
 			const matchButton = createComponent('button', {
 				className: styles.createButton,
-				content: `Match ${match.match_id}`,
+				content: `Match with ${match.player_1_name}`,
 				events: {
 					click: () => {
 						joinGame(match.match_id);
@@ -496,8 +497,7 @@ export default function WaitingRoom({
 	createEffect(() => {
 		const t = tournaments().filter(
 			(tournament) =>
-				tournament.status === 'pending' && // Only show pending tournaments
-				!tournament.players?.includes(userData.id) // Don't show tournaments user already joined
+				tournament.status === 'pending' // Only show pending tournaments
 		);
 
 		tournamentGameList.element.innerHTML = '';
@@ -506,7 +506,7 @@ export default function WaitingRoom({
 		t.forEach((tournament) => {
 			const tournamentButton = createComponent('button', {
 				className: styles.createButton,
-				content: `${tournament.max_players}-Player Tournament ${tournament.tournament_id}`,
+				content: `${tournament.max_players}-Player Tournament (${Object.values(tournament.player_names).join(", ")})`,
 				events: {
 					click: () => {
 						joinTournament(tournament.tournament_id);

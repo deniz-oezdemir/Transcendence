@@ -51,7 +51,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        avatar_url = f"{settings.NGINX_PUBLIC_URL}{settings.MEDIA_URL}default.png"
+        avatar_url = f"{settings.MEDIA_URL}default.png"
+        # avatar_url = f"{settings.NGINX_PUBLIC_URL}{settings.MEDIA_URL}default.png"
         # avatar_url = 'http://localhost:8000/avatars/default.png'
         user = CustomUser.objects.create_user(
             username=validated_data["username"],
