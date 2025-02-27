@@ -23,11 +23,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-(l+v@)wa2lzzm#92g!=u1!5$$5)f(0h++c+7e2(cvhs(=5ui^s"
+# SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+# DEBUG = os.getenv("DEBUG")
 
-ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
+# SECURE_SSL_REDIRECT = True
+# # SESSION_COOKIE_SECURE = True
+# # CSRF_COOKIE_SECURE = True
+
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "nginx"]
+
+# CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://nginx:8000",
+]
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://nginx:8000']
 
 
 # Application definition
@@ -67,6 +82,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+<<<<<<< HEAD
 # CORS_ALLOWED_ORIGINS = [
 #     "http://localhost:8005",  # Frontend application URL
 # ]
@@ -102,6 +118,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://localhost:8443"]
 
+=======
+>>>>>>> main
 ROOT_URLCONF = "django_project.urls"
 
 TEMPLATES = [
@@ -126,18 +144,7 @@ WSGI_APPLICATION = "django_project.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -197,9 +204,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.CustomUser"  # points to my custom user model
 
 # Uploaded avatars
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")  # The 'media' folder in your project root
 # MEDIA_ROOT = '/usr/share/nginx/static/'  # physical directory where files are stored.
-MEDIA_URL = "/media/"  # public URL where Nginx will serve the media files
+MEDIA_ROOT = '/usr/share/nginx/images/'  # physical directory where files are stored. 
+MEDIA_URL = '/avatars/'  # public URL where Nginx will serve the media files
 
 NGINX_STORAGE_URL = "https://nginx:8443"
 NGINX_PUBLIC_URL = "https://localhost:8443"

@@ -58,7 +58,6 @@ export default function SignupPage() {
           password: password(),
         }),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Registration failed');

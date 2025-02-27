@@ -18,16 +18,16 @@ export default function WaitingRoom({
   const [socket, setSocket] = createSignal(null);
   const hostname = window.location.hostname;
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // Use 'wss' for HTTPS, 'ws' for HTTP
-  const port = 8443;
-  const wsUrl = `${protocol}//${hostname}:${port}/ws/waiting-room/`;
+  const nginxPort = 8443;
+  const wsUrl = `${protocol}//${hostname}:${nginxPort}/ws/waiting-room/`;
 
   let userData = { id: null, name: null };
   createEffect(async () => {
     const user = await getUser();
-    console.log('user data:', user);
+    //console.log('user data:', user);
     userData.id = user.id;
     userData.name = user.username;
-    console.log('user data:', userData);
+    //console.log('user data:', userData);
   });
 
   //createEffect(() => {
@@ -35,12 +35,12 @@ export default function WaitingRoom({
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('Connected to matchmaking service');
-      console.log('username:', userData.name);
-      console.log('userId:', userData.id);
+      //console.log('Connected to matchmaking service');
+      //console.log('username:', userData.name);
+      //console.log('userId:', userData.id);
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'get_games' }));
-        console.log('Requesting available games...');
+        //console.log('Requesting available games...');
       }
       setSocket(ws);
     };
@@ -48,7 +48,7 @@ export default function WaitingRoom({
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('Received:', data);
+        //console.log('Received:', data);
 
         switch (data.type) {
           case 'initial_games':
@@ -57,11 +57,11 @@ export default function WaitingRoom({
             break;
 
           case 'match_finished':
-            console.log('Match Finished:', data);
+            //console.log('Match Finished:', data);
             if (data.tournament_id) {
-              console.log('Tournament ID:', data.tournament_id);
+              //console.log('Tournament ID:', data.tournament_id);
               setIsPending(true);
-              console.log('isPending:', isPending());
+              //console.log('isPending:', isPending());
             }
             if (data.winner_id == userData.id) {
               const popup = createComponent('div', {
@@ -85,8 +85,6 @@ export default function WaitingRoom({
                 ],
               });
 
-              // Create fireworks
-              createFireworks(popup);
               document.body.appendChild(popup.element);
 
               // Remove popup after 3 seconds
@@ -97,7 +95,7 @@ export default function WaitingRoom({
             break;
 
           case 'tournament_round_started':
-            console.log('Tournament Round Started:', data);
+            //console.log('Tournament Round Started:', data);
             setIsPending(false);
             const tournamentTBC = data.available_games.tournaments.find(
               (t) => t.tournament_id == data.tournament_id
@@ -108,14 +106,8 @@ export default function WaitingRoom({
                   m.player_1_id == userData.id || m.player_2_id == userData.id
               )
             ) {
-              console.log('Tournament to be continued');
-              console.log(
-                'Match_ID:',
-                tournamentTBC.matches.find(
-                  (m) =>
-                    m.player_1_id == userData.id || m.player_2_id == userData.id
-                ).match_id
-              );
+              //console.log('Tournament to be continued');
+              //console.log('Match_ID:', tournamentTBC.matches.find(m => m.player_1_id == userData.id || m.player_2_id == userData.id).match_id);
               setGameId(
                 tournamentTBC.matches.find(
                   (m) =>
@@ -155,12 +147,13 @@ export default function WaitingRoom({
                 ).match_id
               );
             } else {
-              console.log('No match found');
+              //console.log('No match found');
             }
             break;
 
           case 'tournament_finished':
             setIsPending(false);
+            ws.send(JSON.stringify({ type: 'get_games' }));
             const popup = createComponent('div', {
               className: styles.popup,
               children: [
@@ -173,7 +166,7 @@ export default function WaitingRoom({
                   },
                 }),
                 createComponent('p', {
-                  content: data.winner_id + ' won the tournament!',
+                  content: data.winner_name + ' won the tournament!',
                   style: {
                     fontSize: '1.5rem',
                     color: '#fff',
@@ -182,8 +175,6 @@ export default function WaitingRoom({
               ],
             });
 
-            // Create fireworks
-            createFireworks(popup);
             document.body.appendChild(popup.element);
 
             // Remove popup after 3 seconds
@@ -197,12 +188,12 @@ export default function WaitingRoom({
           case 'games_deleted':
             setMatches(data.available_games?.matches || []);
             setTournaments(data.available_games?.tournaments || []);
-            console.log('Available Games:', data.available_games);
+            //console.log('Available Games:', data.available_games);
             if (
               data.is_local_match == true &&
               userData.id == data.player_1_id
             ) {
-              console.log('Local match created:', data);
+              //console.log('Local match created:', data);
               setGameId(data.match_id);
               setCreatorId(data.player_1_id);
               setCreatorName(data.player_1_name);
@@ -214,7 +205,7 @@ export default function WaitingRoom({
               data.is_ai_match == true &&
               userData.id == data.player_1_id
             ) {
-              console.log('AI match created:', data);
+              //console.log('AI match created:', data);
               setGameId(data.match_id);
               setCreatorId(data.player_1_id);
               setCreatorName(data.player_1_name);
@@ -228,7 +219,7 @@ export default function WaitingRoom({
               (userData.id == data.player_1_id ||
                 userData.id == data.player_2_id)
             ) {
-              console.log('Match created:', data);
+              //console.log('Match created:', data);
               setGameId(data.match_id);
               setCreatorId(data.player_1_id);
               setCreatorName(data.player_1_name);
@@ -240,7 +231,7 @@ export default function WaitingRoom({
             break;
 
           case 'player_joined':
-            console.log('Player joined:', data.available_games);
+            //console.log('Player joined:', data.available_games);
 
             if (data.available_games) {
               if (
@@ -249,12 +240,12 @@ export default function WaitingRoom({
               ) {
                 switch (data.status) {
                   case 'active':
-                    console.log('Plyer joined Match Active');
+                    //console.log('Plyer joined Match Active');
                     if (
                       data.player_1_id == userData.id ||
                       data.player_2_id == userData.id
                     ) {
-                      console.log('Match Started');
+                      //console.log('Match Started');
                       setGameId(data.match_id);
                       setCreatorId(data.player_1_id);
                       setCreatorName(data.player_1_name);
@@ -265,13 +256,13 @@ export default function WaitingRoom({
                     }
                     break;
                   case 'pending':
-                    console.log('Match Pending');
+                    //console.log('Match Pending');
                     break;
                   default:
-                    console.log('Match Status:', data.status);
+                  //console.log('Match Status:', data.status);
                 }
               } else {
-                console.log('No matches available');
+                //console.log('No matches available');
               }
 
               if (
@@ -280,25 +271,22 @@ export default function WaitingRoom({
               ) {
                 switch (data.available_games.tournaments[0].status) {
                   case 'pending':
-                    console.log('Tournament Pending');
+                    //console.log('Tournament Pending');
                     break;
                   default:
-                    console.log(
-                      'Tournament Status:',
-                      data.available_games.tournaments[0].status
-                    );
+                  //console.log('Tournament Status:', data.available_games.tournaments[0].status);
                 }
               } else {
-                console.log('No tournaments available');
+                //console.log('No tournaments available');
               }
             } else {
-              console.log('No available games data found');
+              //console.log('No available games data found');
             }
 
             break;
 
           case 'tournament_started':
-            console.log('Tournament Started:', data);
+            //console.log('Tournament Started:', data);
 
             const tournament = data.available_games.tournaments.find(
               (t) => t.tournament_id == data.tournament_id
@@ -309,7 +297,7 @@ export default function WaitingRoom({
                   m.player_1_id == userData.id || m.player_2_id == userData.id
               )
             ) {
-              console.log('Tournament Match Started');
+              //console.log('Tournament Match Started');
               setGameId(
                 tournament.matches.find(
                   (m) =>
@@ -350,9 +338,15 @@ export default function WaitingRoom({
               );
             }
             break;
+          case 'user_games_deleted':
+            if (userData.id == data.user_id) {
+              alert('All your games have been deleted');
+            }
+            ws.send(JSON.stringify({ type: 'get_games' }));
+            break;
           case 'error':
             alert(data.message);
-            console.log('error', data.message);
+            //console.log('error', data.message);
             break;
 
           default:
@@ -376,46 +370,13 @@ export default function WaitingRoom({
       if (event.key == 'Escape') {
         event.preventDefault();
         event.stopPropagation();
-        console.log('Escape key disabled');
+        //console.log('Escape key disabled');
       }
     };
     document.addEventListener('keydown', handlekeydown);
   };
 
   socketConnection();
-
-  const createFireworks = (container) => {
-    const colors = [
-      '#ff0',
-      '#ff3',
-      '#f62',
-      '#f24',
-      '#f6f',
-      '#63f',
-      '#36f',
-      '#2ff',
-    ];
-    const particleCount = 40;
-
-    for (let i = 0; i < particleCount; i++) {
-      const angle = (i * (360 / particleCount) * Math.PI) / 180;
-      const velocity = 200 + Math.random() * 100;
-      const tx = Math.cos(angle) * velocity;
-      const ty = Math.sin(angle) * velocity;
-      const color = colors[Math.floor(Math.random() * colors.length)];
-
-      const particle = createComponent('div', {
-        className: styles.fireworkParticle,
-        style: {
-          background: color,
-          '--tx': `${tx}px`,
-          '--ty': `${ty}px`,
-        },
-      });
-
-      container.element.appendChild(particle.element);
-    }
-  };
 
   const deleteGames = () => {
     if (!socket()) return;

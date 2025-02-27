@@ -71,7 +71,7 @@ class GameStateManager:
                     self.game_state = engine.update_game_state()
                     logger.debug(f"Updated game state for game_id: {self.game_id}")
                 if self.game_state.is_game_ended:
-                    logger.info(f"Ending game state for game_id: {self.game_id}")
+                    logger.debug(f"Ending game state for game_id: {self.game_id}")
                     await self.send_game_result_to_matchmaking()
                     await self.send_connection_close(channel_layer, game_group_name)
         except Exception as e:
@@ -102,7 +102,7 @@ class GameStateManager:
                     game_group_name,
                     {"type": "game_state_update", "state": encoded_data},
                 )
-                logger.info(
+                logger.debug(
                     f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
                 )
         except Exception as e:
@@ -151,7 +151,7 @@ class GameStateManager:
                 game_group_name,
                 {"type": "connection_closed"},
             )
-            logger.info(
+            logger.debug(
                 f"Sent full game state to group: {game_group_name} for game_id: {self.game_id}"
             )
         except Exception as e:
@@ -181,9 +181,9 @@ class GameStateManager:
         """Sends game result to matchmaking service when game ends"""
         if not self.match_result_sent:
             self.match_result_sent = True
-            logger.info(f"Preparing to send game result for game {self.game_id}")
+            logger.debug(f"Preparing to send game result for game {self.game_id}")
             matchmaking_url = (
-                f"http://matchmaking:8000/api/match/{self.game_id}/result/"
+                f"http://nginx:8000/api/matchmaking/api/match/{self.game_id}/result/"
             )
             logger.debug(f"Matchmaking URL: {matchmaking_url}")
 
@@ -213,12 +213,12 @@ class GameStateManager:
                         response_text = await response.text()
                         logger.debug(f"Matchmaking response: {response_text}")
                         if response.status == 200:
-                            logger.info(
+                            logger.debug(
                                 f"Game {self.game_id} result successfully sent to matchmaking. Response: {response_text}"
                             )
                             try:
                                 self.game_state.delete()
-                                logger.info(
+                                logger.debug(
                                     "Game successfully deleted from REDIS after ended"
                                 )
                             except Exception as e:

@@ -1,6 +1,8 @@
 import os
 import time
 import shutil
+import logging
+from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -18,6 +20,8 @@ from .serializers.change_password_serializer import ChangePasswordSerializer
 from .serializers.change_username_serializer import ChangeUsernameSerializer
 from .serializers.change_avatar_serializer import ChangeAvatarSerializer
 from .models import CustomUser
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterView(APIView):
@@ -92,22 +96,19 @@ class ProfileView(APIView):
     def delete(self, request):
         try:
             user = request.user
-            # old version (not working with new nginx setup):
-            # if user.avatar_url and user.avatar_url.name != 'http://localhost:8000/avatars/default.png':
-            #     filename = user.avatar_url.name.split('/')[-1]
-            #     avatar_path = os.path.join('/usr/share/nginx/images', filename)
-            #     if os.path.exists(avatar_path):
-            #         os.remove(avatar_path)
-            # new approach (needs to be readapted):
-            # if hasattr(user, 'avatar_url') and isinstance(user.avatar_url, (ImageFieldFile, FieldFile)):
-            #     if not user.avatar_url.name.endswith('default.png'):
-            #         try:
-            #             filename = user.avatar_url.name.split('/')[-1]
-            #             avatar_path = os.path.join('/usr/share/nginx/images', filename)
-            #             if os.path.exists(avatar_path):
-            #                 os.remove(avatar_path)
-            #         except Exception as e:
-            #             logger.error(f"Error deleting avatar file: {e}")
+            if user.avatar_url and settings.NGINX_PUBLIC_URL in user.avatar_url:
+                try:
+                    # Extract filename from the full URL
+                    filename = user.avatar_url.split(settings.MEDIA_URL)[-1]
+                    if filename != "default.png":
+                        # Construct path to avatar file in nginx images directory
+                        avatar_path = os.path.join(settings.MEDIA_ROOT, filename)
+                        # avatar_path = os.path.join(settings.NGINX_PUBLIC_URL, filename)
+                        if os.path.exists(avatar_path):
+                            os.remove(avatar_path)
+                            logger.info(f"Deleted avatar file: {avatar_path}")
+                except Exception as e:
+                    logger.error(f"Error deleting avatar file: {e}")
             user.delete()
             return Response(
                 {"message": "Account deleted successfully."},
@@ -128,15 +129,10 @@ class ChangeAvatarView(APIView):
     def put(self, request):
         try:
             file = request.FILES.get("avatar")
-            if not file:
-                return Response(
-                    {"error": "Where is the fucking file??"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
             max_file_size = 2 * 1024 * 1024
             allowed_extensions = ["jpg", "jpeg", "png"]
             if file:
-                nginx_dir = "/usr/share/nginx/images"
+                # nginx_dir = f"{settings.MEDIA_ROOT}"
                 if file.size > max_file_size:
                     raise Exception("Avatar file size must not exceed 2MB.")
                 file_extension = file.name.split(".")[-1].lower()
@@ -147,13 +143,16 @@ class ChangeAvatarView(APIView):
                 with open(temp_path, "wb+") as destination_file:
                     for chunk in file.chunks():
                         destination_file.write(chunk)
-                nginx_image_path = f"/usr/share/nginx/images/{filename}"
+                # nginx_image_path = f"{settings.MEDIA_ROOT}{filename}"
+                nginx_image_path = os.path.join(settings.MEDIA_ROOT, filename)
                 try:
                     shutil.copy(temp_path, nginx_image_path)
                 except Exception as e:
                     raise Exception(f"Failed to copy file to NGINX container: {str(e)}")
                 os.remove(temp_path)
-                avatar_url = f"/avatars/{filename}"
+                avatar_url = (
+                    f"{settings.NGINX_PUBLIC_URL}{settings.MEDIA_URL}{filename}"
+                )
                 serializer = ChangeAvatarSerializer(
                     data=request.data,
                     instance=request.user,

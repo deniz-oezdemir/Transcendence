@@ -28,7 +28,7 @@ class CreateAIPlayer(generics.CreateAPIView):
         # Connect to the WebSocket server
         try:
             ws_client = WebSocketClient(
-                f"ws://pong-api:8000/ws/game/{target_game_id}/", ai_player
+                f"ws://nginx:8000/ws/game/{target_game_id}/", ai_player
             )
             ws_client.start()
             logger.info(
@@ -54,7 +54,7 @@ class CreateAIPlayer(generics.CreateAPIView):
         except serializers.ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         headers = self.get_success_headers(serializer.data)
-        logger.info("ai-opponent create succesfully, sending response")
+        logger.debug("ai-opponent create succesfully, sending response")
 
         return Response(
             AIPlayerSerializer(ai_player).data,
@@ -66,7 +66,7 @@ class CreateAIPlayer(generics.CreateAPIView):
 class DeleteAIPlayer(generics.DestroyAPIView):
     def delete(self, request, player_id):
         try:
-            logger.info(f"Attempting to delete AI Player with id {player_id}")
+            logger.debug(f"Attempting to delete AI Player with id {player_id}")
             ai_player = AIPlayer.from_cache(player_id)
             if not ai_player:
                 ai_player = AIPlayer.objects.get(ai_player_id=player_id)

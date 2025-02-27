@@ -114,6 +114,19 @@ export default class GameManager {
       this.gameData.type
     );
 
+    // Get current scale factor
+    const { scaleFactor } = this.gameDimensionsSig[0]();
+
+    // Reset positions with current scale factor
+    this.gamePositionsSig[1]({
+      player1Position: originalPositions.player1Position * scaleFactor,
+      player2Position: originalPositions.player2Position * scaleFactor,
+      ball: {
+        x: originalPositions.ball.x * scaleFactor,
+        y: originalPositions.ball.y * scaleFactor,
+      },
+    });
+
     // Set initial game score with player information
     this.gameScoreSig[1]({
       player1: { score: 0 },
@@ -207,7 +220,7 @@ export default class GameManager {
       );
 
       this.ws.onopen = () => {
-        console.log('Game Engine WebSocket connected.');
+        //console.log('Game Engine WebSocket connected.');
         this.isConnected = true;
         resolve();
       };
@@ -222,7 +235,7 @@ export default class GameManager {
       };
 
       this.ws.onclose = () => {
-        console.log('Game Engine WebSocket Disconnected.');
+        //console.log('Game Engine WebSocket Disconnected.');
         this.isConnected = false;
         this.ws = null;
       };
@@ -248,7 +261,7 @@ export default class GameManager {
 
         // Detect the state of the game
         if ('is_game_running' in partialState) {
-          console.log('is running:', partialState.is_game_running);
+          //console.log('is running:', partialState.is_game_running);
           this.isGameRunning = partialState.is_game_running;
         }
 
@@ -312,7 +325,7 @@ export default class GameManager {
         console.error('Error processing game state update:', error);
       }
     } else if (data.type === 'connection_closed') {
-      console.log(`Connection closed by server for game ${this.gameData.id}.`);
+      //console.log(`Connection closed by server for game ${this.gameData.id}.`);
       if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.close();
       this.ws = null;
       this.updateCallbacks.forEach((callback) => callback());
@@ -346,7 +359,7 @@ export default class GameManager {
   endGame() {
     if (this.gameData.id < 0) return false;
 
-    console.log('Ending Game:', this.gameData.id);
+    //console.log('Ending Game:', this.gameData.id);
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.close();
     }

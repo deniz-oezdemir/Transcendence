@@ -74,7 +74,7 @@ class PongGameEngine:
         return self.game_state
 
     def move_player(self, player_id, direction):
-        logger.info(
+        logger.debug(
             "Game Engine: Moving player: player_id=%s, direction=%s",
             player_id,
             direction,
@@ -121,7 +121,7 @@ class PongGameEngine:
         Checks for collisions between the ball and the top or bottom walls.
         Reverses the ball's direction if a collision is detected.
         """
-        if self.game_state.ball_y_position - self.ball_radius <= 0:
+        if self.game_state.ball_y_position - (self.ball_radius / 2) <= 0:
             self.game_state.ball_y_direction *= -1
             self.game_state.ball_y_position += self.game_state.ball_y_direction
             logger.debug(
@@ -282,7 +282,7 @@ class PongGameEngine:
         if player_id == self.game_state.player_1_id:
             if ball_x_position + ball_radius < paddle_x_position:
                 self.game_state.ball_x_position = (
-                    paddle_x_position + ball_radius + ball_x_direction
+                    paddle_x_position - ball_radius - ball_x_direction
                 )
                 logger.debug(
                     "Ball 'inside' paddle_1, position set to: %f",
@@ -291,7 +291,7 @@ class PongGameEngine:
         elif player_id == self.game_state.player_2_id:
             if ball_x_position + ball_radius > paddle_x_position:
                 self.game_state.ball_x_position = (
-                    paddle_x_position - ball_radius - ball_x_direction
+                    paddle_x_position + ball_radius + ball_x_direction
                 )
                 logger.debug(
                     "Ball 'inside' paddle_2, position set to: %f",
@@ -304,10 +304,10 @@ class PongGameEngine:
         the scoring event.
         """
         if self.game_state.ball_x_position - self.ball_radius <= 0:
-            self._handle_score_point(self.game_state.player_2_id)
+            self._handle_score_point(self.game_state.player_1_id)
             logger.debug("Player 2 scored a point")
         elif self.game_state.ball_x_position + self.ball_radius >= self.game_width:
-            self._handle_score_point(self.game_state.player_1_id)
+            self._handle_score_point(self.game_state.player_2_id)
             logger.debug("Player 2 scored a point")
 
     def _handle_score_point(self, player_id):

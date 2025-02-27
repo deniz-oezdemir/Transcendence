@@ -1,6 +1,7 @@
 import re
 from rest_framework import serializers
 from accounts.models import CustomUser
+from django.conf import settings
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -50,11 +51,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        avatar_url = "/avatars/default.png"
+        avatar_url = f"{settings.NGINX_PUBLIC_URL}{settings.MEDIA_URL}default.png"
+        # avatar_url = 'http://localhost:8000/avatars/default.png'
         user = CustomUser.objects.create_user(
             username=validated_data["username"],
             password=validated_data["password"],
             avatar_url=avatar_url,
         )
         return user
-

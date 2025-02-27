@@ -99,7 +99,7 @@ async function login(username, password) {
 
 async function logout() {
   try {
-    console.log('loggin out');
+    //console.log('loggin out');
     const response = await fetch(`${apiUrl}/api/uam/logout/`, {
       method: 'POST',
       headers: {

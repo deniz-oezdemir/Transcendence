@@ -65,9 +65,9 @@ export function createCleanupContext() {
   cleanupContext = cleanupFns; // Assign the new context
 
   const cleanup = () => {
-    console.log('cleanup context', cleanupFns);
+    //console.log('cleanup context', cleanupFns);
     cleanupFns.forEach((fn) => {
-      console.log('cleaning fn: ', fn);
+      //console.log('cleaning fn: ', fn);
       fn();
     });
     cleanupFns.length = 0; // Clear the functions

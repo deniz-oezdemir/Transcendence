@@ -5,18 +5,16 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     ports:
-      - "8004:8000"
+      - ":8000"
     volumes:
       - ..:/app
+    env_file:
+      - path: ./.env.example #TODO: change
+        required: true
     environment:
       - DJANGO_SETTINGS_MODULE=AIOpponent.settings
     networks:
       - transcendence
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
 networks:
   transcendence:

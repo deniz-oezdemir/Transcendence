@@ -28,11 +28,6 @@ services:
         required: true
     volumes:
       - matchmaking_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: pg_isready -U postgres -d matchmaking_db
-      interval: 5s
-      timeout: 5s
-      retries: 5
     networks:
       - matchmaking_internal
 
