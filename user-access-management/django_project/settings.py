@@ -82,7 +82,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-<<<<<<< HEAD
 # CORS_ALLOWED_ORIGINS = [
 #     "http://localhost:8005",  # Frontend application URL
 # ]
