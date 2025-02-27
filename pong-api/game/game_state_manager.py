@@ -190,10 +190,8 @@ class GameStateManager:
             # Determine the winner based on the player with the most goals
             if self.game_state.player_1_score > self.game_state.player_2_score:
                 winner_id = self.game_state.player_1_id
-            elif self.game_state.player_2_score > self.game_state.player_1_score:
-                winner_id = self.game_state.player_2_id
             else:
-                winner_id = None  # It's a tie
+                winner_id = self.game_state.player_2_id
 
             game_result = {
                 "winner_id": winner_id,

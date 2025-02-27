@@ -51,16 +51,17 @@ class GameConsumer(AsyncWebsocketConsumer):
 
             if connected_clients == 0:
                 await self.game_state_manager.stop_periodic_updates()
+                await self.game_state_manager.send_game_result_to_matchmaking()
                 logger.debug(f"Stopped periodic updates for game: {self.game_id}")
 
             # Notify all clients that the connection has ended
-            await self.channel_layer.group_send(
-                self.game_group_name,
-                {
-                    "type": "connection_closed",
-                    "message": "Connection closed by server.",
-                },
-            )
+            # await self.channel_layer.group_send(
+            #     self.game_group_name,
+            #     {
+            #         "type": "connection_closed",
+            #         "message": "Connection closed by server.",
+            #     },
+            # )
         except Exception as e:
             logger.error(
                 f"disconnect exception: {e}",
