@@ -9,6 +9,10 @@ let userData = null;
 const [isAuth, setIsAuth] = createSignal(false);
 setIsAuth(await checkAuth());
 
+async function updateUserData(data) {
+  userData.username = data.new_username;
+}
+
 async function validateToken(token) {
   if (!token) return false;
 
@@ -125,4 +129,4 @@ function getIsAuth() {
   return { isAuth, setIsAuth };
 }
 
-export { logout, login, checkAuth, getUser, getIsAuth };
+export { logout, login, checkAuth, getUser, getIsAuth, updateUserData };

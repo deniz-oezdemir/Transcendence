@@ -184,9 +184,10 @@ class ChangeUsernameView(APIView):
         serializer = ChangeUsernameSerializer(data=request.data, instance=request.user)
         if serializer.is_valid():
             serializer.update(request.user, serializer.validated_data)
-            return Response(
-                {"message": "Username changed successfully."}, status=status.HTTP_200_OK
-            )
+            # return Response(
+            #     {"message": "Username changed successfully."}, status=status.HTTP_200_OK
+            # )
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
         first_field = list(serializer.errors.keys())[0]
         error_message = serializer.errors[first_field][0]
         return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)

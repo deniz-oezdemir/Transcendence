@@ -6,6 +6,7 @@ import {
   validatePassword,
   matchPasswords,
 } from '../../core/utils';
+import { updateUserData } from '@/auth.js';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
@@ -214,6 +215,7 @@ function changeUsernameComponent(
       });
 
       const data = await response.json();
+      updateUserData(data);
       setUsernameButtonPressed(false);
       setReload(true);
       if (!response.ok) {
