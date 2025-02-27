@@ -258,6 +258,37 @@ export default class GameManager {
         }
 
         const partialState = JSON.parse(pako.inflate(bytes, { to: 'string' }));
+      const previousState = { ...this.currentGameState };
+      
+      // Update the current game state
+      this.currentGameState = {
+        ...this.currentGameState,
+        ...partialState,
+      };
+
+      // Check if score changed
+      const scoreChanged = (
+        previousState.player_1_score !== this.currentGameState.player_1_score ||
+        previousState.player_2_score !== this.currentGameState.player_2_score
+      );
+
+      if (scoreChanged) {
+        const { scaleFactor } = this.gameDimensionsSig[0]();
+        // Reset positions to center when score changes
+        this.previousPositions = {
+          player1Position: originalPositions.player1Position * scaleFactor,
+          player2Position: originalPositions.player2Position * scaleFactor,
+          ball: {
+            x: originalPositions.ball.x * scaleFactor,
+            y: originalPositions.ball.y * scaleFactor,
+          }
+        };
+        
+        this.targetPositions = { ...this.previousPositions };
+        
+        // Immediately update the displayed positions
+        this.gamePositionsSig[1]({ ...this.previousPositions });
+      }
 
         // Detect the state of the game
         if ('is_game_running' in partialState) {
@@ -318,6 +349,7 @@ export default class GameManager {
             ...prevScore,
             player1: { score: this.currentGameState.player_1_score },
             player2: { score: this.currentGameState.player_2_score },
+
             maxScore: this.currentGameState.max_score,
           }));
         }
