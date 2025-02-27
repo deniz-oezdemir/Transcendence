@@ -166,7 +166,7 @@ class GameStateManager:
                 await self.update_game_state(channel_layer, game_group_name)
                 logger.debug("Game updated now send")
                 await self.send_partial_game_state(channel_layer, game_group_name)
-                await asyncio.sleep(1 / 20)
+                await asyncio.sleep(1 / 40)
         except asyncio.CancelledError:
             pass
         logger.debug(f"Stopped periodic updates for game_id: {self.game_id}")
