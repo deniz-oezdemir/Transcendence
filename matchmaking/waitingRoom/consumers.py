@@ -1,5 +1,5 @@
-import json
 import aiohttp
+import json
 import asyncio
 import logging
 from django.conf import settings
@@ -29,7 +29,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
-                    "http://nginx:8000/api/pong-api/game/create_game/",
+                    "http://pong-api:8000/game/create_game/",
                     json={
                         "id": match.match_id,
                         "max_score": 1,
@@ -63,7 +63,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 # Add timeout parameter to the request
                 timeout = aiohttp.ClientTimeout(total=5)  # 5 seconds timeout
                 async with session.post(
-                    "http://nginx:8000/api/ai-opponent/ai_player/create_ai_player/",
+                    "http://ai-opponent:8000/ai_player/create_ai_player/",
                     json={
                         "ai_player_id": match.player_2_id,
                         "target_game_id": match.match_id,
@@ -279,8 +279,8 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             tournament = await self.get_tournament(data["tournament_id"])
 
             if len(tournament.players) == tournament.max_players:
-                matches, created_matches, available_matches = await self.create_tournament_matches(
-                    tournament
+                matches, created_matches, available_matches = (
+                    await self.create_tournament_matches(tournament)
                 )
                 logger.debug(
                     f"Tournament {tournament.tournament_id} is full. Matches created: {matches}"
@@ -311,8 +311,8 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                         "player_names": tournament.player_names,
                         "available_games": {
                             "matches": available_games["matches"],
-                            "tournaments": available_games["tournaments"]
-                        }
+                            "tournaments": available_games["tournaments"],
+                        },
                     },
                 )
             else:
@@ -572,24 +572,31 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
             "player_names": tournament.player_names,
             "max_players": tournament.max_players,
             "status": tournament.status,
-            "matches": list(Match.objects.filter(
-                tournament_id=tournament.tournament_id,
-                status=Match.ACTIVE
-            ).values(
-                "match_id",
-                "player_1_id",
-                "player_1_name",
-                "player_2_id",
-                "player_2_name",
-                "status"
-            ))
+            "matches": list(
+                Match.objects.filter(
+                    tournament_id=tournament.tournament_id, status=Match.ACTIVE
+                ).values(
+                    "match_id",
+                    "player_1_id",
+                    "player_1_name",
+                    "player_2_id",
+                    "player_2_name",
+                    "status",
+                )
+            ),
         }
 
         # Return simplified structure
-        return matches, created_matches, {
-            "matches": [],  # Empty array for non-tournament matches
-            "tournaments": [tournament_data]  # Array containing only the tournament data
-        }
+        return (
+            matches,
+            created_matches,
+            {
+                "matches": [],  # Empty array for non-tournament matches
+                "tournaments": [
+                    tournament_data
+                ],  # Array containing only the tournament data
+            },
+        )
 
     @database_sync_to_async
     def is_player_in_game(self, player_id):
@@ -620,7 +627,7 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         matches = list(
             Match.objects.filter(
                 status__in=[Match.PENDING, Match.ACTIVE],
-                tournament_id__isnull=True  # Only get non-tournament matches
+                tournament_id__isnull=True,  # Only get non-tournament matches
             ).values(
                 "match_id",
                 "player_1_id",
@@ -633,7 +640,9 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
 
         # Get tournaments with their matches
         tournaments = []
-        for t in Tournament.objects.filter(status__in=[Tournament.PENDING, Tournament.ACTIVE]):
+        for t in Tournament.objects.filter(
+            status__in=[Tournament.PENDING, Tournament.ACTIVE]
+        ):
             tournament_data = {
                 "tournament_id": t.tournament_id,
                 "creator_id": t.creator_id,
@@ -642,17 +651,19 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
                 "player_names": t.player_names,
                 "max_players": t.max_players,
                 "status": t.status,
-                "matches": list(Match.objects.filter(
-                    tournament_id=t.tournament_id,
-                    status__in=[Match.PENDING, Match.ACTIVE]
-                ).values(
-                    "match_id",
-                    "player_1_id",
-                    "player_1_name",
-                    "player_2_id",
-                    "player_2_name",
-                    "status"
-                ))
+                "matches": list(
+                    Match.objects.filter(
+                        tournament_id=t.tournament_id,
+                        status__in=[Match.PENDING, Match.ACTIVE],
+                    ).values(
+                        "match_id",
+                        "player_1_id",
+                        "player_1_name",
+                        "player_2_id",
+                        "player_2_name",
+                        "status",
+                    )
+                ),
             }
             tournaments.append(tournament_data)
 
@@ -669,15 +680,13 @@ class WaitingRoomConsumer(AsyncWebsocketConsumer):
         """Deletes all pending and active matches for a specific user"""
         # Get matches to delete
         matches_deleted = Match.objects.filter(
-            player_1_id=user_id,
-            status__in=[Match.PENDING, Match.ACTIVE]
+            player_1_id=user_id, status__in=[Match.PENDING, Match.ACTIVE]
         ).delete()
         logger.debug(f"Deleted {matches_deleted[0]} matches for user {user_id}")
 
         # Delete tournaments created by user
         tournaments_deleted = Tournament.objects.filter(
-            creator_id=user_id,
-            status=Tournament.PENDING
+            creator_id=user_id, status=Tournament.PENDING
         ).delete()
         logger.debug(f"Deleted {tournaments_deleted[0]} tournaments for user {user_id}")
 

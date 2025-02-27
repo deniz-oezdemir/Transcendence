@@ -9,7 +9,7 @@ import {
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const nginxPort = 8000;
+const nginxPort = 8443;
 const apiUrl = `${protocol}//${hostname}:${nginxPort}`;
 
 //*********************************************************************************************//
@@ -60,17 +60,14 @@ function friendRequestForm(setReload) {
 
     try {
       //console.log('Sending friend request to', username());
-      const response = await fetch(
-        `${apiUrl}/api/uam/friend-request/`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Token ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ friend_username: username() }),
-        }
-      );
+      const response = await fetch(`${apiUrl}/api/uam/friend-request/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Token ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ friend_username: username() }),
+      });
 
       const data = await response.json();
       if (!response.ok) {
@@ -119,17 +116,14 @@ function friendListComponent(user_data, setReload) {
     try {
       //console.log('Sending unfollow request to', friend_username);
 
-      const response = await fetch(
-        `${apiUrl}/api/uam/friend-request/`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Token ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ friend_username }),
-        }
-      );
+      const response = await fetch(`${apiUrl}/api/uam/friend-request/`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Token ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ friend_username }),
+      });
 
       const data = await response.json();
       if (!response.ok) {
@@ -192,7 +186,12 @@ function friendListComponent(user_data, setReload) {
 
 //*********************************************************************************************//
 
-function changeUsernameComponent(user_data, setReload, usernameButtonPressed, setUsernameButtonPressed) { 
+function changeUsernameComponent(
+  user_data,
+  setReload,
+  usernameButtonPressed,
+  setUsernameButtonPressed
+) {
   const [username, setUsername] = createSignal('');
   const [usernameError, setUsernameError] = createSignal('');
 
@@ -281,7 +280,12 @@ function changeUsernameComponent(user_data, setReload, usernameButtonPressed, se
 
 //*********************************************************************************************//
 
-function changePasswordComponent(user_data, setReload, passwordButtonPressed, setPasswordButtonPressed) {
+function changePasswordComponent(
+  user_data,
+  setReload,
+  passwordButtonPressed,
+  setPasswordButtonPressed
+) {
   const [password, setPassword] = createSignal('');
   const [passwordRepeat, setPasswordRepeat] = createSignal('');
   const [passwordError, setPasswordError] = createSignal('');
@@ -297,17 +301,14 @@ function changePasswordComponent(user_data, setReload, passwordButtonPressed, se
         return alert(passwordError());
       }
       let new_password = password();
-      const response = await fetch(
-        `${apiUrl}/api/uam/change-password/`,
-        {
-          method: 'PUT',
-          headers: {
-            Authorization: `Token ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ new_password }),
-        }
-      );
+      const response = await fetch(`${apiUrl}/api/uam/change-password/`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Token ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ new_password }),
+      });
 
       const data = await response.json();
       setPasswordButtonPressed(false);
@@ -388,7 +389,12 @@ function changePasswordComponent(user_data, setReload, passwordButtonPressed, se
 
 //*********************************************************************************************//
 
-function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAvatarButtonPressed) {
+function changeAvatarComponent(
+  user_data,
+  setReload,
+  avatarButtonPressed,
+  setAvatarButtonPressed
+) {
   const [avatar, setAvatar] = createSignal('');
 
   function validateImage(file) {
@@ -413,16 +419,13 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
       const formData = new FormData();
       formData.append('avatar', file);
 
-      const response = await fetch(
-        `${apiUrl}/api/uam/change-avatar/`,
-        {
-          method: 'PUT',
-          headers: {
-            Authorization: `Token ${localStorage.getItem('authToken')}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch(`${apiUrl}/api/uam/change-avatar/`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Token ${localStorage.getItem('authToken')}`,
+        },
+        body: formData,
+      });
 
       const data = await response.json();
       setAvatarButtonPressed(false);
@@ -504,14 +507,24 @@ function changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAva
 
 //*********************************************************************************************//
 
-function dynamicData(user_data, user_stats, setReload, usernameButtonPressed, setUsernameButtonPressed, passwordButtonPressed, setPasswordButtonPressed, avatarButtonPressed, setAvatarButtonPressed) {
+function dynamicData(
+  user_data,
+  user_stats,
+  setReload,
+  usernameButtonPressed,
+  setUsernameButtonPressed,
+  passwordButtonPressed,
+  setPasswordButtonPressed,
+  avatarButtonPressed,
+  setAvatarButtonPressed
+) {
   if (!user_data) {
     return createComponent('div', {
       className: styles.profileContainer,
       content: 'Error loading profile data',
     });
   }
-  
+
   function displayHistory(user_stats, data) {
     // console.log('Displaying player game history, user_stats: ', user_stats);
     const parent = createComponent('ul', {
@@ -575,9 +588,24 @@ function dynamicData(user_data, user_stats, setReload, usernameButtonPressed, se
         },
       }),
 
-      changeUsernameComponent(user_data, setReload, usernameButtonPressed, setUsernameButtonPressed),
-      changePasswordComponent(user_data, setReload, passwordButtonPressed, setPasswordButtonPressed),
-      changeAvatarComponent(user_data, setReload, avatarButtonPressed, setAvatarButtonPressed),
+      changeUsernameComponent(
+        user_data,
+        setReload,
+        usernameButtonPressed,
+        setUsernameButtonPressed
+      ),
+      changePasswordComponent(
+        user_data,
+        setReload,
+        passwordButtonPressed,
+        setPasswordButtonPressed
+      ),
+      changeAvatarComponent(
+        user_data,
+        setReload,
+        avatarButtonPressed,
+        setAvatarButtonPressed
+      ),
       friendListComponent(user_data, setReload),
       friendRequestForm(setReload),
 
@@ -654,7 +682,19 @@ export default function ProfilePage({ params, query }) {
       //console.log('User data:', data);
       const userStats = await fetchStats(data.id);
       // console.log('userStats:', userStats);
-      setContent(dynamicData(data, userStats, setReload, usernameButtonPressed, setUsernameButtonPressed, passwordButtonPressed, setPasswordButtonPressed, avatarButtonPressed, setAvatarButtonPressed));
+      setContent(
+        dynamicData(
+          data,
+          userStats,
+          setReload,
+          usernameButtonPressed,
+          setUsernameButtonPressed,
+          passwordButtonPressed,
+          setPasswordButtonPressed,
+          avatarButtonPressed,
+          setAvatarButtonPressed
+        )
+      );
     } catch (error) {
       console.error('fetch user data fails with error: ', error);
       setError(error.message);

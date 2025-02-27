@@ -2,8 +2,8 @@ import { createSignal } from '@reactivity';
 
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-const nginxPort = 8000;
-const apiUrl = `${protocol}//${hostname}:${nginxPort}`;
+const port = protocol === 'https:' ? 8443 : 8000;
+const apiUrl = `${protocol}//${hostname}:${port}`;
 
 let userData = null;
 const [isAuth, setIsAuth] = createSignal(false);

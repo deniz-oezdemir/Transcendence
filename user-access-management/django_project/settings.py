@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+
 import os
 from pathlib import Path
 
@@ -32,7 +33,7 @@ DEBUG = True
 # # SESSION_COOKIE_SECURE = True
 # # CSRF_COOKIE_SECURE = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "nginx"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "nginx", "*"]
 
 # CORS_ALLOW_ALL_ORIGINS = True
 
@@ -41,7 +42,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://nginx:8000",
 ]
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://nginx:8000']
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://nginx:8000"]
 
 
 # Application definition
@@ -62,11 +63,11 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
 }
 
@@ -80,6 +81,41 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:8005",  # Frontend application URL
+# ]
+CORS_ALLOW_ALL_ORIGINS = True
+
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://localhost:8005",
+#     "http://127.0.0.1:3000",
+#     "http://127.0.0.1:8005"
+# ]
+
+# CORS_ALLOW_METHODS = [
+#     'DELETE',
+#     'GET',
+#     'OPTIONS',
+#     'PATCH',
+#     'POST',
+#     'PUT',
+# ]
+
+# CORS_ALLOW_HEADERS = [
+#     'accept',
+#     'accept-encoding',
+#     'authorization',
+#     'content-type',
+#     'dnt',
+#     'origin',
+#     'user-agent',
+#     'x-csrftoken',
+#     'x-requested-with',
+# ]
+
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://localhost:8443"]
 
 ROOT_URLCONF = "django_project.urls"
 
@@ -137,7 +173,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # Default authentication backend
+    "django.contrib.auth.backends.ModelBackend",  # Default authentication backend
 ]
 
 # Internationalization
@@ -162,12 +198,14 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-AUTH_USER_MODEL = "accounts.CustomUser" #points to my custom user model
+AUTH_USER_MODEL = "accounts.CustomUser"  # points to my custom user model
 
 # Uploaded avatars
-MEDIA_ROOT = '/usr/share/nginx/images/'  # physical directory where files are stored. 
-MEDIA_URL = '/avatars/'  # public URL where Nginx will serve the media files
+# MEDIA_ROOT = '/usr/share/nginx/static/'  # physical directory where files are stored.
+MEDIA_ROOT = "/usr/share/nginx/images/"  # physical directory where files are stored.
+MEDIA_URL = "/avatars/"  # public URL where Nginx will serve the media files
 
-NGINX_PUBLIC_URL = "http://localhost:8000"
+NGINX_STORAGE_URL = "https://nginx:8443"
+NGINX_PUBLIC_URL = "https://localhost:8443"
 
 # APPEND_SLASH=False

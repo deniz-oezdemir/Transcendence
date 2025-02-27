@@ -216,7 +216,7 @@ export default class GameManager {
       // Usar URL websocket más eficiente
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       this.ws = new WebSocket(
-        `${wsProtocol}//${window.location.hostname}:8000/ws/game/${this.gameData.id}/`
+        `${wsProtocol}//${window.location.hostname}:8443/ws/game/${this.gameData.id}/`
       );
 
       this.ws.onopen = () => {
@@ -333,6 +333,9 @@ export default class GameManager {
         cancelAnimationFrame(this.animationId);
         this.animationId = null;
       }
+
+      // Reset to the initial positions
+      this.handleResize();
     }
   }
 
@@ -445,33 +448,34 @@ export default class GameManager {
   update(delta) {
     if (!this.isGameRunning) return;
 
-    const interpolationFactor = 0.4;
-
-    // Update game positions with interpolation
-    this.gamePositionsSig[1]({
-      player1Position: lerp(
-        this.previousPositions.player1Position,
-        this.targetPositions.player1Position,
-        interpolationFactor
-      ),
-      player2Position: lerp(
-        this.previousPositions.player2Position,
-        this.targetPositions.player2Position,
-        interpolationFactor
-      ),
-      ball: {
-        x: lerp(
-          this.previousPositions.ball.x,
-          this.targetPositions.ball.x,
+    const interpolationFactor = 0.5;
+    for (let i = 0; i < 2; i++) {
+      // Update game positions with interpolation
+      this.gamePositionsSig[1]({
+        player1Position: lerp(
+          this.previousPositions.player1Position,
+          this.targetPositions.player1Position,
           interpolationFactor
         ),
-        y: lerp(
-          this.previousPositions.ball.y,
-          this.targetPositions.ball.y,
+        player2Position: lerp(
+          this.previousPositions.player2Position,
+          this.targetPositions.player2Position,
           interpolationFactor
         ),
-      },
-    });
+        ball: {
+          x: lerp(
+            this.previousPositions.ball.x,
+            this.targetPositions.ball.x,
+            interpolationFactor
+          ),
+          y: lerp(
+            this.previousPositions.ball.y,
+            this.targetPositions.ball.y,
+            interpolationFactor
+          ),
+        },
+      });
+    }
 
     if (this.isGameRunning) {
       const now = performance.now();
