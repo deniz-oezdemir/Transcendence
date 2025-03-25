@@ -99,6 +99,14 @@ make re
 
 This is equivalent to running `make fclean` followed by `make all`.
 
+### Visit the Web app
+
+Open your favorite browser in navigate to:
+
+`https://localhost:8443`
+
+Ignore the warning about invalid certificate and proceed to the site.
+
 ## Userflow
 
 <picture>
