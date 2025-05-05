@@ -31,10 +31,6 @@ git clone https://github.com/deniz-oezdemir/Transcendence
 cd Transcendence
 ```
 
-https://github.com/user-attachments/assets/098bcf9d-22a0-4d49-88a3-0a241945e245
-
-
-
 2. Build the project:
 
 ```bash
