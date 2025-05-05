@@ -1,8 +1,10 @@
 # Transcendence: A Pong Web App
 
-Transcendence is a full-stack 3D multiplayer Pong game built with a microservices architecture.
+Transcendence is a full-stack 3D multiplayer Pong game built with a microservices architecture. Below you can find a quick demo of the program:
 
-It supports the following features:
+https://github.com/user-attachments/assets/44c6fa73-51af-4097-9796-ba48a1bbe2e1
+
+The following features are supported:
 
 - Play real-time multiplayer matches and tournaments.
 - Compete against AI opponents.
@@ -28,6 +30,10 @@ It supports the following features:
 git clone https://github.com/deniz-oezdemir/Transcendence
 cd Transcendence
 ```
+
+https://github.com/user-attachments/assets/098bcf9d-22a0-4d49-88a3-0a241945e245
+
+
 
 2. Build the project:
 
