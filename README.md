@@ -40,7 +40,7 @@ make
 3. Open your browser and go to:
 
 ```
-http://localhost:8443
+https://localhost:8443
 ```
 4. Accept the risk of a self-signed certificate when prompted by your browser.
 
